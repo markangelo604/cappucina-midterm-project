@@ -13,7 +13,7 @@ Our project is an app, a "Carpooling App" for SLU Maryheights Campus. The app wo
 - **Bautista, Josh Marcus** - [@jshmrcsb](https://github.com/jshmrcsb)
 - **Beset, Sam Ryleigh** - [@yowghyt](https://github.com/yowghyt)
 - **Contillo, Daniel Roi** - [@sora598](https://github.com/sora598)
-- **Damocles, Jhezreen Adrian** - [@drianajd](https://github.com/drianajd)
+- **Damocles, Jhezreen Adriana** - [@drianajd](https://github.com/drianajd)
 - **Domalanta, Mark Angelo** - [@markangelo604](https://github.com/markangelo604)
 - **Javier, Charles Louis** - 
 - **Manaois, John Michael** - [@mightjm](https://github.com/mightjm)
