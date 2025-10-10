@@ -10,9 +10,9 @@ Our project is an app, a "Carpooling App" for SLU Maryheights Campus. The app wo
 - Objective 
 
 ## 👥 Team Members  
-- **Contillo, Daniel Roi** - [@sora598](https://github.com/sora598)
 - **Bautista, Josh Marcus** - [@jshmrcsb](https://github.com/jshmrcsb)
 - **Beset, Sam Ryleigh** - [@yowghyt](https://github.com/yowghyt)
+- **Contillo, Daniel Roi** - [@sora598](https://github.com/sora598)
 - **Damocles, Jhezreen Adrian** - [@drianajd](https://github.com/drianajd)
 - **Domalanta, Mark Angelo** - [@markangelo604](https://github.com/markangelo604)
 - **Javier, Charles Louis** - 
