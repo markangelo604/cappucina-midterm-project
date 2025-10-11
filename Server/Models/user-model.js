@@ -3,26 +3,119 @@
  * 
  * this file contains the schema and model for User-related data.
  */
+import dotenv from "dotenv";
+import { Collection, MongoClient } from "mongodb";
+dotenv.config();
+
+const uri = process.env.LOCALHOST;
+const client = new MongoClient(uri);
+
+const dbName = process.env.DATABASE;
+const collectionName = process.env.USERCOLLECTION;
 
 // Register the user to the database
 // return true if success
 async function registerUser(data){
-    return true;
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        
+        const result = await collectionName.insertOne(data);
+
+        console.log("User added with _id:", result.insertId);
+        return true;
+    } catch (err) {
+        console.error("Error adding user:", err);   
+    } finally {
+        await client.close();
+    }
 }
 
 // Login user to the web app
 // return true if success
 async function LoginUser(data){
-    return true;
+    try{
+        await client.connect();
+        const db = client.db(dbName);
+        
+        const result = await collectionName.findOne(
+            { username: data.username}, // Search username
+            { projection:{password: 1}} // get password
+        );
+
+        if(result && result.password == data.password){
+            return true;
+        } else {
+            return false;
+        }
+    }catch(err) {
+        console.error("Incorrect username or password", err);
+    } finally {
+        await client.close();
+    }
 }
 
-async function UpdateProfile(data) {
-    return true;
+async function UpdateProfile(username, data) {
+     try{
+        await client.connect();
+        const db = client.db(dbName);
+        
+        const result = await collectionName.updateOne(
+            { username: username}, //find username
+            { $set: data}           //set the updated data
+        );
+
+        if (result.matchedCount > 0) {
+            console.log("User updated successfully");
+            return true;
+        } else {
+            console.log("User not found");
+            return false;
+        }
+
+    } catch (err) {
+        console.error("Error updating user:", err);
+    } finally {
+        await client.close();
+    }
 }
 
-// Return user history(ride/booking)
-async function UserHistory(data){
-    return true;
+// Return user history(ride)
+async function TripHistory(data){
+    try{
+        await client.connect();
+        const db = client.db(dbName);
+        
+        const result = await collectionName.findOne(
+            { username: data.username}, // fetch the history of the said username
+            { projection: {trip_history: 1}} // obtain the trip history
+        );
+
+        return result.trip_history;
+    } catch (err){
+        console.error("An error has occured:", err)
+    } finally {
+        await client.close();
+    }
+}
+
+// Return user payment history
+async function PaymentHistory(data) {
+    try{
+        await client.connect();
+        const db = client.db(dbName);
+        
+        const result = await collectionName.findOne(
+            { username: data.username}, // fetch the history of the said username
+            { projection: {payment_history: 1}} // obtain the payment history
+        );
+
+        return result.payment_history;
+    } catch (err){
+        console.error("An error has occured:", err)
+    } finally {
+        await client.close();
+    }
 }
 
 // Set the user destination
