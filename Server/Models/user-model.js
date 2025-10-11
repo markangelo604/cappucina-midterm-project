@@ -6,7 +6,13 @@
 import dotenv from "dotenv";
 import { MongoClient } from "mongodb";
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const uri = process.env.LOCALHOST;
 const client = new MongoClient(uri);
@@ -16,17 +22,20 @@ const collectionName = process.env.USERCOLLECTION;
 
 // Logger
 function logAction(message) {
-    // Go up one directory (from Models → project root), then into Server-Logs
-    const logDir = path.join(__dirname, "../Server-Logs");
-    const logFile = path.join(logDir, "user.log");
+    try {
+        const logDir = path.join(__dirname, "../Server-Logs");
+        const logFile = path.join(logDir, "user.log");
 
-    // Create folder if it doesn’t exist
-    if (!fs.existsSync(logDir)) {
-        fs.mkdirSync(logDir, { recursive: true });
+        // Create folder if it doesn’t exist
+        if (!fs.existsSync(logDir)) {
+            fs.mkdirSync(logDir, { recursive: true });
+        }
+        
+        const logMessage = `${new Date().toISOString()} - ${message}\n`;
+        fs.appendFileSync(logFile, logMessage);
+    } catch (err) {
+        console.error("Failed to write to log:", err);
     }
-    
-    const logMessage = `${new Date().toISOString()} - ${message}\n`;
-    fs.appendFileSync("user.log", logMessage);
 }
 
 // Register the user to the database
@@ -55,17 +64,17 @@ async function LoginUser(data) {
         const db = client.db(dbName);
 
         const result = await db.collection(collectionName).findOne(
-        { username: data.username },
-        { projection: { password: 1 } }
+            { username: data.username },
+            { projection: { password: 1 } }
         );
 
         if (result && result.password === data.password) {
-        logAction("Matched password with username: " + data.username);
-        console.log("Correct password for username: " + data.username);
-        return true;
+            logAction("Matched password with username: " + data.username);
+            console.log("Correct password for username: " + data.username);
+            return true;
         } else {
-        logAction("Incorrect password for username: " + data.username);
-        return false;
+            logAction("Incorrect password for username: " + data.username);
+            return false;
         }
     } catch (err) {
         console.error("Error logging in:", err);
@@ -82,19 +91,20 @@ async function UpdateProfile(username, data) {
         await client.connect();
         const db = client.db(dbName);
 
+        // Add updated_at timestamp
         const result = await db.collection(collectionName).updateOne(
-        { username: username },
-        { $set: data }
+            { username: username },
+            { $set: { ...data, updated_at: new Date() } }
         );
 
         if (result.matchedCount > 0) {
-        console.log("User updated successfully");
-        logAction("Successfully updated profile of username: " + username);
-        return true;
+            console.log("User updated successfully");
+            logAction("Successfully updated profile of username: " + username);
+            return true;
         } else {
-        console.log("User not found");
-        logAction("Username to be updated not found: " + username);
-        return false;
+            console.log("User not found");
+            logAction("Username to be updated not found: " + username);
+            return false;
         }
     } catch (err) {
         console.error("Error updating user:", err);
@@ -112,18 +122,18 @@ async function TripHistory(data) {
         const db = client.db(dbName);
 
         const result = await db.collection(collectionName).findOne(
-        { username: data.username },
-        { projection: { trip_history: 1 } }
+            { username: data.username },
+            { projection: { trip_history: 1 } }
         );
 
         if (result && result.trip_history) {
-        console.log("Trip history retrieved successfully for:", data.username);
-        logAction("Trip history retrieved successfully for: " + data.username);
-        return result.trip_history;
+            console.log("Trip history retrieved successfully for:", data.username);
+            logAction("Trip history retrieved successfully for: " + data.username);
+            return result.trip_history;
         } else {
-        console.log("No trip history found for:", data.username);
-        logAction("No trip history found for: " + data.username);
-        return [];
+            console.log("No trip history found for:", data.username);
+            logAction("No trip history found for: " + data.username);
+            return [];
         }
     } catch (err) {
         console.error("An error occurred:", err);
@@ -141,18 +151,18 @@ async function PaymentHistory(data) {
         const db = client.db(dbName);
 
         const result = await db.collection(collectionName).findOne(
-        { username: data.username },
-        { projection: { payment_history: 1 } }
+            { username: data.username },
+            { projection: { payment_history: 1 } }
         );
 
         if (result && result.payment_history) {
-        console.log("Payment history retrieved successfully for:", data.username);
-        logAction("Payment history retrieved successfully for: " + data.username);
-        return result.payment_history;
+            console.log("Payment history retrieved successfully for:", data.username);
+            logAction("Payment history retrieved successfully for: " + data.username);
+            return result.payment_history;
         } else {
-        console.log("No payment history found for:", data.username);
-        logAction("No payment history found for: " + data.username);
-        return [];
+            console.log("No payment history found for:", data.username);
+            logAction("No payment history found for: " + data.username);
+            return [];
         }
     } catch (err) {
         console.error("An error occurred:", err);
@@ -163,86 +173,37 @@ async function PaymentHistory(data) {
     }
 }
 
-// Set the user destination
-async function SetUserDestination(data) {
-    try {
-        await client.connect();
-        const db = client.db(dbName);
-
-        const result = await db.collection(collectionName).updateOne(
-        { username: data.username },
-        { $push: { destination: data.destination } }
-        );
-
-        if (result.matchedCount > 0) {
-        console.log("Destination added successfully!");
-        logAction("Destination added for username: " + data.username);
-        return true;
-        } else {
-        console.log("User not found");
-        logAction("User not found while adding destination: " + data.username);
-        return false;
-        }
-    } catch (err) {
-        console.error("An error occurred:", err);
-        logAction("An error occurred while setting destination for " + data.username);
-        return false;
-    } finally {
-        await client.close();
-    }
-}
-
-// View user destination
-async function ViewUserDestination(data) {
-    try {
-        await client.connect();
-        const db = client.db(dbName);
-
-        const result = await db.collection(collectionName).findOne(
-        { username: data.username },
-        { projection: { destination: 1 } }
-        );
-
-        if (result && result.destination) {
-        console.log("User destination found");
-        return result.destination;
-        } else {
-        console.log("No user destination found");
-        return null;
-        }
-    } catch (err) {
-        console.error("Couldn't find specified user:", err);
-        logAction("Couldn't find specified user: " + username)
-        return null;
-    } finally {
-        await client.close();
-    }
-}
-
-// Set the currnt location of the user
+// Set the current location of the user
 async function SetUserLocation(data) {
-    try{
+    try {
         await client.connect();
         const db = client.db(dbName);
 
         const result = await db.collection(collectionName).updateOne(
-            { username: data.username},
-            { $push: data.current_location}
-        )
-        
-        if(result && result.matchedCount > 0){
+            { username: data.username },
+            {
+                $set: {
+                    current_location: {
+                        type: "Point",
+                        coordinates: [data.longitude, data.latitude]
+                    },
+                    updated_at: new Date()
+                }
+            }
+        );
+
+        if (result && result.matchedCount > 0) {
             console.log("Successfully updated user location: " + data.username);
             logAction("Successfully updated user location: " + data.username);
             return true;
         } else {
-            console.log("username not found: " + data.username);
-            logAction("username not found: " + data.username)
+            console.log("Username not found: " + data.username);
+            logAction("Username not found: " + data.username);
             return false;
         }
-
     } catch (err) {
-        console.log("Error has occured while obtaining user location: " + data.username);
-        logAction("Error has occured while obtaining user location: " + data.username);
+        console.log("Error has occurred while setting user location for: " + data.username, err);
+        logAction("Error has occurred while setting user location for: " + data.username);
         return false;
     } finally {
         await client.close();
@@ -256,18 +217,18 @@ async function ViewUserLocation(data) {
         const db = client.db(dbName);
 
         const result = await db.collection(collectionName).findOne(
-        { username: data.username },
-        { projection: { current_location: 1, _id: 0 } }
+            { username: data.username },
+            { projection: { current_location: 1, _id: 0 } }
         );
 
         if (result && result.current_location) {
-        console.log("Successfully retrieved current location for:", data.username);
-        logAction("Successfully retrieved current location for: " + data.username);
-        return result.current_location;
+            console.log("Successfully retrieved current location for:", data.username);
+            logAction("Successfully retrieved current location for: " + data.username);
+            return result.current_location;
         } else {
-        console.log("No current location found for:", data.username);
-        logAction("No current location found for: " + data.username);
-        return null;
+            console.log("No current location found for:", data.username);
+            logAction("No current location found for: " + data.username);
+            return null;
         }
     } catch (err) {
         console.error("Error occurred while obtaining user location:", err);
@@ -277,6 +238,7 @@ async function ViewUserLocation(data) {
         await client.close();
     }
 }
+
 
 // Cancel a booking
 async function CancelBooking(data) {
