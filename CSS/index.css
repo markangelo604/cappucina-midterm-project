@@ -1,0 +1,164 @@
+/* Global Styles */
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+    --light-bg: #f8f9fa;
+    --dark-text: #212529;
+    --primary-hover: #0b5ed7;
+    --google-red: #ea4335;
+    --navbar-height: 60px;
+    --transition-speed: 0.3s;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-container {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 20px;
+}
+
+/* Login Card */
+.login-card {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+}
+
+/* Brand Section */
+.brand-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--dark-text);
+    margin-bottom: 5px;
+}
+
+/* Form Styles */
+.form-label {
+    font-weight: 500;
+    color: var(--dark-text);
+    margin-bottom: 8px;
+}
+
+.form-control {
+    padding: 12px 16px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all var(--transition-speed) ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+
+/* Buttons */
+.btn-login {
+    padding: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all var(--transition-speed) ease;
+}
+
+.btn-login:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.btn-google {
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #2d3748;
+    border-radius: 8px;
+    transition: all var(--transition-speed) ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-google:hover {
+    background-color: #f7fafc;
+    border-color: #cbd5e0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-google img {
+    flex-shrink: 0;
+}
+
+/* Divider */
+.divider {
+    position: relative;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #eee;
+    transform: translateY(-50%);
+}
+
+.divider span {
+    position: relative;
+    display: inline-block;
+    padding: 0 15px;
+    background: white;
+    color: #a0aec0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Links */
+a {
+    color: var(--primary-color);
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: var(--primary-hover);
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .login-card {
+        padding: 30px 20px;
+    }
+
+    .brand-title {
+        font-size: 24px;
+    }
+}
