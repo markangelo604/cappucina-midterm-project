@@ -60,6 +60,32 @@ body {
 
 
 /* SearchBar */
+.search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 0 0.75rem;
+  height: 38px;
+  transition: box-shadow 0.3s ease;
+}
+
+.search-bar input {
+  border: none;
+  outline: none;
+  box-shadow: none;
+  flex: 1;
+  padding-left: 0.5rem;
+  background: transparent;
+  color: var(--dark-text);
+}
+
+.search-bar .material-symbols-outlined {
+  color: var(--secondary-color);
+  font-size: 20px;
+  pointer-events: none;
+}
 
 form[role="search"] input {
     border-radius: 6px;
