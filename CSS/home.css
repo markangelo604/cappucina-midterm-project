@@ -147,3 +147,35 @@ form[role="search"] button:hover {
     background-color: var(--primary-color);
     color: #fff;
 }
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    padding: 100px 0;
+    margin-top: 2px;
+}
+
+.hero-section h1 {
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.hero-section p {
+    animation: fadeInUp 1s ease-out;
+}
+
+.hero-section .btn {
+    animation: fadeInUp 1.2s ease-out;
+}
+
+.hero-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+}
+
+.hero-image .material-symbols-outlined {
+    font-size: 250px;
+    opacity: 0.9;
+    animation: float 3s ease-in-out infinite;
+}
