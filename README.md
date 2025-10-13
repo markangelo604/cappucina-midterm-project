@@ -15,8 +15,12 @@ Our project is an app, a "Carpooling App" for SLU Maryheights Campus. The app wo
 - **Contillo, Daniel Roi** - [@sora598](https://github.com/sora598)
 - **Damocles, Jhezreen Adriana** - [@drianajd](https://github.com/drianajd)
 - **Domalanta, Mark Angelo** - [@markangelo604](https://github.com/markangelo604)
-- **Javier, Charles Louis** - 
+- **Javier, Charles Louis** - [@JayJay3937](https://github.com/JayJay3937)
 - **Manaois, John Michael** - [@mightjm](https://github.com/mightjm)
+
+<a href="https://github.com/markangelo604/cappucina-midterm-project/graphs/contributors">
+  <img class="dark-light" src="https://contrib.rocks/image?repo=markangelo604/cappucina-midterm-project&anon=0&columns=25&max=100&r=true" />
+</a>
 
 ## 📅 Submission Details  
 - **Course:** Web Technologies (9467 - IT 312)  
