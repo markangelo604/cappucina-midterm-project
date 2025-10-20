@@ -22,7 +22,7 @@
                 <div class="success-message" id="successMsg"></div>
 
                 <!-- Login form -->
-                <form id="loginForm" method="POST" action="php/login.php" class="login-form">
+                <form id="loginForm" class="login-form">
                     <div class="form-group">
                         <label for="username">Username</label>
                         <input type="username" id="username" name="username" placeholder="Enter your username..." required>
@@ -31,11 +31,6 @@
                     <div class="form-group">
                         <label for="password">Password</label>
                         <input type="password" id="password" name="password" placeholder="Enter password..." required>
-                    </div>
-
-                    <div class="form-group checkbox">
-                        <input type="checkbox" id="remember" name="remember">
-                        <label for="remember"> Remember me</label>
                     </div>
 
                     <button type="submit" class="login-btn" id="loginBtn">Login</button>
