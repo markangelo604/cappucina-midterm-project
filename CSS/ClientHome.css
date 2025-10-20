@@ -91,9 +91,11 @@ body {
     transition: all 0.3s;
     color: var(--text-dark);
 }
+
 .btn-Outline:hover {
+    background-color: var(--primary-color);
+    color: #fff;
     border-color: var(--primary-color);
-    color: var(--primary-color);
 }
 
 .btn-primary {
