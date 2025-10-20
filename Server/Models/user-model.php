@@ -41,6 +41,7 @@ function createUserProfile($data) {
             ];
         }
 
+        
         // Check if username already exists
         $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
         $stmt->execute([$data['username']]);
