@@ -39,19 +39,7 @@ loginForm.addEventListener('submit', async (e) => {
 
     try {
         // Send POST request to PHP server - mockup
-        // const response = await fetch('../php/mockup-login.php', {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //     },
-        //     body: JSON.stringify({
-        //         username: username,
-        //         password: password
-        //     })
-        // });
-
-        // Send POST request to PHP server
-        const response = await fetch('../php/login.php', {
+        const response = await fetch('../php/mockup-login.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -61,6 +49,18 @@ loginForm.addEventListener('submit', async (e) => {
                 password: password
             })
         });
+
+        // // Send POST request to PHP server
+        // const response = await fetch('../php/login.php', {
+        //     method: 'POST',
+        //     headers: {
+        //         'Content-Type': 'application/json',
+        //     },
+        //     body: JSON.stringify({
+        //         username: username,
+        //         password: password
+        //     })
+        // });
 
         // Parse the response
         const data = await response.json();
