@@ -21,6 +21,8 @@ loginForm.addEventListener('submit', async (e) => {
 
     // Get form data
     const username = document.getElementById('username').value;
-    const username = document.getElementById('username').value;
-    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const remember = document.getElementById('remember').checked;
+
+    
 });
