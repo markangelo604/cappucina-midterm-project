@@ -1,3 +1,6 @@
+# THIS COMMAND IN YOUR PROJECT FOLDER TO USE .ENV AND MONGO DB
+*composer require mongodb/mongodb vlucas/phpdotenv*
+
 # Team Cappucina's Midterm Project - Carpooling App
 
 ## 📌 Project Overview
