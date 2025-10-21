@@ -16,14 +16,7 @@ require_once 'index-config.php';
         <div class="container">
             <div class="nav-content">
                 <div class="logo">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                        <rect width="40" height="40" rx="8" fill="#FFC107"/>
-                        <path d="M10 20C10 18 12 16 15 16H25C28 16 30 18 30 20V26H10V20Z" fill="#333"/>
-                        <circle cx="14" cy="28" r="2" fill="#333"/>
-                        <circle cx="26" cy="28" r="2" fill="#333"/>
-                        <path d="M12 20H18V16H12V20Z" fill="#555"/>
-                        <path d="M22 20H28V16H22V20Z" fill="#555"/>
-                    </svg>
+                    <img src="images/merrylift-transparent.png" alt="Logo">
                 </div>
             <ul class="nav-menu">
                 <?php foreach ($nav_items as $items): ?>

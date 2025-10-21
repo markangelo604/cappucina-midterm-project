@@ -48,8 +48,11 @@ body {
     align-items: center;
 }
 
-.logo svg {
+.logo img {
     display: block;
+    width: 60px; 
+    height: auto; 
+    object-fit: contain;
 }
 
 .nav-menu {
