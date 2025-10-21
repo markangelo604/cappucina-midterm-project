@@ -1,6 +1,6 @@
 <?php
 // Set Title and site name
-$site_title = "Merrylift - Client Dashboard";
+$site_title = "Merrylift Homepage";
 $site_name = "Merrylift";
 
 // Nav Items ; the # is the link to our pages
@@ -160,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endforeach; ?>
             </ul>
                 <div class="nav-buttons">
-                        <a class="btn-Outline" href="php/login.php">Sign In</a>
+                        <a class="btn-Outline" href="html/login.html">Sign In</a>
                         <button class="btn-primary">Join Now</button>
                 </div>
             </div>

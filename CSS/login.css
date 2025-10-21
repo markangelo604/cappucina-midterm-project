@@ -65,18 +65,9 @@ body {
 }
 
 .app-logo {
-    width: 100px;
+    width: 300px;
     height: auto;
     object-fit: contain;
-}
-
-.app-title {
-    font-size: 34px;
-    font-weight: 600;
-    color: var(--accent-gold);
-    text-align: center;
-    margin-bottom: 30px;
-    letter-spacing: 0.3px;
 }
 
 .login-form {
