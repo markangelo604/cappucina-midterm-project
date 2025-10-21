@@ -6,9 +6,9 @@ const successMsg = document.getElementById('successMsg');
 
 // Dashboard redirect mapping
 const dashboardRedirect = {
-    'admin': '../dashboard/admin-dashboard.php',
-    'driver': '../dashboard/driver-dashboard.php',
-    'client': '../dashboard/client-dashboard.php'
+    'admin': '../html/admin-dashboard.html',
+    'driver': '../html/driver-dashboard.html',
+    'client': '../html/client-dashboard.html'
 };
 
 loginForm.addEventListener('submit', async (e) => {

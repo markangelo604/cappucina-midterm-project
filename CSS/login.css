@@ -29,7 +29,6 @@ body {
     min-height: 100vh;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
 }
 
 .container {
@@ -37,7 +36,7 @@ body {
     height: 100%;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
 }
 
 /* Login-section */
