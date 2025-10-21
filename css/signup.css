@@ -1,0 +1,240 @@
+/* Global Styles */
+:root {
+    --primary-color: #073066;
+    --primary-hover: #00418b;
+    --accent-gold: #FEC708;
+    --light-bg: #f8f9fa;
+    --text-dark: #212529;
+    --text-light: #6c757d;
+    --border-color: #c6c8c9;
+}
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: url('../images/campus-bg-login.png') no-repeat center;
+    background-size: cover;
+    background-attachment: fixed;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+}
+
+.container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Signup-section */
+.signup-section {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--light-bg);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.signup-card {
+    background: var(--light-bg);
+    padding: 30px 20px;
+    width: 100%;
+    max-width: 420px;
+}
+
+.logo-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.app-logo {
+    width: 300px;
+    height: auto;
+    object-fit: contain;
+}
+
+.signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 15px;
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"] {
+    padding: 12px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 15px;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: white;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="email"]:focus,
+.form-group input[type="password"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 63, 135, 0.1);
+}
+
+.signup-btn {
+    padding: 12px 16px;
+    background-color: var(--primary-color);
+    color: var(--light-bg);
+    border: none;
+    border-radius: 6px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 6px;
+}
+
+.signup-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.signup-btn:active {
+    transform: scale(0.98);
+}
+
+.signup-btn:disabled {
+    background-color: var(--text-light);
+    cursor: not-allowed;
+}
+
+.login-link {
+    text-align: center;
+    margin-top: 18px;
+}
+
+.login-link p {
+    font-size: 16px;
+    color: var(--text-light);
+}
+
+.login-link a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.login-link a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.error-message {
+    padding: 12px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    display: none;
+    font-size: 14px;
+}
+
+.success-message {
+    padding: 12px;
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    display: none;
+    font-size: 14px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    body {
+        background-position: center;
+        background-attachment: scroll;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .container {
+        padding-right: 0;
+        justify-content: center;
+    }
+
+    .signup-section {
+        max-width: 100%;
+    }
+
+    .signup-card {
+        padding: 32px 24px;
+    }
+
+    .app-logo {
+        width: 250px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 16px;
+    }
+
+    .signup-card {
+        padding: 24px 20px;
+        border-radius: 12px;
+    }
+
+    .signup-form {
+        gap: 14px;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="password"] {
+        padding: 11px 12px;
+        font-size: 16px;
+    }
+
+    .signup-btn {
+        padding: 11px 14px;
+        font-size: 15px;
+    }
+
+    .login-link p {
+        font-size: 13px;
+    }
+
+    .app-logo {
+        width: 200px;
+    }
+}

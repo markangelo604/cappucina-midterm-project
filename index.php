@@ -160,8 +160,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endforeach; ?>
             </ul>
                 <div class="nav-buttons">
-                        <a class="btn-Outline" href="html/login.html">Sign In</a>
-                        <button class="btn-primary">Join Now</button>
+                        <button class="btn-Outline" onclick="window.location.href='html/login.html'">Sign In</button>
+                        <button class="btn-primary" onclick="window.location.href='html/signup.html'">Join Now</button>
                 </div>
             </div>
         </div>
