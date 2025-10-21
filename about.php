@@ -1,76 +1,12 @@
 <?php
-// Set Title and site name
-$site_title = "About MerryLift";
-$site_name = "Merrylift";
-
-// Nav Items
-$nav_items = [
-   ['name' => 'Home', 'url' => 'index.php', 'active' => false],
-   ['name' => 'Find Rides', 'url' => '#', 'active' => false],
-   ['name' => 'Bookings', 'url' => '#', 'active' => false],
-   ['name' => 'About', 'url' => 'about.php', 'active' => true]
-];
-
-// Stats for About page
-$about_stats = [
-    ['number' => '50K', 'label' => 'Active Users'],
-    ['number' => '100K+', 'label' => 'Completed Rides'],
-    ['number' => '50K', 'label' => 'KM'],
-    ['number' => '₱2M+', 'label' => 'Money Saved']
-];
-
-// Team members
-$team_members = [
-    [
-        'name' => 'Javier, Charles Louis',
-        'role' => 'CEO & Founder',
-        'image' => 'images/charles.jpg'
-    ],
-    [
-        'name' => 'Domalanta, Mark Angelo',
-        'role' => 'CTO',
-        'image' => 'images/charles.jpg'
-    ],
-    [
-        'name' => 'Beset, Sam Raleigh',
-        'role' => 'Head of Operations',
-        'image' => 'images/charles.jpg'
-    ],
-    [
-        'name' => 'Damocles, Jheezren',
-        'role' => 'Lead Developer',
-        'image' => 'images/charles.jpg'
-    ],
-    [
-        'name' => 'Bautista, Josh Marcus',
-        'role' => 'CEO & Founder',
-        'image' => 'images/charles.jpg'
-    ],
-    [
-        'name' => 'Contillo, Daniel Roi',
-        'role' => 'CTO',
-        'image' => 'images/charles.jpg'
-    ],
-    [
-        'name' => 'Manaois, John Michael',
-        'role' => 'Head of Operations',
-        'image' => 'images/charles.jpg'
-    ]
-];
-
-// Footer links
-$footer_links = [
-    'Company' => ['About Us', 'How It Works', 'Careers', 'Press'],
-    'Support' => ['Help Center', 'Safety', 'Contact Us', 'Trust & Safety'],
-    'Quick Links' => ['Find Rides', 'Offer Ride', 'My Bookings', 'Trip History']
-];
+require_once 'about-config.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $site_title; ?></title>
+    <title><?= $site_title ?></title>
     <link rel="stylesheet" href="css/about.css">
 </head>
 <body>
@@ -92,9 +28,8 @@ $footer_links = [
                 <ul class="nav-menu">
                     <?php foreach ($nav_items as $items): ?>
                         <li>
-                            <a href="<?php echo $items['url']; ?>" 
-                            class="<?php echo $items['active'] ? 'active' : ''; ?>">
-                            <?php echo $items['name']; ?>
+                            <a href="<?= $items['url'] ?>" class="<?= $items['active'] ? 'active' : '' ?>">
+                                <?= $items['name'] ?>
                             </a>
                         </li>
                     <?php endforeach; ?>
@@ -139,8 +74,8 @@ $footer_links = [
             <div class="about-stats-grid">
                 <?php foreach ($about_stats as $stat): ?>
                     <div class="about-stat-card">
-                        <h3 class="about-stat-number"><?php echo $stat['number']; ?></h3>
-                        <p class="about-stat-label"><?php echo $stat['label']; ?></p>
+                        <h3 class="about-stat-number"><?= $stat['number'] ?></h3>
+                        <p class="about-stat-label"><?= $stat['label'] ?></p>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -158,11 +93,11 @@ $footer_links = [
                 <?php foreach ($team_members as $member): ?>
                     <div class="team-card">
                         <div class="team-image">
-                            <img src="<?php echo $member['image']; ?>" alt="<?php echo $member['name']; ?>">
+                            <img src="<?= $member['image'] ?>" alt="<?= $member['name'] ?>">
                         </div>
                         <div class="team-info">
-                            <h3 class="team-name"><?php echo $member['name']; ?></h3>
-                            <p class="team-role"><?php echo $member['role']; ?></p>
+                            <h3 class="team-name"><?= $member['name'] ?></h3>
+                            <p class="team-role"><?= $member['role'] ?></p>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -197,17 +132,17 @@ $footer_links = [
                 </div>
                 <?php foreach ($footer_links as $category => $links): ?>
                     <div class="footer-links">
-                        <h4><?php echo $category; ?></h4>
+                        <h4><?= $category ?></h4>
                         <ul>
                             <?php foreach ($links as $link): ?>
-                                <li><a href="#"><?php echo $link; ?></a></li>
+                                <li><a href="#"><?= $link ?></a></li>
                             <?php endforeach; ?>
                         </ul>
                     </div>
                 <?php endforeach; ?>
             </div>
             <div class="footer-bottom">
-                <p>&copy; <?php echo date("Y"); ?> MerryLift. All Rights Reserved.</p>
+                <p>&copy; <?= $current_year ?> MerryLift. All Rights Reserved.</p>
             </div>
         </div>
     </footer>
