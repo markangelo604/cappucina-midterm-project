@@ -13,7 +13,6 @@ require_once __DIR__ . '/Server/Models/user-model.php';
 
 echo "=== MongoDB PHP Connection Test ===\n";
 
-
 try {
     // Step 1: Check if $db exists
     global $db;
