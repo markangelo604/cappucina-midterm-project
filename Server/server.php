@@ -8,13 +8,13 @@
 //  • Can be included by other PHP files
 // ===============================================
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 use Dotenv\Dotenv;
 use MongoDB\Client;
 
 // Load environment variables
-$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
 // Retrieve environment variables

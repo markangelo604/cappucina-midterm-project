@@ -4,9 +4,12 @@
  * MongoDB Implementation
  */
 
-require_once __DIR__ . '/../Server/server.php';
+require_once __DIR__ . '/../../Server/server.php';
+require_once __DIR__ . '/../../vendor/autoload.php'; 
 
+use MongoDB\Client;
 use MongoDB\BSON\ObjectId;
+use MongoDB\BSON\UTCDateTime;
 
 // ===== Utility function for logging actions =====
 function logAction($message) {
