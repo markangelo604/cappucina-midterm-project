@@ -40,7 +40,7 @@ require_once 'about-config.php';
         <div class="container">
             <div class="about-hero-content">
                 <h1 class="about-title">About <span class="highlight">MerryLift</span></h1>
-                <p class="about-subtitle">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                <p class="about-subtitle">The More, the Merrier!</p>
             </div>
         </div>
     </section>
@@ -51,11 +51,14 @@ require_once 'about-config.php';
             <div class="story-card">
                 <h2 class="story-title">Our Story</h2>
                 <div class="story-content">
-                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
+                    <p>MerryLift was born from a simple yet powerful idea: to make the daily commute to Maryheights Main Campus easier, cheaper, and more enjoyable for everyone.
+                    As former students of the campus, we know firsthand the struggle of getting to class on time. Long waits at the terminal, unpredictable jeepney schedules, and rising fares made every trip a challenge. We’ve been there—rushing to catch the last ride, sharing cramped seats, or walking under the heat just to save a few pesos.</p>
                     
-                    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequat? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur.</p>
+                    <p>That’s why we created MerryLift—a carpooling platform designed exclusively for the Maryheights community. Whether you're a student heading to an early morning class or a faculty member commuting daily, MerryLift connects you with trusted companions who share your route.
+                    By riding together, you save on fare, reduce traffic, and build connections along the way. It’s more than just a ride—it’s a community on wheels.</p>
                     
-                    <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxim placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.</p>
+                    <p>We’re proud to serve both students and faculty, fostering a safer, smarter, and more sustainable way to travel. Because at MerryLift, we believe the journey matters as much as the destination.
+                    <strong>Ride together. Save together. Arrive together.</strong></p>
                 </div>
             </div>
         </div>
