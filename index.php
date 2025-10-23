@@ -42,8 +42,8 @@ require_once 'index-config.php';
             <div class="hero-content">
                 <div class="hero-text">
                     <h1 class="hero-title">
-                        Lorem, ipsum. <br>
-                        <span class="highlight">Inspirational.</span>
+                        MerryLift <br>
+                        <span class="highlight">Ride, save, slay the day!</span>
                     </h1>
                     <div class="feature-list">
                             <?php foreach ($features as $feature): ?>

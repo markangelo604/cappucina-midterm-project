@@ -14,16 +14,16 @@ $nav_items = [
 // Hero Section
 $features = [
     [
-        'title' => 'Lorem Ipsum dolor sit amet.',
-        'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod.',
+        'title' => 'Save Big.',
+        'description' => 'Share rides, split costs—pay up to 70% less than solo commuting.',
     ],
     [
-        'title' => 'Lorem Ipsum dolor sit amet.',
-        'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod.', 
+        'title' => 'Go Green.',
+        'description' => 'One full car = 4 fewer cars on the road. Reduce your carbon footprint.', 
     ],
     [
-        'title' => 'Lorem Ipsum dolor sit amet.',
-        'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod.', 
+        'title' => 'Ride Safe.',
+        'description' => 'Verified students & faculty only. Real-time tracking. Campus-approved.', 
     ]
 ];
 
