@@ -16,12 +16,23 @@ function logAction($message) {
     $logDir = __DIR__ . "/../Server-Logs";
     $logFile = $logDir . "/user.log";
 
+    // Ensure directory exists
     if (!file_exists($logDir)) {
         mkdir($logDir, 0777, true);
     }
 
+    // Prepare log message with timestamp
     $logMessage = "[" . date('Y-m-d H:i:s') . "] " . $message . PHP_EOL;
-    file_put_contents($logFile, $logMessage, FILE_APPEND);
+
+    // Use file locking to prevent race conditions
+    $fp = fopen($logFile, 'a');
+    if ($fp) {
+        flock($fp, LOCK_EX); // acquire exclusive lock
+        fwrite($fp, $logMessage);
+        fflush($fp);         // flush output before unlocking
+        flock($fp, LOCK_UN); // release lock
+        fclose($fp);
+    }
 }
 
 // ========================================
@@ -61,7 +72,7 @@ function createUserProfile($data) {
                 "address" => $data['address'] ?? null
             ],
             "account_status" => "active",
-            "created_at" => new MongoDB\BSON\UTCDateTime()
+            "created_at" => new UTCDateTime()
         ];
 
         $result = $users->insertOne($insertData);
@@ -85,6 +96,8 @@ function createUserProfile($data) {
 // ========================================
 function manageUserProfile($user_id, $updates) {
     global $db;
+
+    if (empty($updates)) return ["success" => false, "message" => "No updates provided."];
 
     try {
         $users = $db->users;
@@ -212,15 +225,17 @@ function bookSeat($passenger_id, $ride_id) {
             'fare' => $ride['fare'],
             'date' => $ride['date'],
             'status' => 'confirmed',
-            'created_at' => new MongoDB\BSON\UTCDateTime()
+            'created_at' => new UTCDateTime()
         ];
         $result = $bookings->insertOne($booking);
 
         // Update ride seats
-        $rides->updateOne(
-            ['_id' => new ObjectId($ride_id)],
+        $updateResult = $rides->updateOne(
+            ['_id' => new ObjectId($ride_id), 'available_seats' => ['$gt' => 0]],
             ['$inc' => ['available_seats' => -1]]
         );
+        if ($updateResult->getModifiedCount() === 0)
+            return ["success" => false, "message" => "Seat no longer available."];
 
         logAction("Booked ride $ride_id by passenger $passenger_id");
 
@@ -243,7 +258,8 @@ function cancelBooking($booking_id, $passenger_id) {
         $rides = $db->rides;
 
         $booking = $bookings->findOne(['_id' => new ObjectId($booking_id)]);
-        if (!$booking) return ["success" => false, "message" => "Booking not found."];
+        if (!$booking)
+            return ["success" => false, "message" => "Booking not found."];
 
         if ((string)$booking['passenger_id'] !== $passenger_id)
             return ["success" => false, "message" => "Unauthorized."];
@@ -251,17 +267,32 @@ function cancelBooking($booking_id, $passenger_id) {
         if ($booking['status'] === 'cancelled')
             return ["success" => false, "message" => "Already cancelled."];
 
+        // Get current ride info
+        $ride = $rides->findOne(['_id' => $booking['ride_id']]);
+        if (!$ride)
+            return ["success" => false, "message" => "Ride not found."];
+
         // Cancel booking
         $bookings->updateOne(
             ['_id' => new ObjectId($booking_id)],
             ['$set' => ['status' => 'cancelled']]
         );
 
-        // Restore seat
-        $rides->updateOne(
-            ['_id' => $booking['ride_id']],
-            ['$inc' => ['available_seats' => 1]]
-        );
+        // Only restore seat if below total capacity
+        if (isset($ride['total_seats']) && isset($ride['available_seats'])) {
+            if ($ride['available_seats'] < $ride['total_seats']) {
+                $rides->updateOne(
+                    ['_id' => $booking['ride_id']],
+                    ['$inc' => ['available_seats' => 1]]
+                );
+            }
+        } else {
+            // If no total_seats field is tracked, just increment
+            $rides->updateOne(
+                ['_id' => $booking['ride_id']],
+                ['$inc' => ['available_seats' => 1]]
+            );
+        }
 
         logAction("Cancelled booking $booking_id by $passenger_id");
         return ["success" => true, "message" => "Booking cancelled successfully."];
@@ -271,6 +302,7 @@ function cancelBooking($booking_id, $passenger_id) {
         return ["success" => false, "message" => "Cancellation failed."];
     }
 }
+
 
 // ========================================
 // 6. RATE AND REVIEW DRIVER
@@ -286,7 +318,8 @@ function rateAndReviewDriver($data) {
             '_id' => new ObjectId($data['booking_id']),
             'passenger_id' => new ObjectId($data['passenger_id'])
         ]);
-
+        if ($data['rating'] < 1 || $data['rating'] > 5)
+            return ["success" => false, "message" => "Rating must be between 1 and 5."];
         if (!$booking)
             return ["success" => false, "message" => "Booking not found."];
         if ($booking['status'] != 'completed')
@@ -300,7 +333,7 @@ function rateAndReviewDriver($data) {
             'reviewee_id' => $booking['driver_id'],
             'rating' => intval($data['rating']),
             'comment' => $data['comment'] ?? '',
-            'created_at' => new MongoDB\BSON\UTCDateTime()
+            'created_at' => new UTCDateTime()
         ];
         $result = $reviews->insertOne($review);
 
