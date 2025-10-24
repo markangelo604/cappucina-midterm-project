@@ -7,7 +7,6 @@
 require_once __DIR__ . '/../../Server/server.php';
 require_once __DIR__ . '/../../vendor/autoload.php'; 
 
-use MongoDB\Client;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
 
