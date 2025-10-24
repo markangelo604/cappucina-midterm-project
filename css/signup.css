@@ -2,7 +2,7 @@
 :root {
     --primary-color: #073066;
     --primary-hover: #00418b;
-    --accent-gold: #ffc107;
+    --accent-gold: #FEC708;
     --light-bg: #f8f9fa;
     --text-dark: #212529;
     --text-light: #6c757d;
@@ -29,7 +29,6 @@ body {
     min-height: 100vh;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
 }
 
 .container {
@@ -37,46 +36,40 @@ body {
     height: 100%;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
 }
 
-/* Login-section */
-.login-section {
+/* Signup-section */
+.signup-section {
     width: 100%;
-    height: 100vh;
-    max-width: 450px;
+    max-width: 500px;
     display: flex;
     justify-content: center;
     align-items: center;
     background: var(--light-bg);
+    min-height: 100vh;
+    padding: 20px;
 }
 
-.login-card {
+.signup-card {
     background: var(--light-bg);
     padding: 30px 20px;
+    width: 100%;
+    max-width: 420px;
 }
 
 .logo-container {
     text-align: center;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
-.slu-logo {
-    width: 100px;
+.app-logo {
+    width: 300px;
     height: auto;
     object-fit: contain;
 }
 
-.app-title {
-    font-size: 34px;
-    font-weight: 600;
-    color: var(--text-dark);
-    text-align: center;
-    margin-bottom: 30px;
-    letter-spacing: 0.3px;
-}
-
-.login-form {
+.signup-form {
     display: flex;
     flex-direction: column;
     gap: 18px;
@@ -85,25 +78,28 @@ body {
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .form-group label {
-    font-size: 18px;
+    font-size: 15px;
     color: var(--text-dark);
-    font-weight: 500;
+    font-weight: 600;
 }
 
+.form-group input[type="text"],
 .form-group input[type="email"],
 .form-group input[type="password"] {
-    padding: 12px 14px;
+    padding: 12px 10px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     font-size: 15px;
     font-family: inherit;
     transition: border-color 0.2s, box-shadow 0.2s;
+    background: white;
 }
 
+.form-group input[type="text"]:focus,
 .form-group input[type="email"]:focus,
 .form-group input[type="password"]:focus {
     outline: none;
@@ -111,26 +107,7 @@ body {
     box-shadow: 0 0 0 3px rgba(0, 63, 135, 0.1);
 }
 
-.form-group.checkbox {
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-}
-
-.form-group.checkbox input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: var(--primary-color);
-}
-
-.form-group.checkbox label {
-    margin: 0;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.login-btn {
+.signup-btn {
     padding: 12px 16px;
     background-color: var(--primary-color);
     color: var(--light-bg);
@@ -143,34 +120,61 @@ body {
     margin-top: 6px;
 }
 
-.login-btn:hover {
+.signup-btn:hover {
     background-color: var(--primary-hover);
 }
 
-.login-btn:active {
+.signup-btn:active {
     transform: scale(0.98);
 }
 
-.signup-link {
+.signup-btn:disabled {
+    background-color: var(--text-light);
+    cursor: not-allowed;
+}
+
+.login-link {
     text-align: center;
     margin-top: 18px;
 }
 
-.signup-link p {
+.login-link p {
     font-size: 16px;
     color: var(--text-light);
 }
 
-.signup-link a {
+.login-link a {
     color: var(--primary-color);
     text-decoration: none;
     font-weight: 600;
     transition: color 0.2s;
 }
 
-.signup-link a:hover {
+.login-link a:hover {
     color: var(--primary-hover);
     text-decoration: underline;
+}
+
+.error-message {
+    padding: 12px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    display: none;
+    font-size: 14px;
+}
+
+.success-message {
+    padding: 12px;
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    display: none;
+    font-size: 14px;
 }
 
 /* Mobile Responsive */
@@ -187,22 +191,16 @@ body {
         justify-content: center;
     }
 
-    .login-section {
+    .signup-section {
         max-width: 100%;
     }
 
-    .login-card {
+    .signup-card {
         padding: 32px 24px;
     }
 
-    .app-title {
-        font-size: 20px;
-        margin-bottom: 24px;
-    }
-
-    .slu-logo {
-        width: 50px;
-        height: 50px;
+    .app-logo {
+        width: 250px;
     }
 }
 
@@ -211,32 +209,32 @@ body {
         padding: 16px;
     }
 
-    .login-card {
+    .signup-card {
         padding: 24px 20px;
         border-radius: 12px;
     }
 
-    .app-title {
-        font-size: 18px;
-        margin-bottom: 20px;
-    }
-
-    .login-form {
+    .signup-form {
         gap: 14px;
     }
 
+    .form-group input[type="text"],
     .form-group input[type="email"],
     .form-group input[type="password"] {
         padding: 11px 12px;
         font-size: 16px;
     }
 
-    .login-btn {
+    .signup-btn {
         padding: 11px 14px;
         font-size: 15px;
     }
 
-    .signup-link p {
+    .login-link p {
         font-size: 13px;
+    }
+
+    .app-logo {
+        width: 200px;
     }
 }
