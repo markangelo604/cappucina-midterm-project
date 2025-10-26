@@ -7,7 +7,7 @@ $site_name = "Merrylift";
 $nav_items = [
    ['name' => 'Home', 'url' => '#', 'active' => true],
    ['name' => 'Find Rides', 'url' => '#', 'active' => false],
-   ['name' => 'Bookings', 'url' => '#', 'active' => false],
+   ['name' => 'Bookings', 'url' => 'booking.php', 'active' => false],
    ['name' => 'About', 'url' => 'about.php', 'active' => false]
 ];
 
