@@ -349,4 +349,5 @@ function rateAndReviewDriver($data) {
         return ["success" => false, "message" => "Review failed."];
     }
 }
+
 ?>
