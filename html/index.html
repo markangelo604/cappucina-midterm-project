@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MerryLift Homepage</title>
+    <link rel="stylesheet" href="../css/index.css">
+</head>
+<body>
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    <img src="../images/merrylift-transparent.png" alt="Logo">
+                </div>
+                <ul class="nav-menu" id="navMenu"></ul>
+                <div class="nav-buttons">
+                    <button class="btn-Outline" onclick="window.location.href='../html/login.html'">Sign In</button>
+                    <button class="btn-primary" onclick="window.location.href='../html/signup.html'">Join Now</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">
+                        MerryLift <br>
+                        <span class="highlight">Ride, save, slay the day!</span>
+                    </h1>
+                    <div class="feature-list" id="featureList"></div>
+                </div>
+                <div class="hero-image">
+                    <img src="../images/campus-bg-login.png" alt="Hero Image">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="search-section">
+        <div class="container">
+            <div class="search-card">
+                <h2 class="search-title">Find Your Perfect Ride</h2>
+                <p class="search-subtitle">Search available rides to your destination</p>
+                <form class="search-form" id="searchForm">
+                    <div class="form-group">
+                        <label>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <circle cx="8" cy="6" r="2"/>
+                                <path d="M8 0C5.2 0 3 2.2 3 5c0 4 5 9 5 9s5-5 5-9c0-2.8-2.2-5-5-5z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                            Pickup
+                        </label>
+                        <input type="text" name="pickup" placeholder="Dito" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <circle cx="8" cy="6" r="2"/>
+                                <path d="M8 0C5.2 0 3 2.2 3 5c0 4 5 9 5 9s5-5 5-9c0-2.8-2.2-5-5-5z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                            Destination
+                        </label>
+                        <input type="text" name="destination" placeholder="Dito" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                                <line x1="2" y1="6" x2="14" y2="6" stroke="currentColor" stroke-width="1.5"/>
+                                <line x1="5" y1="1" x2="5" y2="4" stroke="currentColor" stroke-width="1.5"/>
+                                <line x1="11" y1="1" x2="11" y2="4" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                            Date
+                        </label>
+                        <input type="date" name="date" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <circle cx="5" cy="8" r="2"/>
+                                <circle cx="11" cy="8" r="2"/>
+                            </svg>
+                            Passengers
+                        </label>
+                        <input type="number" name="passengers" placeholder="1" min="1" max="8" class="form-input" required>
+                    </div>
+                    <button type="submit" class="btn-search">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <circle cx="6" cy="6" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Search
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid" id="statsGrid"></div>
+        </div>
+    </section>
+
+    <!-- Why Choose Section -->
+    <section class="why-choose-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Why Choose MerryLift?</h2>
+                <p class="section-subtitle">Your trusted carpooling platform in the Philippines. Share rides, save money, and build community through travel.</p>
+            </div>
+            <div class="features-grid" id="whyChooseGrid"></div>
+        </div>
+    </section>
+
+    <!-- Available Rides Section -->
+    <section class="available-rides-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Available Rides</h2>
+            </div>
+            <div class="rides-grid" id="ridesGrid"></div>
+        </div>
+    </section>
+    
+    <!-- How It Works Section -->
+    <section class="how-it-works-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">How It Works</h2>
+                <p class="section-subtitle">Get started with MerryLift in just 4 simple steps</p>
+            </div>
+            <div class="steps-grid" id="stepsGrid"></div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div id="footerContent" class="footer-content"></div>
+            <div class="footer-bottom">
+                <p>&copy; <span id="year"></span> MerryLift. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Include Configuration and Main Script -->
+    <script src="../js/index-config.js"></script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Rides - MerryLift</title>
+    <link rel="stylesheet" href="../css/findrides.css">
+</head>
+<body>
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    <img src="../images/merrylift-transparent.png" alt="Logo">
+                </div>
+                <ul id="navMenu" class="nav-menu"></ul>
+                <div class="nav-buttons">
+                    <button class="btn-Outline" onclick="window.location.href='../html/login.html'">Sign In</button>
+                    <button class="btn-primary" onclick="window.location.href='../html/signup.html'">Join Now</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Map Section -->
+    <section class="map-section">
+        <div class="map-container">
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d123523.12345!2d121.0244!3d14.5995!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c90264a0f021%3A0x2b063c8c5b6d8c01!2sMetro%20Manila!5e0!3m2!1sen!2sph!4v1234567890"
+                width="100%"
+                height="100%"
+                style="border:0;"
+                allowfullscreen=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+            <div class="map-marker"></div>
+        </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="search-section">
+        <div class="container-fluid">
+            <form class="search-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Pickup</label>
+                        <input type="text" placeholder="Dito" class="form-input" value="Dito">
+                    </div>
+                    <div class="arrow-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                    <div class="form-group">
+                        <label>Destination</label>
+                        <input type="text" placeholder="Dituy" class="form-input" value="Dituy">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="text" placeholder="mm / dd / yyyy" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Passengers</label>
+                        <select class="form-input">
+                            <option>5</option>
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-search">Search Ride</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="main-content">
+        <div class="container-fluid">
+            <div class="content-wrapper">
+                
+                <!-- Sidebar -->
+                <aside class="sidebar">
+                    <div id="safetyFeatures" class="safety-card"></div>
+                </aside>
+
+                <!-- Rides List -->
+                <div class="rides-section">
+                    <div class="rides-header">
+                        <h2>Available Rides</h2>
+                        <button class="btn-filter">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 7h18M6 12h12M9 17h6"/>
+                            </svg>
+                            Filters
+                        </button>
+                    </div>
+
+                    <div class="filter-chips">
+                        <button class="chip active">All Rides</button>
+                        <button class="chip">Price: Low to High</button>
+                        <button class="chip">Best Rated</button>
+                    </div>
+
+                    <div id="ridesList" class="rides-list"></div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div id="footerContent" class="footer-content"></div>
+            <div class="footer-bottom">
+                <p>&copy; <span id="year"></span> MerryLift. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JS -->
+    <script src="../js/findrides-config.js"></script>
+</body>
+</html>
