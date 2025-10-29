@@ -140,13 +140,13 @@ document.addEventListener('DOMContentLoaded', function() {
     renderWhyChoose();
     
     // Render Available Rides
-    renderAvailableRides();
+    fetchAvailableRides();
     
     // Render How It Works Steps
     renderSteps();
     
     // Render Footer Links
-    renderFooterLinks();
+    // renderFooterLinks();
     
     // Set current year in footer
     document.getElementById('currentYear').textContent = new Date().getFullYear();
@@ -209,40 +209,57 @@ function renderWhyChoose() {
 }
 
 // Render Available Rides
-function renderAvailableRides() {
-    const ridesGrid = document.getElementById('ridesGrid');
-    ridesGrid.innerHTML = availableRides.map(ride => `
-        <div class="ride-card">
-            <img src="${ride.image}" alt="Ride" class="ride-image">
-            <div class="ride-content">
-                <h3 class="ride-driver">${ride.driver}</h3>
-                <div class="ride-rating">
-                    <div class="stars">
-                        ${'<span class="star">★</span>'.repeat(5)}
-                    </div>
-                    <span class="rating-count">${ride.reviews}</span>
-                </div>
-                <div class="ride-price">$ • ${ride.price}</div>
-                <div class="ride-details">
-                    <div class="ride-location">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <circle cx="8" cy="6" r="2"/>
-                            <path d="M8 0C5.2 0 3 2.2 3 5c0 4 5 9 5 9s5-5 5-9c0-2.8-2.2-5-5-5z" fill="none" stroke="currentColor" stroke-width="1.5"/>
-                        </svg>
-                        <span class="location-text">Pickup: ${ride.pickup}</span>
-                    </div>
-                    <div class="ride-location">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <path d="M8 0v16M4 12l4 4 4-4"/>
-                        </svg>
-                        <span class="location-text">Destination: ${ride.destination}</span>
-                    </div>
-                </div>
-                <button class="btn-book-ride">Book Ride</button>
-            </div>
-        </div>
-    `).join('');
+// ========================================
+// Fetch and Render Available Rides
+// ========================================
+async function fetchAvailableRides() {
+    try {
+        const response = await fetch('../Server/Models/get-rides.php'); // adjust path if needed
+        const rides = await response.json();
+        renderAvailableRides(rides);
+    } catch (error) {
+        console.error('Error fetching rides:', error);
+    }
 }
+
+function renderAvailableRides(rides) {
+    const ridesGrid = document.getElementById('ridesGrid');
+    if (!rides || rides.length === 0) {
+        ridesGrid.innerHTML = '<p>No rides available at the moment.</p>';
+        return;
+    }
+
+    ridesGrid.innerHTML = rides.map(ride => {
+        // Map MongoDB document structure to frontend fields
+        const driver = ride.name || ride.username || "Unknown Driver";
+        const rating = ride.ratings?.average || 0;
+        const reviews = ride.ratings?.count || 0;
+        const car = ride.car_details?.model || "Unknown Car";
+        const plate = ride.car_details?.license_plate || "N/A";
+        const status = ride.profile_status || "unavailable";
+
+        return `
+            <div class="ride-card">
+                <img src="${ride.image || '../images/campus-bg-login.png'}" alt="Ride" class="ride-image">
+                <div class="ride-content">
+                    <h3 class="ride-driver">${driver}</h3>
+                    <div class="ride-rating">
+                        <div class="stars">${'<span class="star">★</span>'.repeat(5)}</div>
+                        <span class="rating-count">${reviews}</span>
+                    </div>
+                    <div class="ride-price">${car} (${plate})</div>
+                    <div class="ride-details">
+                        <div class="ride-location">Status: ${status}</div>
+                        <div class="ride-location">Rating: ${rating}</div>
+                    </div>
+                    <button class="btn-book-ride">Book Ride</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+
 
 // Render How It Works Steps
 function renderSteps() {
