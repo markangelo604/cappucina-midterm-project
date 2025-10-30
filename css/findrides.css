@@ -77,7 +77,7 @@ body {
     gap: 15px;
 }
 
-.btn-outline {
+.btn-Outline {
     padding: 8px 25px;
     border: 2px solid var(--text-dark);
     background: transparent;
@@ -88,7 +88,7 @@ body {
     transition: all 0.3s;
 }
 
-.btn-outline:hover {
+.btn-Outline:hover {
     background-color: var(--primary-color);
     color: #fff;
     border-color: var(--primary-color);
@@ -337,7 +337,6 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    padding-right: 120px;
 }
 
 .driver-info {
@@ -448,20 +447,215 @@ body {
     flex-shrink: 0;
 }
 
-/* Ride Badge */
-.ride-badge {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    padding: 8px 16px;
+/* Book Now Button */
+.btn-book-ride {
+    width: 100%;
+    padding: 12px 24px;
+    margin-top: 15px;
+    border: none;
     background: var(--accent-gold);
     color: var(--text-dark);
-    font-size: 11px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
     font-weight: 700;
-    border-radius: 15px;
     text-transform: uppercase;
-    white-space: nowrap;
-    z-index: 1;
+    transition: all 0.3s;
+}
+
+.btn-book-ride:hover {
+    background: #e5b307;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(254, 199, 8, 0.4);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 30px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+.close-modal {
+    font-size: 32px;
+    color: var(--text-light);
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.3s;
+}
+
+.close-modal:hover {
+    color: var(--text-dark);
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.booking-summary {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+}
+
+.booking-summary h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 15px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 14px;
+}
+
+.summary-item .label {
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.summary-item span:last-child {
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+.price-highlight {
+    color: var(--primary-color) !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+}
+
+.booking-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.form-group-modal {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group-modal label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+}
+
+.form-group-modal input,
+.form-group-modal select,
+.form-group-modal textarea {
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.form-group-modal input:focus,
+.form-group-modal select:focus,
+.form-group-modal textarea:focus {
+    border-color: var(--accent-gold);
+}
+
+.form-group-modal textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.btn-cancel {
+    flex: 1;
+    padding: 12px 24px;
+    border: 2px solid var(--border-color);
+    background: #fff;
+    color: var(--text-dark);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-cancel:hover {
+    border-color: var(--text-dark);
+    background: #f5f5f5;
+}
+
+.btn-confirm {
+    flex: 1;
+    padding: 12px 24px;
+    border: none;
+    background: var(--primary-color);
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-confirm:hover {
+    background: #052347;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(7, 48, 102, 0.3);
 }
 
 /* Profile Card */
@@ -603,15 +797,20 @@ body {
     }
 
     .ride-header {
-        padding-right: 0;
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
     }
 
-    .ride-badge {
-        position: static;
-        margin-bottom: 10px;
-        display: inline-block;
+    .modal-content {
+        max-width: 100%;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .form-actions {
+        flex-direction: column;
     }
 }

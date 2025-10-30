@@ -32,8 +32,7 @@ const availableRides = [
         eta: "25 min",
         vehicle: "SUV",
         seats: 5,
-        rating: 4.8,
-        badge: "Book Now!"
+        rating: 4.8
     },
     {
         driver_name: "Josh Bautista",
@@ -48,8 +47,7 @@ const availableRides = [
         eta: "22 min",
         vehicle: "SUV",
         seats: 5,
-        rating: 4.8,
-        badge: "Book Now!"
+        rating: 4.8
     },
     {
         driver_name: "Maria Santos",
@@ -64,8 +62,7 @@ const availableRides = [
         eta: "30 min",
         vehicle: "Sedan",
         seats: 4,
-        rating: 4.9,
-        badge: "Popular"
+        rating: 4.9
     }
 ];
 
@@ -97,7 +94,7 @@ safetyFeatures.forEach(feature => {
 
 // Render Available Rides
 const ridesList = document.getElementById("ridesList");
-availableRides.forEach(ride => {
+availableRides.forEach((ride, index) => {
     const rideCard = document.createElement("div");
     rideCard.classList.add("ride-card");
     rideCard.innerHTML = `
@@ -136,9 +133,263 @@ availableRides.forEach(ride => {
             <div class="meta-item">💺 <span>${ride.seats} Seats</span></div>
         </div>
 
-        ${ride.badge ? `<div class="ride-badge">${ride.badge}</div>` : ""}
+        <button class="btn-book-ride" data-ride-index="${index}">Book Now</button>
     `;
     ridesList.appendChild(rideCard);
+});
+
+// Create Modal
+const modal = document.createElement("div");
+modal.id = "bookingModal";
+modal.className = "modal";
+modal.innerHTML = `
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Complete Your Booking</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="booking-summary">
+                <h3>Ride Details</h3>
+                <div class="summary-item">
+                    <span class="label">Driver:</span>
+                    <span id="modal-driver"></span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">From:</span>
+                    <span id="modal-from"></span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">To:</span>
+                    <span id="modal-to"></span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Date:</span>
+                    <span id="modal-date"></span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Price:</span>
+                    <span id="modal-price" class="price-highlight"></span>
+                </div>
+            </div>
+
+            <form id="bookingForm" class="booking-form">
+                <div class="form-group-modal">
+                    <label for="passengerName">Full Name *</label>
+                    <input type="text" id="passengerName" name="passengerName" required placeholder="Enter your full name">
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="passengerPhone">Phone Number *</label>
+                    <input type="tel" id="passengerPhone" name="passengerPhone" required placeholder="+63 912 345 6789">
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="passengerEmail">Email Address *</label>
+                    <input type="email" id="passengerEmail" name="passengerEmail" required placeholder="your.email@example.com">
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="numPassengers">Number of Passengers *</label>
+                    <select id="numPassengers" name="numPassengers" required>
+                        <option value="">Select number</option>
+                        <option value="1">1 Passenger</option>
+                        <option value="2">2 Passengers</option>
+                        <option value="3">3 Passengers</option>
+                        <option value="4">4 Passengers</option>
+                        <option value="5">5 Passengers</option>
+                    </select>
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="pickupPoint">Pickup Point</label>
+                    <input type="text" id="pickupPoint" name="pickupPoint" placeholder="Exact pickup location (optional)">
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="specialRequests">Special Requests</label>
+                    <textarea id="specialRequests" name="specialRequests" rows="3" placeholder="Any special requests or notes..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel">Cancel</button>
+                    <button type="submit" class="btn-confirm">Confirm Booking</button>
+                </div>
+            </form>
+        </div>
+    </div>
+`;
+document.body.appendChild(modal);
+
+// Modal Functions
+function openBookingModal(rideIndex) {
+    const ride = availableRides[rideIndex];
+    
+    // Populate modal with ride details
+    document.getElementById("modal-driver").textContent = ride.driver_name;
+    document.getElementById("modal-from").textContent = ride.departure_location;
+    document.getElementById("modal-to").textContent = ride.arrival_location;
+    document.getElementById("modal-date").textContent = `${ride.date} at ${ride.departure_time}`;
+    document.getElementById("modal-price").textContent = ride.price;
+    
+    // Show modal
+    modal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+}
+
+function closeBookingModal() {
+    modal.style.display = "none";
+    document.body.style.overflow = "auto";
+    document.getElementById("bookingForm").reset();
+}
+
+// Filter Functionality
+let currentFilter = 'all';
+
+function filterRides(filterType) {
+    let sortedRides = [...availableRides];
+    
+    switch(filterType) {
+        case 'price-low':
+            sortedRides.sort((a, b) => {
+                const priceA = parseFloat(a.price.replace('₱', '').replace(',', ''));
+                const priceB = parseFloat(b.price.replace('₱', '').replace(',', ''));
+                return priceA - priceB;
+            });
+            break;
+        case 'rating':
+            sortedRides.sort((a, b) => b.rating - a.rating);
+            break;
+        case 'all':
+        default:
+            // Keep original order
+            break;
+    }
+    
+    currentFilter = filterType;
+    renderRides(sortedRides);
+    updateFilterChips(filterType);
+}
+
+function renderRides(rides) {
+    ridesList.innerHTML = '';
+    
+    rides.forEach((ride, index) => {
+        const rideCard = document.createElement("div");
+        rideCard.classList.add("ride-card");
+        rideCard.innerHTML = `
+            <div class="ride-header">
+                <div class="driver-info">
+                    <div class="driver-avatar" style="background-color: ${ride.driver_color}">
+                        ${ride.driver_initials}
+                    </div>
+                    <span class="driver-name">${ride.driver_name}</span>
+                </div>
+                <div class="ride-price">${ride.price}</div>
+            </div>
+
+            <div class="ride-route">
+                <div class="route-item">
+                    <div class="route-dot pickup"></div>
+                    <div class="route-details">
+                        <span class="route-time">${ride.departure_time}</span>
+                        <span class="route-location">${ride.departure_location}</span>
+                    </div>
+                </div>
+                <div class="route-line"></div>
+                <div class="route-item">
+                    <div class="route-dot destination"></div>
+                    <div class="route-details">
+                        <span class="route-time">${ride.arrival_time}</span>
+                        <span class="route-location">${ride.arrival_location}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ride-meta">
+                <div class="meta-item">🕒 <span>${ride.date}</span></div>
+                <div class="meta-item">⏱️ <span>${ride.eta}</span></div>
+                <div class="meta-item">🚗 <span>${ride.vehicle}</span></div>
+                <div class="meta-item">💺 <span>${ride.seats} Seats</span></div>
+                ${ride.rating ? `<div class="meta-item">⭐ <span>${ride.rating}</span></div>` : ''}
+            </div>
+
+            <button class="btn-book-ride" data-ride-index="${index}">Book Now</button>
+        `;
+        ridesList.appendChild(rideCard);
+    });
+    
+    // Re-attach event listeners to new buttons
+    attachBookNowListeners();
+}
+
+function updateFilterChips(activeFilter) {
+    const chips = document.querySelectorAll('.chip');
+    chips.forEach(chip => {
+        chip.classList.remove('active');
+    });
+    
+    const filterMap = {
+        'all': 0,
+        'price-low': 1,
+        'rating': 2
+    };
+    
+    if (filterMap[activeFilter] !== undefined) {
+        chips[filterMap[activeFilter]].classList.add('active');
+    }
+}
+
+function attachBookNowListeners() {
+    document.querySelectorAll(".btn-book-ride").forEach(button => {
+        button.addEventListener("click", function() {
+            const rideIndex = parseInt(this.getAttribute("data-ride-index"));
+            openBookingModal(rideIndex);
+        });
+    });
+}
+
+// Event Listeners for Book Now buttons (initial render)
+attachBookNowListeners();
+
+// Event Listeners for Filter Chips
+document.querySelectorAll('.chip').forEach((chip, index) => {
+    chip.addEventListener('click', function() {
+        const filters = ['all', 'price-low', 'rating'];
+        filterRides(filters[index]);
+    });
+});
+
+// Close modal events
+document.querySelector(".close-modal").addEventListener("click", closeBookingModal);
+document.querySelector(".btn-cancel").addEventListener("click", closeBookingModal);
+
+// Close modal when clicking outside
+modal.addEventListener("click", function(e) {
+    if (e.target === modal) {
+        closeBookingModal();
+    }
+});
+
+// Form submission
+document.getElementById("bookingForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    
+    // Get form data
+    const formData = {
+        name: document.getElementById("passengerName").value,
+        phone: document.getElementById("passengerPhone").value,
+        email: document.getElementById("passengerEmail").value,
+        passengers: document.getElementById("numPassengers").value,
+        pickupPoint: document.getElementById("pickupPoint").value,
+        specialRequests: document.getElementById("specialRequests").value
+    };
+    
+    // Show success message (you can replace this with actual booking logic)
+    alert("Booking successful! You will receive a confirmation email shortly.");
+    console.log("Booking data:", formData);
+    
+    closeBookingModal();
 });
 
 // Render Footer
