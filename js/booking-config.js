@@ -1,9 +1,9 @@
 // --- Navigation Items ---
 const navItems = [
-    { name: 'Home', url: 'index.html', active: false },
-    { name: 'Find Rides', url: 'findrides.html', active: false },
-    { name: 'Bookings', url: 'booking.html', active: true },
-    { name: 'Find My Trip', url: 'about.html', active: false }
+    { name: 'Home', url: '../html/index.html', active: false },
+    { name: 'Find Rides', url: '../html/findrides.html', active: false },
+    { name: 'Bookings', url: '../html/booking.html', active: true },
+    { name: 'Find My Trip', url: '../html/about.html', active: false }
 ];
 
 // --- Bookings Data ---

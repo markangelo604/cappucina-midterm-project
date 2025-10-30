@@ -4,10 +4,10 @@ const pageTitle = "Find Rides - MerryLift";
 document.title = pageTitle;
 
 const navItems = [
-    { name: "Home", url: "index.html", active: false },
-    { name: "Find Rides", url: "findrides.html", active: true },
-    { name: "Bookings", url: "booking.html", active: false },
-    { name: "About", url: "about.html", active: false }
+    { name: "Home", url: "../html/index.html", active: false },
+    { name: "Find Rides", url: "../html/findrides.html", active: true },
+    { name: "Bookings", url: "../html/booking.html", active: false },
+    { name: "About", url: "../html/about.html", active: false }
 ];
 
 const safetyFeatures = [
@@ -410,4 +410,4 @@ footerContainer.innerHTML = `
 `;
 
 // Year
-document.getElementById("year").textContent = new Date().getFullYear();
+document.getElementById("year").textContent = new Date().getFullYear();g
