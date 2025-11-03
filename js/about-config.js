@@ -6,10 +6,10 @@ const siteConfig = {
     siteName: "MerryLift",
 
     navItems: [
-        { name: "Home", url: "../html/index.html", active: false },
-        { name: "Find Rides", url: "f../html/indrides.html", active: false },
-        { name: "Bookings", url: "../html/booking.html", active: false },
-        { name: "About", url: "../html/about.html", active: true }
+        { name: "Home", url: "index.html", active: false },
+        { name: "Find Rides", url: "findrides.html", active: false },
+        { name: "Bookings", url: "booking.html", active: false },
+        { name: "About", url: "about.html", active: true }
     ],
 
     aboutStats: [

@@ -8,8 +8,8 @@ session_start();
 // set response header
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../../Server/server.php';
-require_once __DIR__ . '/../../vendor/autoload.php'; 
+require_once __DIR__ . '../Server/server.php';
+require_once __DIR__ . '../vendor/autoload.php'; 
 
 // This is expected to return a JSON of 
 // ([

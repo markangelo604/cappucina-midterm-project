@@ -59,14 +59,14 @@ loginForm.addEventListener('submit', async (e) => {
             successMsg.style.display = 'block';
 
             // Get the dashboard URL based on user type
-            const userType = data.userType.toLowerCase(); // admin, driver, client
-            const dashboardUrl = dashboardRedirect[userType];
+            const role = data.role.toLowerCase(); // admin, driver, client
+            const dashboardUrl = dashboardRedirect[role];
 
             // Log user for debugging
             console.log('User logged in:', {
                 id: data.userId,
                 name: data.name,
-                type: data.userType
+                role: data.role
             });
 
             // Redirect after short delay
