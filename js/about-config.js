@@ -6,7 +6,7 @@ const siteConfig = {
     siteName: "MerryLift",
 
     navItems: [
-        { name: "Home", url: "index.html", active: false },
+        { name: "Home", url: "../index.html", active: false },
         { name: "Find Rides", url: "findrides.html", active: false },
         { name: "Bookings", url: "booking.html", active: false },
         { name: "About", url: "about.html", active: true }

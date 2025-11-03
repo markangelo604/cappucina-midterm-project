@@ -4,7 +4,7 @@ const pageTitle = "Find Rides - MerryLift";
 document.title = pageTitle;
 
 const navItems = [
-    { name: "Home", url: "../html/index.html", active: false },
+    { name: "Home", url: "../index.html", active: false },
     { name: "Find Rides", url: "../html/findrides.html", active: true },
     { name: "Bookings", url: "../html/booking.html", active: false },
     { name: "About", url: "../html/about.html", active: false }
