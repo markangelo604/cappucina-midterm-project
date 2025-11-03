@@ -11,7 +11,7 @@ const siteConfig = {
 // Navigation Items
 const navItems = [
     { name: 'Home', url: '#', active: true },
-    { name: 'Find Rides', url: '../htmlfindrides.html', active: false },
+    { name: 'Find Rides', url: '../html/findrides.html', active: false },
     { name: 'Bookings', url: '../html/booking.html', active: false },
     { name: 'About', url: '../html/about.html', active: false }
 ];
