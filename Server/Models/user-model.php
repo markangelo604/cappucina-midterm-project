@@ -350,4 +350,73 @@ function rateAndReviewDriver($data) {
     }
 }
 
+function viewAllAvailableRides(){
+    global $db;
+
+    try {
+        $rides = $db->rides;
+        $users = $db->users;
+
+        // Only upcoming rides with available seats
+        $query = [
+            'ride_status' => 'upcoming',
+            'available_seats' => ['$gt' => 0]
+        ];
+
+        // Sort by date and time
+        $cursor = $rides->find($query, ['sort' => ['date' => 1, 'time' => 1]]);
+        $data = [];
+
+        foreach ($cursor as $ride) {
+            // Fetch driver info
+            $driver = $users->findOne(['_id' => $ride['driver_id']], [
+                'projection' => [
+                    'username' => 1,
+                    'email' => 1,
+                    'profile.name' => 1,
+                    'profile.phone' => 1
+                ]
+            ]);
+
+            // Construct ride details
+            $data[] = [
+                'ride_id' => (string)$ride['_id'],
+                'starting_point' => $ride['from'] ?? 'N/A',
+                'destination' => $ride['to'] ?? 'N/A',
+                'date' => $ride['date'] ?? 'N/A',
+                'time' => $ride['time'] ?? 'N/A',
+                'seat_available' => $ride['available_seats'] ?? 0,
+                'fare' => $ride['fare'] ?? 'N/A',
+                'route' => [
+                    'stops' => $ride['route']['stops'] ?? [],
+                    'distance_km' => $ride['route']['distance_km'] ?? null,
+                    'estimated_duration_mins' => $ride['route']['estimated_duration_mins'] ?? null
+                ],
+                'driver' => [
+                    'name' => $driver['profile']['name'] ?? $driver['username'] ?? 'Unknown',
+                    'phone' => $driver['profile']['phone'] ?? 'N/A',
+                    'email' => $driver['email'] ?? 'N/A'
+                ]
+            ];
+        }
+
+        logAction("Viewed all available rides (" . count($data) . " found).");
+
+        return [
+            "success" => true,
+            "message" => count($data) . " available rides found.",
+            "rides" => $data
+        ];
+
+    } catch (Exception $e) {
+        logAction("Error viewing available rides: " . $e->getMessage());
+        return [
+            "success" => false,
+            "message" => "Error fetching available rides.",
+            "rides" => []
+        ];
+    }
+}
+
+
 ?>
