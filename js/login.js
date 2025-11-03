@@ -8,7 +8,7 @@ const successMsg = document.getElementById('successMsg');
 const dashboardRedirect = {
     'admin': '../html/admin-dashboard.html',
     'driver': '../html/driver-dashboard.html',
-    'client': '../html/client-dashboard.html'
+    'passenger': '../html/passenger-dashboard.html'
 };
 
 loginForm.addEventListener('submit', async (e) => {
@@ -64,7 +64,7 @@ loginForm.addEventListener('submit', async (e) => {
             successMsg.style.display = 'block';
 
             // Get the dashboard URL based on user role
-            const role = data.role.toLowerCase(); // admin, driver, client
+            const role = data.role.toLowerCase(); // admin, driver, passenger
             const dashboardUrl = dashboardRedirect[role];
 
             // Log user for debugging
