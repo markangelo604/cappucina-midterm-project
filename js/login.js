@@ -67,12 +67,17 @@ loginForm.addEventListener('submit', async (e) => {
             const role = data.role.toLowerCase(); // admin, driver, passenger
             const dashboardUrl = dashboardRedirect[role];
 
-            // Log user for debugging
-            console.log('User logged in:', {
-                id: data.userId,
+            // Store user credentials in sessionStorage
+            const userData = {
+                id: data.id,
                 name: data.name,
-                role: data.role
-            });
+                role: data.role.toLowerCase()
+            };
+
+            sessionStorage.setItem('userData', JSON.stringify(userData));
+
+            // Log user for debugging
+            console.log('User logged in and credentials stored:', userData);
 
             // Redirect after short delay
             if (dashboardUrl) {

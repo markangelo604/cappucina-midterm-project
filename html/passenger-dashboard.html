@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passenger | MerryLift</title>
+    <link rel="stylesheet" href="../css/passenger-dashboard.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    <img src="../images/merrylift-transparent.png" alt="Logo">
+                </div>
+                <ul class="nav-menu" id="navMenu"></ul>
+                <div class="nav-buttons">
+                    <button class="btn-primary" onclick="window.location.href='../html/driver-signup.html'">
+                        Become a Driver
+                    </button>
+                    <!-- Profile dropdown -->
+                    <div class="profile-dropdown">
+                        <button class="profile-btn" id="profileBtn">
+                            <img id="profileImage" src="../images/default-avatar.png" alt="Profile" class="profile-icon">
+                        </button>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="../html/passenger-profile.html">Profile</a>
+                            <a href="../html/passenger-settings.html">Settings</a>
+                            <hr>
+                            <a href="../php/logout.php">Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+
+
+
+
+    <script src="../js/passenger-dashboard.js"></script>
+</body>
+</html>
