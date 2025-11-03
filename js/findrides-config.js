@@ -72,6 +72,9 @@ const footerLinks = {
     "Quick Links": ["Find Rides", "Offer Ride", "My Bookings", "Trip History"]
 };
 
+// Store current ride being booked
+let currentRideIndex = null;
+
 // Render Navigation
 const navMenu = document.getElementById("navMenu");
 navItems.forEach(item => {
@@ -223,6 +226,7 @@ document.body.appendChild(modal);
 
 // Modal Functions
 function openBookingModal(rideIndex) {
+    currentRideIndex = rideIndex; // Store the current ride index
     const ride = availableRides[rideIndex];
     
     // Populate modal with ride details
@@ -241,6 +245,7 @@ function closeBookingModal() {
     modal.style.display = "none";
     document.body.style.overflow = "auto";
     document.getElementById("bookingForm").reset();
+    currentRideIndex = null;
 }
 
 // Filter Functionality
@@ -371,25 +376,40 @@ modal.addEventListener("click", function(e) {
     }
 });
 
-// Form submission
+// Form submission - UPDATED TO REDIRECT TO PAYMENT
 document.getElementById("bookingForm").addEventListener("submit", function(e) {
     e.preventDefault();
     
+    // Get the selected ride data
+    const ride = availableRides[currentRideIndex];
+    
     // Get form data
     const formData = {
-        name: document.getElementById("passengerName").value,
-        phone: document.getElementById("passengerPhone").value,
-        email: document.getElementById("passengerEmail").value,
-        passengers: document.getElementById("numPassengers").value,
+        passenger_name: document.getElementById("passengerName").value,
+        passenger_phone: document.getElementById("passengerPhone").value,
+        passenger_email: document.getElementById("passengerEmail").value,
+        num_passengers: document.getElementById("numPassengers").value,
         pickupPoint: document.getElementById("pickupPoint").value,
         specialRequests: document.getElementById("specialRequests").value
     };
     
-    // Show success message (you can replace this with actual booking logic)
-    alert("Booking successful! You will receive a confirmation email shortly.");
-    console.log("Booking data:", formData);
+    // Combine ride data with passenger data
+    const bookingData = {
+        ...ride, // All ride information
+        ...formData // All passenger information
+    };
     
+    // Store booking data in sessionStorage
+    sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
+    
+    // Log for debugging
+    console.log("Booking data stored:", bookingData);
+    
+    // Close modal
     closeBookingModal();
+    
+    // Redirect to payment page
+    window.location.href = '../html/payment.html';
 });
 
 // Render Footer
@@ -410,4 +430,4 @@ footerContainer.innerHTML = `
 `;
 
 // Year
-document.getElementById("year").textContent = new Date().getFullYear();g
+document.getElementById("year").textContent = new Date().getFullYear();
