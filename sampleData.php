@@ -65,14 +65,12 @@ $users = [
     ]
 ];
 
-$userInsert = $db->users->insertMany($users);
-$driverId = $userInsert->getInsertedIds()[0];
-$passengerId = $userInsert->getInsertedIds()[1];
+$db->users->insertMany($users);
 
 // ===== RIDES =====
 $rides = [
     [
-        "driver_id" => $driverId,
+        "driver_username" => "carowner123",
         "plate_number" => "ABC-1234",
         "from" => "SLU Bakakeng",
         "to" => "SM Baguio",
@@ -87,14 +85,14 @@ $rides = [
             "estimated_duration_mins" => 45
         ],
         "passengers" => [[
-            "user_id" => $passengerId,
+            "username" => "passenger1",
             "status" => "confirmed",
             "rating_given" => null
         ]],
         "created_at" => new UTCDateTime(strtotime("2025-10-19T10:00:00Z") * 1000)
     ],
     [
-        "driver_id" => $driverId,
+        "driver_username" => "carowner123",
         "plate_number" => "ABC-1234",
         "from" => "SLU Bakakeng",
         "to" => "Session Road",
@@ -109,14 +107,14 @@ $rides = [
             "estimated_duration_mins" => 30
         ],
         "passengers" => [[
-            "user_id" => $passengerId,
+            "username" => "passenger1",
             "status" => "confirmed",
             "rating_given" => null
         ]],
         "created_at" => new UTCDateTime(strtotime("2025-10-18T09:00:00Z") * 1000)
     ],
     [
-        "driver_id" => $driverId,
+        "driver_username" => "carowner123",
         "plate_number" => "ABC-1234",
         "from" => "SLU Bakakeng",
         "to" => "Burnham Park",
@@ -131,14 +129,14 @@ $rides = [
             "estimated_duration_mins" => 25
         ],
         "passengers" => [[
-            "user_id" => $passengerId,
+            "username" => "passenger1",
             "status" => "confirmed",
             "rating_given" => 5
         ]],
         "created_at" => new UTCDateTime(strtotime("2025-10-19T09:00:00Z") * 1000)
     ],
     [
-        "driver_id" => $driverId,
+        "driver_username" => "carowner123",
         "plate_number" => "ABC-1234",
         "from" => "SLU Bakakeng",
         "to" => "La Trinidad",
@@ -156,16 +154,18 @@ $rides = [
         "created_at" => new UTCDateTime(strtotime("2025-10-14T10:00:00Z") * 1000)
     ]
 ];
+
 $rideInsert = $db->rides->insertMany($rides);
-$finishedRideId = $rideInsert->getInsertedIds()[2];
-$upcomingRideId = $rideInsert->getInsertedIds()[0];
+$rideIds = $rideInsert->getInsertedIds();
+$finishedRideId = $rideIds[2];
+$upcomingRideId = $rideIds[0];
 
 // ===== BOOKINGS =====
 $bookings = [
     [
         "ride_id" => $finishedRideId,
-        "passenger_id" => $passengerId,
-        "driver_id" => $driverId,
+        "passenger_username" => "passenger1",
+        "driver_username" => "carowner123",
         "plate_number" => "ABC-1234",
         "fare" => 100,
         "date" => "2025-10-20",
@@ -174,8 +174,8 @@ $bookings = [
     ],
     [
         "ride_id" => $upcomingRideId,
-        "passenger_id" => $passengerId,
-        "driver_id" => $driverId,
+        "passenger_username" => "passenger1",
+        "driver_username" => "carowner123",
         "plate_number" => "ABC-1234",
         "fare" => 150,
         "date" => "2025-10-25",
@@ -189,8 +189,8 @@ $db->bookings->insertMany($bookings);
 $reviews = [
     [
         "ride_id" => $finishedRideId,
-        "reviewer_id" => $passengerId,
-        "reviewee_id" => $driverId,
+        "reviewer_username" => "passenger1",
+        "reviewee_username" => "carowner123",
         "rating" => 4,
         "comment" => "Very smooth ride!",
         "created_at" => new UTCDateTime(strtotime("2025-10-19T10:00:00Z") * 1000)
@@ -201,8 +201,8 @@ $db->reviews->insertMany($reviews);
 // ===== PAYMENTS =====
 $payments = [
     [
-        "user_id" => $passengerId,
-        "driver_id" => $driverId,
+        "passenger_username" => "passenger1",
+        "driver_username" => "carowner123",
         "ride_id" => $finishedRideId,
         "amount" => 100,
         "status" => "paid",
@@ -212,8 +212,8 @@ $payments = [
         "updated_at" => new UTCDateTime()
     ],
     [
-        "user_id" => $passengerId,
-        "driver_id" => $driverId,
+        "passenger_username" => "passenger1",
+        "driver_username" => "carowner123",
         "ride_id" => $upcomingRideId,
         "amount" => 150,
         "status" => "pending",
@@ -225,4 +225,4 @@ $payments = [
 ];
 $db->payments->insertMany($payments);
 
-echo "✅ MongoDB sample data inserted successfully into CarpoolDB.\n";
+echo "✅ MongoDB sample data inserted successfully into CarpoolDB (using usernames).\n";

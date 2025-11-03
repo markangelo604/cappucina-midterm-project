@@ -351,7 +351,7 @@ function rateAndReviewDriver($data) {
 }
 //================================
 // 7. VIEW ALL AVAILABLE RIDES
-//================================
+//===============================
 function viewAllAvailableRides() {
     global $db;
 
@@ -370,22 +370,26 @@ function viewAllAvailableRides() {
         $data = [];
 
         foreach ($cursor as $ride) {
-            // Fetch driver info
-            $driver = $users->findOne(
-                ['_id' => $ride['driver_id']],
-                [
-                    'projection' => [
-                        'username' => 1,
-                        'email' => 1,
-                        'profile' => 1
+            $driverUsername = $ride['driver_username'] ?? $ride['driver_id'] ?? null;
+            $driver = null;
+
+            if ($driverUsername) {
+                $driver = $users->findOne(
+                    ['username' => $driverUsername],
+                    [
+                        'projection' => [
+                            'username' => 1,
+                            'email' => 1,
+                            'profile' => 1
+                        ]
                     ]
-                ]
-            );
+                );
+            }
 
             // Safely extract driver info
-            $driverName  = isset($driver['profile']['name']) ? $driver['profile']['name'] : ($driver['username'] ?? 'Unknown');
-            $driverPhone = isset($driver['profile']['phone']) ? $driver['profile']['phone'] : 'N/A';
-            $driverEmail = isset($driver['email']) ? $driver['email'] : 'N/A';
+            $driverName  = $driver['profile']['name'] ?? ($driver['username'] ?? 'Unknown');
+            $driverPhone = $driver['profile']['phone'] ?? 'N/A';
+            $driverEmail = $driver['email'] ?? 'N/A';
 
             // Construct ride details
             $data[] = [
@@ -403,6 +407,7 @@ function viewAllAvailableRides() {
                 ],
                 'driver' => [
                     'name' => $driverName,
+                    'username' => $driverUsername ?? 'Unknown',
                     'phone' => $driverPhone,
                     'email' => $driverEmail
                 ]
