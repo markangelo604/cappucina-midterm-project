@@ -8,6 +8,7 @@ session_start();
 // set response header
 header('Content-Type: application/json');
 
+require_once __DIR__ . '/../Server/Models/user-model.php';
 require_once __DIR__ . '/../Server/server.php';
 require_once __DIR__ . '/../vendor/autoload.php'; 
 
