@@ -34,21 +34,6 @@ function logAction($message) {
 // ========================================
 // 1. ADD RIDE SCHEDULE
 // ========================================
-/**
- * sample use:
- * addRideSchedule([
- * 'driver_id' => '6726f7c8bda1230012a9b110',
- * 'from' => 'SLU Bakakeng',
- * 'to' => 'SM Baguio',
- * 'date' => '2025-11-04',
- * 'time' => '08:00',
- * 'fare' => 150,
- * 'available_seats' => 3,
- * 'stops' => ['Bakakeng Arc', 'BGH']
- * ]);
- * @param mixed $data
- * @return array{message: string, success: bool|array{ride_id: string, success: bool}}
- */
 function addRideSchedule($data) {
     global $db;
     try {
@@ -86,7 +71,76 @@ function addRideSchedule($data) {
 }
 
 // ========================================
-// 2. REMOVE RIDE SCHEDULE
+// 2. UPDATE RIDE SCHEDULE
+// ========================================
+/**
+ * Updates existing ride schedule details.
+ * 
+ * sample use:
+ * updateRideSchedule([
+ *   'ride_id' => '6726f7c8bda1230012a9b110',
+ *   'driver_id' => '6726f7c8bda1230012a9b111',
+ *   'from' => 'Bakakeng',
+ *   'to' => 'SLU Main',
+ *   'fare' => 200,
+ *   'available_seats' => 2,
+ *   'time' => '09:00',
+ *   'stops' => ['Bakakeng Arc', 'BGH']
+ * ]);
+ */
+function updateRideSchedule($data) {
+    global $db;
+    try {
+        $rides = $db->rides;
+
+        if (empty($data['ride_id']) || empty($data['driver_id']))
+            return ["success" => false, "message" => "Missing required identifiers."];
+
+        $updateFields = [];
+
+        // only update provided fields
+        $fields = ['from', 'to', 'date', 'time', 'fare', 'available_seats'];
+        foreach ($fields as $field) {
+            if (isset($data[$field])) {
+                $updateFields[$field] = $data[$field];
+            }
+        }
+
+        // route-related updates
+        if (isset($data['stops']) || isset($data['distance_km']) || isset($data['estimated_duration_mins'])) {
+            $updateFields['route'] = [
+                'stops' => $data['stops'] ?? [],
+                'distance_km' => $data['distance_km'] ?? null,
+                'estimated_duration_mins' => $data['estimated_duration_mins'] ?? null
+            ];
+        }
+
+        if (empty($updateFields))
+            return ["success" => false, "message" => "No fields to update."];
+
+        $result = $rides->updateOne(
+            [
+                '_id' => new ObjectId($data['ride_id']),
+                'driver_id' => new ObjectId($data['driver_id'])
+            ],
+            ['$set' => $updateFields]
+        );
+
+        if ($result->getModifiedCount() > 0) {
+            logAction("Ride {$data['ride_id']} updated by driver {$data['driver_id']}");
+            return ["success" => true, "message" => "Ride updated successfully."];
+        }
+
+        return ["success" => false, "message" => "Ride not found or no changes made."];
+
+    } catch (Exception $e) {
+        logAction("Error updating ride: " . $e->getMessage());
+        return ["success" => false, "message" => "Failed to update ride."];
+    }
+}
+
+// ========================================
+// 3. REMOVE RIDE SCHEDULE
 // ========================================
 function removeRideSchedule($data) {
     global $db;
@@ -114,7 +168,7 @@ function removeRideSchedule($data) {
 }
 
 // ========================================
-// 3. START RIDE
+// 4. START RIDE
 // ========================================
 function startRide($data) {
     global $db;
@@ -142,7 +196,7 @@ function startRide($data) {
 }
 
 // ========================================
-// 4. COMPLETE RIDE
+// 5. COMPLETE RIDE
 // ========================================
 function completeRide($data) {
     global $db;
@@ -170,7 +224,7 @@ function completeRide($data) {
 }
 
 // ========================================
-// 5. VIEW DRIVER RIDES
+// 6. VIEW DRIVER RIDES
 // ========================================
 function viewDriverRides($data) {
     global $db;
