@@ -349,8 +349,10 @@ function rateAndReviewDriver($data) {
         return ["success" => false, "message" => "Review failed."];
     }
 }
-
-function viewAllAvailableRides(){
+//================================
+// 7. VIEW ALL AVAILABLE RIDES
+//================================
+function viewAllAvailableRides() {
     global $db;
 
     try {
@@ -369,14 +371,21 @@ function viewAllAvailableRides(){
 
         foreach ($cursor as $ride) {
             // Fetch driver info
-            $driver = $users->findOne(['_id' => $ride['driver_id']], [
-                'projection' => [
-                    'username' => 1,
-                    'email' => 1,
-                    'profile.name' => 1,
-                    'profile.phone' => 1
+            $driver = $users->findOne(
+                ['_id' => $ride['driver_id']],
+                [
+                    'projection' => [
+                        'username' => 1,
+                        'email' => 1,
+                        'profile' => 1
+                    ]
                 ]
-            ]);
+            );
+
+            // Safely extract driver info
+            $driverName  = isset($driver['profile']['name']) ? $driver['profile']['name'] : ($driver['username'] ?? 'Unknown');
+            $driverPhone = isset($driver['profile']['phone']) ? $driver['profile']['phone'] : 'N/A';
+            $driverEmail = isset($driver['email']) ? $driver['email'] : 'N/A';
 
             // Construct ride details
             $data[] = [
@@ -393,9 +402,9 @@ function viewAllAvailableRides(){
                     'estimated_duration_mins' => $ride['route']['estimated_duration_mins'] ?? null
                 ],
                 'driver' => [
-                    'name' => $driver['profile']['name'] ?? $driver['username'] ?? 'Unknown',
-                    'phone' => $driver['profile']['phone'] ?? 'N/A',
-                    'email' => $driver['email'] ?? 'N/A'
+                    'name' => $driverName,
+                    'phone' => $driverPhone,
+                    'email' => $driverEmail
                 ]
             ];
         }
@@ -417,6 +426,7 @@ function viewAllAvailableRides(){
         ];
     }
 }
+
 
 
 ?>
