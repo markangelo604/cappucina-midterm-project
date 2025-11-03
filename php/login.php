@@ -8,8 +8,9 @@ session_start();
 // set response header
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../../Server/server.php';
-require_once __DIR__ . '/../../vendor/autoload.php'; 
+require_once __DIR__ . '/../Server/Models/user-model.php';
+require_once __DIR__ . '/../Server/server.php';
+require_once __DIR__ . '/../vendor/autoload.php'; 
 
 // This is expected to return a JSON of 
 // ([
@@ -81,4 +82,22 @@ function loginUser($data) {
     }
 }
 
+// Handle incoming POST request
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Get JSON input
+    $input = file_get_contents('php://input');
+    $data = json_decode($input, true);
+
+    // Call loginUser function
+    $result = loginUser($data);
+
+    // Return JSON response
+    echo json_encode($result);
+} else {
+    // Method not allowed
+    echo json_encode([
+        "success" => false,
+        "message" => "Invalid request method."
+    ]);
+}
 ?>

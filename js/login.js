@@ -8,7 +8,7 @@ const successMsg = document.getElementById('successMsg');
 const dashboardRedirect = {
     'admin': '../html/admin-dashboard.html',
     'driver': '../html/driver-dashboard.html',
-    'client': '../html/client-dashboard.html'
+    'passenger': '../html/passenger-dashboard.html'
 };
 
 loginForm.addEventListener('submit', async (e) => {
@@ -50,6 +50,11 @@ loginForm.addEventListener('submit', async (e) => {
             })
         });
 
+        // Check if response is OK
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         // Parse the response
         const data = await response.json();
 
@@ -58,21 +63,28 @@ loginForm.addEventListener('submit', async (e) => {
             successMsg.textContent = data.message || 'Login successful! Redirecting...';
             successMsg.style.display = 'block';
 
-            // Get the dashboard URL based on user type
-            const userType = data.userType.toLowerCase(); // admin, driver, client
-            const dashboardUrl = dashboardRedirect[userType];
+            // Get the dashboard URL based on user role
+            const role = data.role.toLowerCase(); // admin, driver, passenger
+            const dashboardUrl = dashboardRedirect[role];
 
             // Log user for debugging
             console.log('User logged in:', {
                 id: data.userId,
                 name: data.name,
-                type: data.userType
+                role: data.role
             });
 
             // Redirect after short delay
-            setTimeout(() => {
-                window.location.href = dashboardUrl;
-            }, 1000);
+            if (dashboardUrl) {
+                setTimeout(() => {
+                    window.location.href = dashboardUrl;
+                }, 1000);
+            } else {
+                errorMsg.textContent = 'Invalid user role detected.';
+                errorMsg.style.display = 'block';
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
+            }
         } else {
             errorMsg.textContent = data.message || 'Login failed. Please try again.';
             errorMsg.style.display = 'block';
