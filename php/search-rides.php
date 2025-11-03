@@ -18,6 +18,7 @@ try {
 
     // Get filters from query parameters (GET) or POST data
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        // Match the parameter names used in user-model.php searchAvailableRides()
         if (!empty($_GET['pickup']) || !empty($_GET['from'])) {
             $filters['from'] = $_GET['pickup'] ?? $_GET['from'] ?? '';
             $hasFilters = true;

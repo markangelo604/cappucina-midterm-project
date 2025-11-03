@@ -136,27 +136,101 @@ function searchAvailableRides($filters = []) {
 
     try {
         $rides = $db->rides;
+        $users = $db->users;
 
+        // Base query - only upcoming rides with available seats
         $query = [
             'ride_status' => 'upcoming',
             'available_seats' => ['$gt' => 0]
         ];
 
-        if (!empty($filters['destination'])) $query['to'] = ['$regex' => $filters['destination'], '$options' => 'i'];
-        if (!empty($filters['from'])) $query['from'] = ['$regex' => $filters['from'], '$options' => 'i'];
-        if (!empty($filters['date'])) $query['date'] = $filters['date'];
-        if (!empty($filters['route'])) $query['route.stops'] = ['$regex' => $filters['route'], '$options' => 'i'];
+        // Add filters if provided
+        // Note: 'from' and 'to' are the field names in the database
+        if (!empty($filters['destination'])) {
+            $query['to'] = ['$regex' => $filters['destination'], '$options' => 'i'];
+        }
+        if (!empty($filters['from'])) {
+            $query['from'] = ['$regex' => $filters['from'], '$options' => 'i'];
+        }
+        if (!empty($filters['date'])) {
+            $query['date'] = $filters['date'];
+        }
+        if (!empty($filters['route'])) {
+            $query['route.stops'] = ['$regex' => $filters['route'], '$options' => 'i'];
+        }
+        
+        // Filter by minimum seats (passengers) if provided
+        if (!empty($filters['min_seats'])) {
+            $query['available_seats']['$gte'] = intval($filters['min_seats']);
+        }
 
-        $result = $rides->find($query, ['sort' => ['date' => 1, 'time' => 1]]);
-        $ridesList = iterator_to_array($result);
+        // Execute query with sorting
+        $cursor = $rides->find($query, ['sort' => ['date' => 1, 'time' => 1]]);
+        $data = [];
 
-        logAction("Search found " . count($ridesList) . " rides.");
+        // Format each ride with driver information (same as viewAllAvailableRides)
+        foreach ($cursor as $ride) {
+            $driverUsername = $ride['driver_username'] ?? $ride['driver_id'] ?? null;
+            $driver = null;
 
-        return ["success" => true, "rides" => $ridesList];
+            // Fetch driver information
+            if ($driverUsername) {
+                $driver = $users->findOne(
+                    ['username' => $driverUsername],
+                    [
+                        'projection' => [
+                            'username' => 1,
+                            'email' => 1,
+                            'profile' => 1
+                        ]
+                    ]
+                );
+            }
+
+            // Safely extract driver info with fallbacks
+            $driverName  = $driver['profile']['name'] ?? ($driver['username'] ?? 'Unknown');
+            $driverPhone = $driver['profile']['phone'] ?? 'N/A';
+            $driverEmail = $driver['email'] ?? 'N/A';
+
+            // Construct ride details in the same format as viewAllAvailableRides()
+            $data[] = [
+                'ride_id' => (string)$ride['_id'],
+                'starting_point' => $ride['from'] ?? 'N/A',
+                'destination' => $ride['to'] ?? 'N/A',
+                'date' => $ride['date'] ?? 'N/A',
+                'time' => $ride['time'] ?? 'N/A',
+                'seat_available' => $ride['available_seats'] ?? 0,
+                'fare' => $ride['fare'] ?? 'N/A',
+                'route' => [
+                    'stops' => $ride['route']['stops'] ?? [],
+                    'distance_km' => $ride['route']['distance_km'] ?? null,
+                    'estimated_duration_mins' => $ride['route']['estimated_duration_mins'] ?? null
+                ],
+                'driver' => [
+                    'name' => $driverName,
+                    'username' => $driverUsername ?? 'Unknown',
+                    'phone' => $driverPhone,
+                    'email' => $driverEmail
+                ]
+            ];
+        }
+
+        $resultCount = count($data);
+        logAction("Search found $resultCount rides with filters: " . json_encode($filters));
+
+        return [
+            "success" => true,
+            "message" => "$resultCount rides found matching your search.",
+            "rides" => $data
+        ];
 
     } catch (Exception $e) {
         logAction("Error searching rides: " . $e->getMessage());
-        return ["success" => false, "rides" => []];
+        return [
+            "success" => false,
+            "message" => "Error searching for rides.",
+            "rides" => []
+        ];
     }
 }
 

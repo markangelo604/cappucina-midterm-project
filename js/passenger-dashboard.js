@@ -354,7 +354,7 @@ function renderRides(rides) {
     
     ridesList.innerHTML = rides.map((ride, index) => {
         // Map PHP data structure to display format
-        const driverName = ride.driver?.name || "Unknown Driver";
+        const driverName = ride.driver?.name || ride.name || ride.username || "Unknown Driver";
         const driverInitials = getInitials(driverName);
         const driverColor = generateColor(driverName);
         const rating = ride.ratings?.average || 0;
