@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Dashboard - MerryLift</title>
+    <link rel="stylesheet" href="../css/driver-dashboard.css">
+</head>
+<body>
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    <img src="../images/merrylift-transparent.png" alt="Logo">
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="driver.html" class="active">My Rides</a></li>
+                </ul>
+                <div class="nav-buttons">
+                    <button class="btn-outline">Profile</button>
+                    <button class="btn-primary">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Driver Dashboard -->
+    <section class="dashboard-section">
+        <div class="container">
+            <div class="dashboard-header">
+                <h1>Driver Dashboard</h1>
+                <p>Manage your ride destinations</p>
+            </div>
+
+            <!-- Add Destination Form -->
+            <div class="add-destination-card">
+                <h2>Add New Destination</h2>
+                <form id="addDestinationForm" class="destination-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pickup">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <circle cx="8" cy="6" r="2"/>
+                                    <path d="M8 0C5.2 0 3 2.2 3 5c0 4 5 9 5 9s5-5 5-9c0-2.8-2.2-5-5-5z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                                </svg>
+                                Pickup Location
+                            </label>
+                            <input type="text" id="pickup" name="pickup" placeholder="Enter pickup location" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="destination">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <circle cx="8" cy="6" r="2"/>
+                                    <path d="M8 0C5.2 0 3 2.2 3 5c0 4 5 9 5 9s5-5 5-9c0-2.8-2.2-5-5-5z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                                </svg>
+                                Destination
+                            </label>
+                            <input type="text" id="destination" name="destination" placeholder="Enter destination" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="date">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                                    <line x1="2" y1="6" x2="14" y2="6" stroke="currentColor" stroke-width="1.5"/>
+                                    <line x1="5" y1="1" x2="5" y2="4" stroke="currentColor" stroke-width="1.5"/>
+                                    <line x1="11" y1="1" x2="11" y2="4" stroke="currentColor" stroke-width="1.5"/>
+                                </svg>
+                                Date
+                            </label>
+                            <input type="date" id="date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="time">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                                    <line x1="8" y1="8" x2="8" y2="4" stroke="currentColor" stroke-width="1.5"/>
+                                    <line x1="8" y1="8" x2="11" y2="8" stroke="currentColor" stroke-width="1.5"/>
+                                </svg>
+                                Time
+                            </label>
+                            <input type="time" id="time" name="time" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="seats">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <circle cx="5" cy="8" r="2"/>
+                                    <circle cx="11" cy="8" r="2"/>
+                                </svg>
+                                Available Seats
+                            </label>
+                            <input type="number" id="seats" name="seats" placeholder="1" min="1" max="8" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="price">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <text x="3" y="12" font-size="12" font-weight="bold">₱</text>
+                                </svg>
+                                Price per Seat
+                            </label>
+                            <input type="number" id="price" name="price" placeholder="0.00" min="0" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Additional Notes (Optional)</label>
+                        <textarea id="notes" name="notes" rows="3" placeholder="Any special instructions or landmarks..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-submit">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <line x1="8" y1="3" x2="8" y2="13" stroke="currentColor" stroke-width="2"/>
+                            <line x1="3" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Add Destination
+                    </button>
+                </form>
+            </div>
+
+            <!-- My Destinations List -->
+            <div class="destinations-section">
+                <div class="section-header">
+                    <h2>My Active Destinations</h2>
+                    <span class="destination-count" id="destinationCount">0 destinations</span>
+                </div>
+                <div id="destinationsList" class="destinations-grid">
+                    <!-- Destinations will be dynamically added here -->
+                </div>
+                <div id="emptyState" class="empty-state">
+                    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="40" cy="40" r="30"/>
+                        <path d="M40 25 L40 40 L50 45"/>
+                    </svg>
+                    <h3>No destinations yet</h3>
+                    <p>Add your first destination to start offering rides</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>MerryLift</h3>
+                    <p>Your trusted carpooling platform in the Philippines. Share rides, save money, and build community through travel.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">How It Works</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Press</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Safety</a></li>
+                        <li><a href="#">Contact Us</a></li>
+                        <li><a href="#">Trust & Safety</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#">Find Rides</a></li>
+                        <li><a href="#">Offer Ride</a></li>
+                        <li><a href="#">My Bookings</a></li>
+                        <li><a href="#">Trip History</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; <span id="currentYear">2024</span> MerryLift. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/driver-dashboard-config.js"></script>
+</body>
+</html>
