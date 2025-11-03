@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - MerryLift</title>
+    <link rel="stylesheet" href="../css/payment.css">
+</head>
+<body>
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    <img src="../images/merrylift-transparent.png" alt="Logo">
+                </div>
+                <ul id="navMenu" class="nav-menu"></ul>
+                <div class="nav-buttons">
+                    <button class="btn-Outline" onclick="window.location.href='../html/login.html'">Sign In</button>
+                    <button class="btn-primary" onclick="window.location.href='../html/signup.html'">Join Now</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Payment Section -->
+    <section class="payment-section">
+        <div class="container">
+            <div class="payment-wrapper">
+                
+                <!-- Booking Summary Sidebar -->
+                <aside class="booking-summary-sidebar">
+                    <div class="summary-card">
+                        <h2>Booking Summary</h2>
+                        
+                        <div class="trip-details">
+                            <div class="trip-route">
+                                <div class="route-point">
+                                    <div class="route-icon pickup">📍</div>
+                                    <div class="route-info">
+                                        <span class="route-label">Pickup</span>
+                                        <span class="route-location" id="summary-pickup">Baiuokong</span>
+                                        <span class="route-time" id="summary-pickup-time">18:00</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="route-divider"></div>
+                                
+                                <div class="route-point">
+                                    <div class="route-icon destination">🎯</div>
+                                    <div class="route-info">
+                                        <span class="route-label">Destination</span>
+                                        <span class="route-location" id="summary-destination">Camp 7</span>
+                                        <span class="route-time" id="summary-arrival-time">18:25</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="driver-info-card">
+                            <div class="driver-avatar-large" id="summary-driver-avatar">JB</div>
+                            <div class="driver-details">
+                                <span class="driver-name" id="summary-driver-name">Josh Bautista</span>
+                                <div class="driver-rating">
+                                    <span class="stars">⭐⭐⭐⭐⭐</span>
+                                    <span class="rating-text" id="summary-rating">4.8</span>
+                                </div>
+                                <span class="vehicle-info" id="summary-vehicle">SUV • 5 Seats</span>
+                            </div>
+                        </div>
+
+                        <div class="passenger-info">
+                            <h3>Passenger Details</h3>
+                            <div class="info-item">
+                                <span class="info-label">Name:</span>
+                                <span class="info-value" id="summary-passenger-name">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Phone:</span>
+                                <span class="info-value" id="summary-passenger-phone">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Passengers:</span>
+                                <span class="info-value" id="summary-num-passengers">-</span>
+                            </div>
+                        </div>
+
+                        <div class="price-breakdown">
+                            <div class="price-item">
+                                <span>Base Fare</span>
+                                <span id="base-fare">₱200.00</span>
+                            </div>
+                            <div class="price-item">
+                                <span>Service Fee</span>
+                                <span id="service-fee">₱20.00</span>
+                            </div>
+                            <div class="price-item discount">
+                                <span>Discount</span>
+                                <span id="discount-amount">-₱0.00</span>
+                            </div>
+                            <div class="price-divider"></div>
+                            <div class="price-item total">
+                                <span>Total Amount</span>
+                                <span id="total-amount">₱220.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Payment Form -->
+                <div class="payment-form-container">
+                    <div class="payment-header">
+                        <h1>Complete Payment</h1>
+                        <p>Choose your preferred payment method</p>
+                    </div>
+
+                    <!-- Payment Methods -->
+                    <div class="payment-methods">
+                        <h3>Select Payment Method</h3>
+                        
+                        <div class="payment-options">
+                            <label class="payment-option active" data-method="card">
+                                <input type="radio" name="payment-method" value="card" checked>
+                                <div class="option-content">
+                                    <div class="option-icon">💳</div>
+                                    <div class="option-text">
+                                        <span class="option-title">Credit/Debit Card</span>
+                                        <span class="option-subtitle">Visa, Mastercard, JCB</span>
+                                    </div>
+                                </div>
+                                <div class="option-check">✓</div>
+                            </label>
+
+                            <label class="payment-option" data-method="gcash">
+                                <input type="radio" name="payment-method" value="gcash">
+                                <div class="option-content">
+                                    <div class="option-icon">📱</div>
+                                    <div class="option-text">
+                                        <span class="option-title">GCash</span>
+                                        <span class="option-subtitle">Pay with GCash wallet</span>
+                                    </div>
+                                </div>
+                                <div class="option-check">✓</div>
+                            </label>
+
+                            <label class="payment-option" data-method="paymaya">
+                                <input type="radio" name="payment-method" value="paymaya">
+                                <div class="option-content">
+                                    <div class="option-icon">💰</div>
+                                    <div class="option-text">
+                                        <span class="option-title">PayMaya</span>
+                                        <span class="option-subtitle">Pay with PayMaya wallet</span>
+                                    </div>
+                                </div>
+                                <div class="option-check">✓</div>
+                            </label>
+
+                            <label class="payment-option" data-method="cash">
+                                <input type="radio" name="payment-method" value="cash">
+                                <div class="option-content">
+                                    <div class="option-icon">💵</div>
+                                    <div class="option-text">
+                                        <span class="option-title">Cash</span>
+                                        <span class="option-subtitle">Pay the driver directly</span>
+                                    </div>
+                                </div>
+                                <div class="option-check">✓</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Payment Forms -->
+                    <div id="paymentForms">
+                        
+                        <!-- Card Payment Form -->
+                        <form id="cardForm" class="payment-form active">
+                            <div class="form-group-payment">
+                                <label for="cardNumber">Card Number *</label>
+                                <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+                            </div>
+
+                            <div class="form-row-payment">
+                                <div class="form-group-payment">
+                                    <label for="cardExpiry">Expiry Date *</label>
+                                    <input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5" required>
+                                </div>
+                                <div class="form-group-payment">
+                                    <label for="cardCVV">CVV *</label>
+                                    <input type="text" id="cardCVV" placeholder="123" maxlength="3" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group-payment">
+                                <label for="cardName">Cardholder Name *</label>
+                                <input type="text" id="cardName" placeholder="JUAN DELA CRUZ" required>
+                            </div>
+
+                            <div class="promo-code-section">
+                                <input type="text" id="promoCode" placeholder="Enter promo code" class="promo-input">
+                                <button type="button" class="btn-apply-promo">Apply</button>
+                            </div>
+
+                            <button type="submit" class="btn-pay">
+                                <span>Pay ₱<span id="pay-amount">220.00</span></span>
+                                <span class="btn-arrow">→</span>
+                            </button>
+                        </form>
+
+                        <!-- GCash Form -->
+                        <form id="gcashForm" class="payment-form">
+                            <div class="form-group-payment">
+                                <label for="gcashNumber">GCash Mobile Number *</label>
+                                <input type="tel" id="gcashNumber" placeholder="+63 912 345 6789" required>
+                            </div>
+
+                            <div class="wallet-info">
+                                <p>You will be redirected to GCash to complete your payment</p>
+                            </div>
+
+                            <div class="promo-code-section">
+                                <input type="text" id="promoCodeGcash" placeholder="Enter promo code" class="promo-input">
+                                <button type="button" class="btn-apply-promo">Apply</button>
+                            </div>
+
+                            <button type="submit" class="btn-pay">
+                                <span>Pay with GCash ₱<span id="pay-amount-gcash">220.00</span></span>
+                                <span class="btn-arrow">→</span>
+                            </button>
+                        </form>
+
+                        <!-- PayMaya Form -->
+                        <form id="paymayaForm" class="payment-form">
+                            <div class="form-group-payment">
+                                <label for="paymayaNumber">PayMaya Mobile Number *</label>
+                                <input type="tel" id="paymayaNumber" placeholder="+63 912 345 6789" required>
+                            </div>
+
+                            <div class="wallet-info">
+                                <p>You will be redirected to PayMaya to complete your payment</p>
+                            </div>
+
+                            <div class="promo-code-section">
+                                <input type="text" id="promoCodePaymaya" placeholder="Enter promo code" class="promo-input">
+                                <button type="button" class="btn-apply-promo">Apply</button>
+                            </div>
+
+                            <button type="submit" class="btn-pay">
+                                <span>Pay with PayMaya ₱<span id="pay-amount-paymaya">220.00</span></span>
+                                <span class="btn-arrow">→</span>
+                            </button>
+                        </form>
+
+                        <!-- Cash Payment Form -->
+                        <form id="cashForm" class="payment-form">
+                            <div class="cash-info">
+                                <div class="info-box">
+                                    <h4>Payment Instructions</h4>
+                                    <ul>
+                                        <li>Pay the driver directly at the start of your ride</li>
+                                        <li>Make sure to bring exact change if possible</li>
+                                        <li>You will receive a booking confirmation</li>
+                                        <li>Driver will confirm payment upon completion</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-pay">
+                                <span>Confirm Booking</span>
+                                <span class="btn-arrow">→</span>
+                            </button>
+                        </form>
+
+                    </div>
+
+                    <div class="security-info">
+                        <div class="security-icon">🔒</div>
+                        <p>Your payment information is encrypted and secure</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div id="footerContent" class="footer-content"></div>
+            <div class="footer-bottom">
+                <p>&copy; <span id="year"></span> MerryLift. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JS -->
+    <script src="../js/payment-config.js"></script>
+</body>
+</html>
