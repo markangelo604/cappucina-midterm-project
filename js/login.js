@@ -50,6 +50,11 @@ loginForm.addEventListener('submit', async (e) => {
             })
         });
 
+        // Check if response is OK
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         // Parse the response
         const data = await response.json();
 
@@ -58,7 +63,7 @@ loginForm.addEventListener('submit', async (e) => {
             successMsg.textContent = data.message || 'Login successful! Redirecting...';
             successMsg.style.display = 'block';
 
-            // Get the dashboard URL based on user type
+            // Get the dashboard URL based on user role
             const role = data.role.toLowerCase(); // admin, driver, client
             const dashboardUrl = dashboardRedirect[role];
 
@@ -70,9 +75,16 @@ loginForm.addEventListener('submit', async (e) => {
             });
 
             // Redirect after short delay
-            setTimeout(() => {
-                window.location.href = dashboardUrl;
-            }, 1000);
+            if (dashboardUrl) {
+                setTimeout(() => {
+                    window.location.href = dashboardUrl;
+                }, 1000);
+            } else {
+                errorMsg.textContent = 'Invalid user role detected.';
+                errorMsg.style.display = 'block';
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
+            }
         } else {
             errorMsg.textContent = data.message || 'Login failed. Please try again.';
             errorMsg.style.display = 'block';
