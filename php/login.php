@@ -1,25 +1,15 @@
 <?php
-//can be removed
-error_reporting(0);
-ini_set('display_errors', 0);
-// -------------------
 session_start();
 
-// set response header
+// Set response header
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Headers: Content-Type');
 
 require_once __DIR__ . '/../Server/Models/user-model.php';
 require_once __DIR__ . '/../Server/server.php';
 require_once __DIR__ . '/../vendor/autoload.php'; 
-
-// This is expected to return a JSON of 
-// ([
-//         'success' => true,
-//         'message' => 'Login successful!', => this is the message for the website
-//         'userId' => $user['id'],
-//         'name' => $user['name'],
-//         'userType' => $user['userType']  // THIS IS KEY!
-//     ]);
 
 function loginUser($data) {
     global $db;
@@ -60,13 +50,27 @@ function loginUser($data) {
             ];
         }
 
-        // Success response
+        // Set session variables
+        $_SESSION['user_id'] = (string)$user['_id'];
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['role'] = $user['role'];
+        $_SESSION['name'] = $user['profile']['name'] ?? $user['username'];
+        $_SESSION['logged_in'] = true;
+
+        // Success response with full user data
         $response = [
             "success" => true,
             "message" => "Login successful.",
-            "name" => $user['profile']['name'] ?? $user['username'],
-            "id" => (string)$user['_id'],
-            "role" => $user['role']
+            "user" => [
+                "id" => (string)$user['_id'],
+                "username" => $user['username'],
+                "name" => $user['profile']['name'] ?? $user['username'],
+                "email" => $user['email'] ?? '',
+                "phone" => $user['profile']['phone'] ?? '',
+                "role" => $user['role'],
+                "profile_image" => $user['profile']['image'] ?? null,
+                "account_status" => $user['account_status'] ?? 'active'
+            ]
         ];
 
         logAction("User logged in: {$user['username']} ({$user['role']})");
@@ -84,17 +88,13 @@ function loginUser($data) {
 
 // Handle incoming POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get JSON input
     $input = file_get_contents('php://input');
     $data = json_decode($input, true);
 
-    // Call loginUser function
     $result = loginUser($data);
-
-    // Return JSON response
     echo json_encode($result);
 } else {
-    // Method not allowed
+    http_response_code(405);
     echo json_encode([
         "success" => false,
         "message" => "Invalid request method."

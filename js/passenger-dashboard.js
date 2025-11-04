@@ -1,24 +1,24 @@
 // ========================================
-// PASSENGER DASHBOARD CONFIGURATION
+// PASSENGER DASHBOARD - REAL-TIME DATA
 // ========================================
 
 // Get user credentials from sessionStorage
-let userData = {
-    id: null,
-    name: 'Guest',
-    role: 'passenger'
-};
+let userData = null;
 
-// Load user data from sessionStorage
-const storedUserData = sessionStorage.getItem('userData');
-if (storedUserData) {
-    userData = JSON.parse(storedUserData);
+// Load user data
+function loadUserData() {
+    const storedUserData = sessionStorage.getItem('userData');
+    if (storedUserData) {
+        userData = JSON.parse(storedUserData);
+        return true;
+    }
+    return false;
 }
 
 // Navigation Items for Passenger
 const navItems = [
     { name: 'Find Rides', url: '../html/passenger-dashboard.html', active: true },
-    { name: 'My Bookings', url: '../html/passenger-booking.html', active: false },
+    { name: 'My Bookings', url: '../html/booking.html', active: false },
 ];
 
 // Safety Features
@@ -37,13 +37,19 @@ let currentRideData = null;
 // DOM READY
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
+    // Check authentication
+    if (!loadUserData()) {
+        window.location.href = '../html/login.html';
+        return;
+    }
+    
     // Render navigation
     renderNavigation();
     
-    // Load user profile image
+    // Load user profile
     loadUserProfile();
     
-    // Setup dropdown functionality
+    // Setup dropdown
     setupDropdown();
     
     // Render main content
@@ -54,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ========================================
-// NAVIGATION RENDERING
+// NAVIGATION
 // ========================================
 function renderNavigation() {
     const navMenu = document.getElementById('navMenu');
@@ -73,14 +79,11 @@ function renderNavigation() {
 function loadUserProfile() {
     const profileImage = document.getElementById('profileImage');
     
-    if (userData.image) {
-        profileImage.src = userData.image;
+    if (userData && userData.profile_image) {
+        profileImage.src = userData.profile_image;
     }
 }
 
-// ========================================
-// DROPDOWN FUNCTIONALITY
-// ========================================
 function setupDropdown() {
     const profileBtn = document.getElementById('profileBtn');
     const dropdownMenu = document.getElementById('dropdownMenu');
@@ -114,7 +117,6 @@ function renderMainContent() {
                     loading="lazy"
                     referrerpolicy="no-referrer-when-downgrade">
                 </iframe>
-                <div class="map-marker"></div>
             </div>
         </section>
 
@@ -171,7 +173,7 @@ function renderMainContent() {
                     <div class="rides-section">
                         <div class="rides-header">
                             <h2>Available Rides</h2>
-                            <button class="btn-filter">
+                            <button class="btn-filter" onclick="toggleFilters()">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M3 7h18M6 12h12M9 17h6"/>
                                 </svg>
@@ -265,7 +267,7 @@ function renderMainContent() {
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn-cancel">Cancel</button>
+                            <button type="button" class="btn-cancel" onclick="closeBookingModal()">Cancel</button>
                             <button type="submit" class="btn-confirm">Proceed To Payment</button>
                         </div>
                     </form>
@@ -283,11 +285,11 @@ function renderMainContent() {
     
     // Attach event listeners
     attachEventListeners();
+    
+    // Pre-fill user data in booking form
+    prefillUserData();
 }
 
-// ========================================
-// RENDER SAFETY FEATURES
-// ========================================
 function renderSafetyFeatures() {
     const safetyContainer = document.getElementById('safetyFeatures');
     safetyContainer.innerHTML = safetyFeatures.map(feature => `
@@ -298,8 +300,22 @@ function renderSafetyFeatures() {
     `).join('');
 }
 
+function prefillUserData() {
+    setTimeout(() => {
+        if (userData) {
+            const nameField = document.getElementById('passengerName');
+            const phoneField = document.getElementById('passengerPhone');
+            const emailField = document.getElementById('passengerEmail');
+            
+            if (nameField && userData.name) nameField.value = userData.name;
+            if (phoneField && userData.phone) phoneField.value = userData.phone;
+            if (emailField && userData.email) emailField.value = userData.email;
+        }
+    }, 500);
+}
+
 // ========================================
-// FETCH AVAILABLE RIDES FROM PHP
+// FETCH AVAILABLE RIDES
 // ========================================
 async function fetchAvailableRides(searchParams = null) {
     try {
@@ -308,7 +324,6 @@ async function fetchAvailableRides(searchParams = null) {
         
         let url = '../php/search-rides.php';
         
-        // Add search parameters if provided
         if (searchParams) {
             const params = new URLSearchParams(searchParams);
             url += '?' + params.toString();
@@ -316,9 +331,7 @@ async function fetchAvailableRides(searchParams = null) {
         
         const response = await fetch(url, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            credentials: 'include'
         });
         
         if (!response.ok) {
@@ -353,7 +366,6 @@ function renderRides(rides) {
     const ridesList = document.getElementById('ridesList');
     
     ridesList.innerHTML = rides.map((ride, index) => {
-        // Map PHP data structure to display format
         const driverName = ride.driver?.name || ride.name || ride.username || "Unknown Driver";
         const driverInitials = getInitials(driverName);
         const driverColor = generateColor(driverName);
@@ -362,21 +374,15 @@ function renderRides(rides) {
         const seats = ride.seat_available || ride.available_seats || 0;
         const price = ride.fare || "₱0.00";
         
-        // Use the correct field names from PHP response
         const pickupLocation = ride.starting_point || ride.from || "TBD";
         const destinationLocation = ride.destination || ride.to || "TBD";
         const departureTime = ride.time || "TBD";
         const tripDate = ride.date || "TBD";
         
-        // Calculate arrival time if we have estimated duration
         const arrivalTime = calculateArrivalTime(departureTime, ride.route?.estimated_duration_mins);
-        
-        // Format ETA
         const eta = ride.route?.estimated_duration_mins 
             ? `${ride.route.estimated_duration_mins} mins` 
             : "N/A";
-        
-        // Format distance
         const distance = ride.route?.distance_km 
             ? `${ride.route.distance_km} km` 
             : "";
@@ -416,7 +422,7 @@ function renderRides(rides) {
                     ${eta !== "N/A" ? `<div class="meta-item">⏱️ <span>${eta}</span></div>` : ''}
                     ${distance ? `<div class="meta-item">📍 <span>${distance}</span></div>` : ''}
                     ${vehicle !== "Vehicle Info N/A" ? `<div class="meta-item">🚗 <span>${vehicle}</span></div>` : ''}
-                    <div class="meta-item">💺 <span>${seats} Seats</span></div>
+                    <div class="meta-item">👺 <span>${seats} Seats</span></div>
                     ${rating > 0 ? `<div class="meta-item">⭐ <span>${rating.toFixed(1)}</span></div>` : ''}
                 </div>
 
@@ -431,10 +437,7 @@ function renderRides(rides) {
         `;
     }).join('');
     
-    // Store rides data for booking
     window.availableRidesData = rides;
-    
-    // Attach event listeners
     attachBookNowListeners();
 }
 
@@ -442,40 +445,28 @@ function renderRides(rides) {
 // HELPER FUNCTIONS
 // ========================================
 function calculateArrivalTime(departureTime, durationMins) {
-    if (!departureTime || !durationMins || departureTime === "TBD") {
-        return "TBD";
-    }
+    if (!departureTime || !durationMins || departureTime === "TBD") return "TBD";
     
     try {
-        // Parse time (assuming format like "14:30" or "2:30 PM")
         const timeMatch = departureTime.match(/(\d{1,2}):(\d{2})/);
         if (!timeMatch) return "TBD";
         
         let hours = parseInt(timeMatch[1]);
         let minutes = parseInt(timeMatch[2]);
         
-        // Add duration
         minutes += parseInt(durationMins);
         hours += Math.floor(minutes / 60);
         minutes = minutes % 60;
         hours = hours % 24;
         
-        // Format back to string
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     } catch (error) {
-        console.error('Error calculating arrival time:', error);
         return "TBD";
     }
 }
 
-
 function getInitials(name) {
-    return name
-        .split(' ')
-        .map(word => word[0])
-        .join('')
-        .toUpperCase()
-        .substring(0, 2);
+    return name.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2);
 }
 
 function generateColor(str) {
@@ -488,39 +479,32 @@ function generateColor(str) {
 // EVENT LISTENERS
 // ========================================
 function attachEventListeners() {
-    // Search form
     const searchForm = document.getElementById('searchForm');
     if (searchForm) {
         searchForm.addEventListener('submit', handleSearchSubmit);
     }
     
-    // Filter chips
     document.querySelectorAll('.chip').forEach(chip => {
         chip.addEventListener('click', function() {
             const filterType = this.getAttribute('data-filter');
             filterRides(filterType);
             
-            // Update active chip
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
             this.classList.add('active');
         });
     });
     
-    // Modal close
     const closeModal = document.querySelector('.close-modal');
     const btnCancel = document.querySelector('.btn-cancel');
     const modal = document.getElementById('bookingModal');
     
     if (closeModal) closeModal.addEventListener('click', closeBookingModal);
-    if (btnCancel) btnCancel.addEventListener('click', closeBookingModal);
-    
     if (modal) {
         modal.addEventListener('click', function(e) {
             if (e.target === modal) closeBookingModal();
         });
     }
     
-    // Booking form
     const bookingForm = document.getElementById('bookingForm');
     if (bookingForm) {
         bookingForm.addEventListener('submit', handleBookingSubmit);
@@ -536,9 +520,6 @@ function attachBookNowListeners() {
     });
 }
 
-// ========================================
-// SEARCH FUNCTIONALITY
-// ========================================
 function handleSearchSubmit(e) {
     e.preventDefault();
     
@@ -549,15 +530,9 @@ function handleSearchSubmit(e) {
         passengers: document.querySelector('select[name="passengers"]').value
     };
     
-    console.log('Search params:', searchParams);
-    
-    // Fetch rides with search parameters
     fetchAvailableRides(searchParams);
 }
 
-// ========================================
-// FILTER FUNCTIONALITY
-// ========================================
 function filterRides(filterType) {
     if (!window.availableRidesData) return;
     
@@ -566,8 +541,8 @@ function filterRides(filterType) {
     switch(filterType) {
         case 'price-low':
             sortedRides.sort((a, b) => {
-                const priceA = parseFloat((a.fare || a.price || '₱0').toString().replace(/[^\d.]/g, ''));
-                const priceB = parseFloat((b.fare || b.price || '₱0').toString().replace(/[^\d.]/g, ''));
+                const priceA = parseFloat((a.fare || '₱0').toString().replace(/[^\d.]/g, ''));
+                const priceB = parseFloat((b.fare || '₱0').toString().replace(/[^\d.]/g, ''));
                 return priceA - priceB;
             });
             break;
@@ -578,25 +553,17 @@ function filterRides(filterType) {
                 return ratingB - ratingA;
             });
             break;
-        case 'all':
-        default:
-            // Keep original order (sorted by date/time from backend)
-            break;
     }
     
     renderRides(sortedRides);
 }
 
-// ========================================
-// BOOKING MODAL
-// ========================================
 function openBookingModal(rideIndex) {
     if (!window.availableRidesData) return;
     
     const ride = window.availableRidesData[rideIndex];
     currentRideData = ride;
     
-    // Populate modal with correct field names
     const driverName = ride.driver?.name || ride.name || ride.username || "Unknown Driver";
     const pickupLocation = ride.starting_point || ride.from || "TBD";
     const destinationLocation = ride.destination || ride.to || "TBD";
@@ -610,7 +577,6 @@ function openBookingModal(rideIndex) {
     document.getElementById('modal-date').textContent = `${tripDate} at ${departureTime}`;
     document.getElementById('modal-price').textContent = price;
     
-    // Show modal
     const modal = document.getElementById('bookingModal');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -622,11 +588,9 @@ function closeBookingModal() {
     document.body.style.overflow = 'auto';
     document.getElementById('bookingForm').reset();
     currentRideData = null;
+    prefillUserData();
 }
 
-// ========================================
-// BOOKING SUBMISSION
-// ========================================
 function handleBookingSubmit(e) {
     e.preventDefault();
     
@@ -635,7 +599,6 @@ function handleBookingSubmit(e) {
         return;
     }
     
-    // Get form data
     const formData = {
         passenger_name: document.getElementById('passengerName').value,
         passenger_phone: document.getElementById('passengerPhone').value,
@@ -645,7 +608,6 @@ function handleBookingSubmit(e) {
         specialRequests: document.getElementById('specialRequests').value
     };
     
-    // Combine ride data with passenger data
     const bookingData = {
         ...currentRideData,
         ...formData,
@@ -653,14 +615,8 @@ function handleBookingSubmit(e) {
         booking_date: new Date().toISOString()
     };
     
-    // Store in sessionStorage
     sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
     
-    console.log('Booking data stored:', bookingData);
-    
-    // Close modal
     closeBookingModal();
-    
-    // Redirect to payment
     window.location.href = '../html/payment.html';
 }
