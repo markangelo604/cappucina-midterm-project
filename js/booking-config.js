@@ -1,9 +1,7 @@
 // --- Navigation Items ---
 const navItems = [
-    { name: 'Home', url: '../index.html', active: false },
-    { name: 'Find Rides', url: '../html/findrides.html', active: false },
-    { name: 'Bookings', url: '../html/booking.html', active: true },
-    { name: 'About', url: '../html/about.html', active: false }
+    { name: 'Find Rides', url: '../html/passenger-dashboard.html', active: false  },
+    { name: 'My Bookings', url: '../html/booking.html', active: true },
 ];
 
 // --- Bookings Data ---

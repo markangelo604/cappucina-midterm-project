@@ -18,7 +18,7 @@ if (storedUserData) {
 // Navigation Items for Passenger
 const navItems = [
     { name: 'Find Rides', url: '../html/passenger-dashboard.html', active: true },
-    { name: 'My Bookings', url: '../html/passenger-booking.html', active: false },
+    { name: 'My Bookings', url: '../html/booking.html', active: false },
 ];
 
 // Safety Features
