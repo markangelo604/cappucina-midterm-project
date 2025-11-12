@@ -61,7 +61,7 @@ function displayBookings(bookingsToShow) {
                 </svg>
                 <h3>No bookings found</h3>
                 <p>You haven't made any bookings yet. Start by finding a ride!</p>
-                <button class="btn-primary" onclick="window.location.href='../html/findrides.html'">
+                <button class="btn-primary" onclick="window.location.href='../html/passenger-dashboard.html'">
                     Find Rides
                 </button>
             </div>

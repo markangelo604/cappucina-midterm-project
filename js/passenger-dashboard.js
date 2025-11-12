@@ -176,7 +176,6 @@ function renderMainContent() {
                         <div class="filter-chips">
                             <button class="chip active" data-filter="all">All Rides</button>
                             <button class="chip" data-filter="price-low">Price: Low to High</button>
-                            <button class="chip" data-filter="rating">Best Rated</button>
                         </div>
 
                         <div id="ridesList" class="rides-list">
@@ -399,7 +398,6 @@ function renderRides(rides) {
                     <div class="route-item">
                         <div class="route-dot destination"></div>
                         <div class="route-details">
-                            <span class="route-time">${arrivalTime}</span>
                             <span class="route-location">${destinationLocation}</span>
                         </div>
                     </div>
