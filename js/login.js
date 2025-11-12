@@ -4,10 +4,11 @@ const loginBtn = document.getElementById('loginBtn');
 const errorMsg = document.getElementById('errorMsg');
 const successMsg = document.getElementById('successMsg');
 
-// Dashboard redirect mapping
+// Dashboard redirect mapping - UPDATED to handle car_owner
 const dashboardRedirect = {
     'admin': '../html/admin-dashboard.html',
     'driver': '../html/driver-dashboard.html',
+    'car_owner': '../html/driver-dashboard.html',  // Handle car_owner role
     'passenger': '../html/passenger-dashboard.html'
 };
 
@@ -64,14 +65,22 @@ loginForm.addEventListener('submit', async (e) => {
             successMsg.style.display = 'block';
 
             // Get the dashboard URL based on user role
-            const role = data.role.toLowerCase(); // admin, driver, passenger
+            let role = data.role.toLowerCase();
+            
+            // Normalize car_owner to driver
+            if (role === 'car_owner') {
+                role = 'driver';
+            }
+            
             const dashboardUrl = dashboardRedirect[role];
 
-            // Store user credentials in sessionStorage
+            // FIXED: Store BOTH username and display name in sessionStorage
             const userData = {
                 id: data.id,
-                name: data.name,
-                role: data.role.toLowerCase()
+                username: username,           // ← ADDED: Store the actual username
+                name: data.name,              // ← Keep display name for UI
+                displayName: data.name,       // ← Explicit display name
+                role: role                    // ← Normalized role
             };
 
             sessionStorage.setItem('userData', JSON.stringify(userData));
@@ -85,7 +94,7 @@ loginForm.addEventListener('submit', async (e) => {
                     window.location.href = dashboardUrl;
                 }, 1000);
             } else {
-                errorMsg.textContent = 'Invalid user role detected.';
+                errorMsg.textContent = `Invalid user role: ${data.role}`;
                 errorMsg.style.display = 'block';
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Login';

@@ -1,9 +1,10 @@
 // ========================================
-// DRIVER DASHBOARD JAVASCRIPT
+// DRIVER DASHBOARD JAVASCRIPT - FIXED WITH ENHANCED DEBUGGING
 // ========================================
 
-// Initialize destinations array from localStorage or empty array
-let destinations = JSON.parse(localStorage.getItem('driverDestinations')) || [];
+// Get driver username from session
+let driverUsername = null;
+let destinations = [];
 
 // DOM Elements
 const addDestinationForm = document.getElementById('addDestinationForm');
@@ -13,10 +14,12 @@ const destinationCount = document.getElementById('destinationCount');
 const currentYearSpan = document.getElementById('currentYear');
 
 // ========================================
-// EVENT LISTENERS
+// INITIALIZATION
 // ========================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('=== DRIVER DASHBOARD INITIALIZED ===');
+    
     // Set current year in footer
     currentYearSpan.textContent = new Date().getFullYear();
     
@@ -25,54 +28,303 @@ document.addEventListener('DOMContentLoaded', function() {
     const today = new Date().toISOString().split('T')[0];
     dateInput.setAttribute('min', today);
     
-    // Render existing destinations
-    renderDestinations();
+    // Get driver username from session
+    const userDataStr = sessionStorage.getItem('userData');
+    console.log('Raw sessionStorage userData:', userDataStr);
+    
+    if (!userDataStr) {
+        console.error('❌ No userData in sessionStorage');
+        showError('Please log in first - No session data found');
+        setTimeout(() => {
+            window.location.href = '../html/login.html';
+        }, 2000);
+        return;
+    }
+    
+    let userData;
+    try {
+        userData = JSON.parse(userDataStr);
+        console.log('Parsed userData:', userData);
+    } catch (e) {
+        console.error('❌ Failed to parse userData:', e);
+        showError('Session data corrupted. Please log in again.');
+        setTimeout(() => {
+            window.location.href = '../html/login.html';
+        }, 2000);
+        return;
+    }
+    
+    // Check for username field
+    if (!userData.username) {
+        console.error('❌ No username in userData:', userData);
+        showError('Username not found in session. Please log in again.');
+        setTimeout(() => {
+            window.location.href = '../html/login.html';
+        }, 2000);
+        return;
+    }
+    
+    // Set driver username
+    driverUsername = userData.username;
+    console.log('✅ Driver authenticated:', {
+        username: driverUsername,
+        displayName: userData.name || userData.displayName,
+        role: userData.role
+    });
+    
+    // Load existing destinations from database
+    await loadDestinations();
     
     // Add form submit handler
     addDestinationForm.addEventListener('submit', handleAddDestination);
 });
 
 // ========================================
+// DATABASE FUNCTIONS
+// ========================================
+
+/**
+ * Load destinations from database
+ */
+async function loadDestinations() {
+    try {
+        console.log('📥 Loading destinations for driver:', driverUsername);
+        showLoading('Loading your rides...');
+        
+        const url = `../php/manage-driver-rides.php?driver_username=${encodeURIComponent(driverUsername)}`;
+        console.log('GET request to:', url);
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        console.log('Load destinations response:', data);
+        
+        if (data.success) {
+            destinations = data.data.rides || [];
+            console.log('✅ Loaded', destinations.length, 'destinations');
+            renderDestinations();
+            hideLoading();
+        } else {
+            console.error('❌ Failed to load rides:', data.message);
+            showError(data.message || 'Failed to load rides');
+            hideLoading();
+        }
+    } catch (error) {
+        console.error('❌ Error loading destinations:', error);
+        showError('Failed to connect to server: ' + error.message);
+        hideLoading();
+    }
+}
+
+/**
+ * Create new ride in database
+ */
+async function createRide(rideData) {
+    try {
+        console.log('📤 Creating new ride...');
+        showLoading('Creating ride...');
+        
+        const payload = {
+            driver_username: driverUsername,
+            pickup: rideData.pickup,
+            destination: rideData.destination,
+            date: rideData.date,
+            time: rideData.time,
+            seats: rideData.seats,
+            price: rideData.price,
+            notes: rideData.notes
+        };
+        
+        console.log('POST request payload:', payload);
+        
+        const response = await fetch('../php/manage-driver-rides.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        console.log('Response status:', response.status, response.statusText);
+        
+        const data = await response.json();
+        console.log('Create ride response:', data);
+        
+        if (data.success) {
+            console.log('✅ Ride created successfully:', data.data.ride);
+            hideLoading();
+            return data.data.ride;
+        } else {
+            console.error('❌ Failed to create ride:', data.message);
+            hideLoading();
+            showError(data.message || 'Failed to create ride');
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Error creating ride:', error);
+        hideLoading();
+        showError('Failed to connect to server: ' + error.message);
+        return null;
+    }
+}
+
+/**
+ * Update ride in database
+ */
+async function updateRide(rideId, rideData) {
+    try {
+        console.log('📤 Updating ride:', rideId);
+        showLoading('Updating ride...');
+        
+        const payload = {
+            driver_username: driverUsername,
+            ride_id: rideId,
+            pickup: rideData.pickup,
+            destination: rideData.destination,
+            date: rideData.date,
+            time: rideData.time,
+            seats: rideData.seats,
+            price: rideData.price,
+            notes: rideData.notes
+        };
+        
+        console.log('PUT request payload:', payload);
+        
+        const response = await fetch('../php/manage-driver-rides.php', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        console.log('Update ride response:', data);
+        
+        if (data.success) {
+            console.log('✅ Ride updated successfully');
+            hideLoading();
+            return true;
+        } else {
+            console.error('❌ Failed to update ride:', data.message);
+            hideLoading();
+            showError(data.message || 'Failed to update ride');
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Error updating ride:', error);
+        hideLoading();
+        showError('Failed to connect to server: ' + error.message);
+        return false;
+    }
+}
+
+/**
+ * Delete ride from database
+ */
+async function deleteRideFromDB(rideId) {
+    try {
+        console.log('🗑️ Deleting ride:', rideId);
+        showLoading('Deleting ride...');
+        
+        const url = `../php/manage-driver-rides.php?driver_username=${encodeURIComponent(driverUsername)}&ride_id=${rideId}`;
+        console.log('DELETE request to:', url);
+        
+        const response = await fetch(url, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        console.log('Delete ride response:', data);
+        
+        if (data.success) {
+            console.log('✅ Ride deleted successfully');
+            hideLoading();
+            return true;
+        } else {
+            console.error('❌ Failed to delete ride:', data.message);
+            hideLoading();
+            showError(data.message || 'Failed to delete ride');
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Error deleting ride:', error);
+        hideLoading();
+        showError('Failed to connect to server: ' + error.message);
+        return false;
+    }
+}
+
+// ========================================
 // FORM HANDLING
 // ========================================
 
-function handleAddDestination(e) {
+async function handleAddDestination(e) {
     e.preventDefault();
+    
+    console.log('📝 Form submitted - Adding destination');
     
     // Get form data
     const formData = {
-        id: Date.now(), // Unique ID using timestamp
         pickup: document.getElementById('pickup').value.trim(),
         destination: document.getElementById('destination').value.trim(),
         date: document.getElementById('date').value,
         time: document.getElementById('time').value,
         seats: parseInt(document.getElementById('seats').value),
         price: parseFloat(document.getElementById('price').value),
-        notes: document.getElementById('notes').value.trim(),
-        createdAt: new Date().toISOString(),
-        status: 'active'
+        notes: document.getElementById('notes').value.trim()
     };
     
-    // Add to destinations array
-    destinations.push(formData);
+    console.log('Form data:', formData);
     
-    // Save to localStorage
-    saveDestinations();
+    // Validate form data
+    if (!formData.pickup || !formData.destination) {
+        console.error('❌ Validation failed: Missing pickup or destination');
+        showError('Please enter pickup and destination locations');
+        return;
+    }
     
-    // Render updated list
-    renderDestinations();
+    if (!formData.date || !formData.time) {
+        console.error('❌ Validation failed: Missing date or time');
+        showError('Please select date and time');
+        return;
+    }
     
-    // Reset form
-    addDestinationForm.reset();
+    if (isNaN(formData.seats) || formData.seats < 1) {
+        console.error('❌ Validation failed: Invalid seats');
+        showError('Please enter valid number of seats');
+        return;
+    }
     
-    // Show success message
-    showSuccessMessage('Destination added successfully!');
+    if (isNaN(formData.price) || formData.price < 0) {
+        console.error('❌ Validation failed: Invalid price');
+        showError('Please enter valid price');
+        return;
+    }
     
-    // Scroll to destinations list
-    document.querySelector('.destinations-section').scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-    });
+    console.log('✅ Validation passed');
+    
+    // Create ride in database
+    const newRide = await createRide(formData);
+    
+    if (newRide) {
+        console.log('🎉 Ride created successfully, reloading list...');
+        
+        // Reload destinations from database
+        await loadDestinations();
+        
+        // Reset form
+        addDestinationForm.reset();
+        
+        // Show success message
+        showSuccessMessage('Ride added successfully!');
+        
+        // Scroll to destinations list
+        document.querySelector('.destinations-section').scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
 }
 
 // ========================================
@@ -80,6 +332,8 @@ function handleAddDestination(e) {
 // ========================================
 
 function renderDestinations() {
+    console.log('🎨 Rendering', destinations.length, 'destinations');
+    
     // Update count
     updateDestinationCount();
     
@@ -87,6 +341,7 @@ function renderDestinations() {
     if (destinations.length === 0) {
         destinationsList.innerHTML = '';
         emptyState.classList.add('show');
+        console.log('📭 No destinations to display');
         return;
     }
     
@@ -96,7 +351,8 @@ function renderDestinations() {
     destinationsList.innerHTML = destinations.map(dest => `
         <div class="destination-card" data-id="${dest.id}">
             <div class="destination-header">
-                <span class="destination-status">${dest.status}</span>
+                <span class="destination-status ${dest.status}">${dest.status}</span>
+                ${dest.passengers > 0 ? `<span class="passengers-badge">${dest.passengers} passenger${dest.passengers > 1 ? 's' : ''}</span>` : ''}
             </div>
             
             <div class="destination-route">
@@ -113,11 +369,13 @@ function renderDestinations() {
                     </div>
                 </div>
                 
+                <div class="route-line"></div>
+                
                 <div class="location-item">
                     <div class="location-icon">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <circle cx="10" cy="8" r="3" stroke="#FEC708" stroke-width="2"/>
-                            <path d="M10 2C6.5 2 4 4.5 4 7.5c0 5 6 10.5 6 10.5s6-5.5 6-10.5C16 4.5 13.5 2 10 2z" stroke="#FEC708" stroke-width="2"/>
+                            <circle cx="10" cy="8" r="3" fill="#073066"/>
+                            <path d="M10 2C6.5 2 4 4.5 4 7.5c0 5 6 10.5 6 10.5s6-5.5 6-10.5C16 4.5 13.5 2 10 2z" fill="#073066"/>
                         </svg>
                     </div>
                     <div class="location-text">
@@ -129,100 +387,101 @@ function renderDestinations() {
             
             <div class="destination-details">
                 <div class="detail-item">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="#6c757d">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                         <rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
                         <line x1="2" y1="6" x2="14" y2="6" stroke="currentColor" stroke-width="1.5"/>
                     </svg>
-                    <div>
-                        <div class="detail-label">Date</div>
-                        <div class="detail-value">${formatDate(dest.date)}</div>
-                    </div>
+                    <span>${formatDate(dest.date)}</span>
                 </div>
-                
                 <div class="detail-item">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="#6c757d">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                         <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
                         <line x1="8" y1="8" x2="8" y2="4" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="8" y1="8" x2="11" y2="8" stroke="currentColor" stroke-width="1.5"/>
                     </svg>
-                    <div>
-                        <div class="detail-label">Time</div>
-                        <div class="detail-value">${formatTime(dest.time)}</div>
-                    </div>
+                    <span>${formatTime(dest.time)}</span>
                 </div>
-                
                 <div class="detail-item">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="#6c757d">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                         <circle cx="5" cy="8" r="2"/>
                         <circle cx="11" cy="8" r="2"/>
                     </svg>
-                    <div>
-                        <div class="detail-label">Seats</div>
-                        <div class="detail-value">${dest.seats} available</div>
-                    </div>
+                    <span>${dest.seats} seat${dest.seats > 1 ? 's' : ''}</span>
                 </div>
-                
-                <div class="detail-item">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="#6c757d">
-                        <text x="2" y="12" font-size="12" font-weight="bold">₱</text>
+                <div class="detail-item price">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <text x="3" y="12" font-size="12" font-weight="bold">₱</text>
                     </svg>
-                    <div>
-                        <div class="detail-label">Price</div>
-                        <div class="detail-value">₱${dest.price.toFixed(2)}</div>
-                    </div>
+                    <span>₱${parseFloat(dest.price).toFixed(2)}</span>
                 </div>
             </div>
             
-            ${dest.notes ? `<div class="destination-notes">"${dest.notes}"</div>` : ''}
+            ${dest.notes ? `
+                <div class="destination-notes">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M2 2h12v12H2z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="4" y1="5" x2="12" y2="5" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="4" y1="8" x2="12" y2="8" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="4" y1="11" x2="9" y2="11" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <span>${dest.notes}</span>
+                </div>
+            ` : ''}
             
             <div class="destination-actions">
-                <button class="btn-edit" onclick="editDestination(${dest.id})">
+                <button class="btn-edit" onclick="editDestination('${dest.id}')" ${dest.passengers > 0 ? 'disabled title="Cannot edit ride with bookings"' : ''}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5z"/>
+                        <path d="M12.854 1.146a.5.5 0 0 0-.708 0L11 2.293 13.707 5l1.147-1.146a.5.5 0 0 0 0-.708l-2-2zM10.5 2.793 2.793 10.5l-.793 3.793 3.793-.793 7.707-7.707L10.5 2.793z"/>
                     </svg>
                     Edit
                 </button>
-                <button class="btn-delete" onclick="deleteDestination(${dest.id})">
+                <button class="btn-delete" onclick="deleteDestination('${dest.id}')">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                         <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
                     </svg>
                     Delete
                 </button>
             </div>
         </div>
     `).join('');
+    
+    console.log('✅ Destinations rendered');
 }
 
 // ========================================
-// CRUD OPERATIONS
+// EDIT & DELETE FUNCTIONS
 // ========================================
 
-function deleteDestination(id) {
-    // Confirm deletion
-    if (!confirm('Are you sure you want to delete this destination?')) {
+async function deleteDestination(destinationId) {
+    if (!confirm('Are you sure you want to delete this ride?')) {
         return;
     }
     
-    // Filter out the destination
-    destinations = destinations.filter(dest => dest.id !== id);
+    const success = await deleteRideFromDB(destinationId);
     
-    // Save to localStorage
-    saveDestinations();
-    
-    // Re-render
-    renderDestinations();
-    
-    // Show success message
-    showSuccessMessage('Destination deleted successfully!');
+    if (success) {
+        // Reload destinations
+        await loadDestinations();
+        showSuccessMessage('Ride deleted successfully!');
+    }
 }
 
-function editDestination(id) {
-    // Find the destination
-    const destination = destinations.find(dest => dest.id === id);
+function editDestination(destinationId) {
+    const destination = destinations.find(d => d.id === destinationId);
     
-    if (!destination) return;
+    if (!destination) {
+        showError('Ride not found');
+        return;
+    }
     
-    // Populate form with destination data
+    // Check if ride has passengers
+    if (destination.passengers > 0) {
+        showError('Cannot edit ride with existing bookings');
+        return;
+    }
+    
+    // Populate form
     document.getElementById('pickup').value = destination.pickup;
     document.getElementById('destination').value = destination.destination;
     document.getElementById('date').value = destination.date;
@@ -231,32 +490,85 @@ function editDestination(id) {
     document.getElementById('price').value = destination.price;
     document.getElementById('notes').value = destination.notes || '';
     
-    // Remove the old destination
-    destinations = destinations.filter(dest => dest.id !== id);
+    // Store editing ID
+    addDestinationForm.dataset.editingId = destinationId;
     
-    // Save changes
-    saveDestinations();
+    // Change submit button text
+    const submitBtn = addDestinationForm.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M12.854 1.146a.5.5 0 0 0-.708 0L11 2.293 13.707 5l1.147-1.146a.5.5 0 0 0 0-.708l-2-2zM10.5 2.793 2.793 10.5l-.793 3.793 3.793-.793 7.707-7.707L10.5 2.793z"/>
+        </svg>
+        Update Destination
+    `;
     
-    // Re-render
-    renderDestinations();
+    // Change form handler
+    addDestinationForm.removeEventListener('submit', handleAddDestination);
+    addDestinationForm.addEventListener('submit', handleUpdateDestination);
     
     // Scroll to form
-    document.querySelector('.add-destination-card').scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-    });
+    addDestinationForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function handleUpdateDestination(e) {
+    e.preventDefault();
     
-    // Show message
-    showSuccessMessage('Edit your destination and submit to save changes');
+    const rideId = addDestinationForm.dataset.editingId;
+    
+    if (!rideId) {
+        showError('No ride selected for editing');
+        return;
+    }
+    
+    // Get form data
+    const formData = {
+        pickup: document.getElementById('pickup').value.trim(),
+        destination: document.getElementById('destination').value.trim(),
+        date: document.getElementById('date').value,
+        time: document.getElementById('time').value,
+        seats: parseInt(document.getElementById('seats').value),
+        price: parseFloat(document.getElementById('price').value),
+        notes: document.getElementById('notes').value.trim()
+    };
+    
+    // Update ride in database
+    const success = await updateRide(rideId, formData);
+    
+    if (success) {
+        // Reload destinations
+        await loadDestinations();
+        
+        // Reset form
+        cancelEdit();
+        
+        // Show success message
+        showSuccessMessage('Ride updated successfully!');
+    }
+}
+
+function cancelEdit() {
+    // Reset form
+    addDestinationForm.reset();
+    delete addDestinationForm.dataset.editingId;
+    
+    // Reset button
+    const submitBtn = addDestinationForm.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <line x1="8" y1="3" x2="8" y2="13" stroke="currentColor" stroke-width="2"/>
+            <line x1="3" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Add Destination
+    `;
+    
+    // Restore original handler
+    addDestinationForm.removeEventListener('submit', handleUpdateDestination);
+    addDestinationForm.addEventListener('submit', handleAddDestination);
 }
 
 // ========================================
 // HELPER FUNCTIONS
 // ========================================
-
-function saveDestinations() {
-    localStorage.setItem('driverDestinations', JSON.stringify(destinations));
-}
 
 function updateDestinationCount() {
     const count = destinations.length;
@@ -264,12 +576,14 @@ function updateDestinationCount() {
 }
 
 function formatDate(dateString) {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     const options = { month: 'short', day: 'numeric', year: 'numeric' };
     return date.toLocaleDateString('en-US', options);
 }
 
 function formatTime(timeString) {
+    if (!timeString) return 'N/A';
     const [hours, minutes] = timeString.split(':');
     const hour = parseInt(hours);
     const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -278,39 +592,214 @@ function formatTime(timeString) {
 }
 
 function showSuccessMessage(message) {
+    // Remove existing messages
+    const existing = document.querySelector('.success-message');
+    if (existing) {
+        existing.remove();
+    }
+    
     // Create message element
     const messageEl = document.createElement('div');
     messageEl.className = 'success-message';
-    messageEl.textContent = message;
+    messageEl.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 0C4.477 0 0 4.477 0 10s4.477 10 10 10 10-4.477 10-10S15.523 0 10 0zm-1.5 14.5L3 9l1.5-1.5L9 12l6.5-6.5L17 7l-8.5 8.5z"/>
+        </svg>
+        <span>${message}</span>
+    `;
     
     // Append to body
     document.body.appendChild(messageEl);
     
+    // Show with animation
+    setTimeout(() => messageEl.classList.add('show'), 10);
+    
     // Remove after 3 seconds
     setTimeout(() => {
-        messageEl.classList.add('hide');
-        setTimeout(() => {
-            document.body.removeChild(messageEl);
-        }, 300);
+        messageEl.classList.remove('show');
+        setTimeout(() => messageEl.remove(), 300);
     }, 3000);
 }
 
-// ========================================
-// EXPORT FOR POTENTIAL API INTEGRATION
-// ========================================
+function showError(message) {
+    console.error('🚨 ERROR:', message);
+    
+    // Remove existing messages
+    const existing = document.querySelector('.error-message');
+    if (existing) {
+        existing.remove();
+    }
+    
+    // Create message element
+    const messageEl = document.createElement('div');
+    messageEl.className = 'error-message';
+    messageEl.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 0C4.477 0 0 4.477 0 10s4.477 10 10 10 10-4.477 10-10S15.523 0 10 0zm1 14H9v-2h2v2zm0-3H9V5h2v6z"/>
+        </svg>
+        <span>${message}</span>
+    `;
+    
+    // Append to body
+    document.body.appendChild(messageEl);
+    
+    // Show with animation
+    setTimeout(() => messageEl.classList.add('show'), 10);
+    
+    // Remove after 5 seconds
+    setTimeout(() => {
+        messageEl.classList.remove('show');
+        setTimeout(() => messageEl.remove(), 300);
+    }, 5000);
+}
 
-// Function to sync with backend (placeholder for future implementation)
-async function syncWithBackend() {
-    try {
-        // Example: Send destinations to server
-        // const response = await fetch('/api/driver/destinations', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(destinations)
-        // });
-        
-        console.log('Ready for backend integration');
-    } catch (error) {
-        console.error('Sync error:', error);
+function showLoading(message = 'Loading...') {
+    // Remove existing loader
+    const existing = document.querySelector('.loading-overlay');
+    if (existing) {
+        existing.remove();
+    }
+    
+    // Create loader
+    const loader = document.createElement('div');
+    loader.className = 'loading-overlay';
+    loader.innerHTML = `
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>${message}</p>
+        </div>
+    `;
+    
+    document.body.appendChild(loader);
+    setTimeout(() => loader.classList.add('show'), 10);
+}
+
+function hideLoading() {
+    const loader = document.querySelector('.loading-overlay');
+    if (loader) {
+        loader.classList.remove('show');
+        setTimeout(() => loader.remove(), 300);
     }
 }
+
+// ========================================
+// STYLES FOR MESSAGES AND LOADING
+// ========================================
+
+// Inject styles
+const style = document.createElement('style');
+style.textContent = `
+.success-message, .error-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+}
+
+.success-message.show, .error-message.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.success-message {
+    border-left: 4px solid #4CAF50;
+    color: #2d5016;
+}
+
+.success-message svg {
+    fill: #4CAF50;
+}
+
+.error-message {
+    border-left: 4px solid #f44336;
+    color: #7f231c;
+}
+
+.error-message svg {
+    fill: #f44336;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.loading-overlay.show {
+    opacity: 1;
+}
+
+.loading-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #073066;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-content p {
+    margin: 0;
+    color: #333;
+    font-weight: 500;
+}
+
+.btn-edit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.empty-state {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-state.show {
+    display: block;
+}
+
+.empty-state svg {
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    margin-bottom: 10px;
+    color: #333;
+}
+`;
+document.head.appendChild(style);
