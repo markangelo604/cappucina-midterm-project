@@ -261,58 +261,73 @@ function processPayment(method) {
 // Redirect to Confirmation Page
 async function redirectToConfirmation(paymentData) {
     try {
-        // store confirmation data
-        sessionStorage.setItem('confirmationData', JSON.stringify({
-            ...paymentData,
-            status: 'success',
-            confirmation_number: 'ML' + Math.random().toString(36).substr(2, 9).toUpperCase()
-        }));
-
-        // booking details
         const bookingData = JSON.parse(sessionStorage.getItem('bookingData'));
         const userData = JSON.parse(sessionStorage.getItem('userData')) || {};
 
         if (!userData?.name || !bookingData?._id) {
-            alert('⚠️ Missing booking or user data. Cannot create booking.');
+            alert('⚠️ Missing booking or user data. Cannot continue.');
             return;
         }
 
-        // booking payload
-        const payload = {
-            passenger_username: userData.name,                
-            ride_id: bookingData._id || bookingData.id,     
-            driver_username: bookingData.username || 'Unknown',
-            plate_number: bookingData.plate_number || '',
-            fare: parseFloat((bookingData.price || '0').replace(/[₱,]/g, '')),
-            date: bookingData.date || new Date().toISOString(),
+       // create booking if not yet existing
+        let bookingCreated = false;
+
+        const bookingPayload = {
+            passenger_username: userData.name,
+            ride_id: bookingData._id || bookingData.id
+        };
+
+        const bookingRes = await fetch('../Server/Models/user-model.php?action=createBooking', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookingPayload)
+        });
+        const bookingResult = await bookingRes.json();
+
+        // if booking exist proceed to payment
+        if (bookingResult.success) {
+            bookingCreated = true;
+        } else if (bookingResult.message.includes('already booked')) {
+            console.log('Booking already exists — proceeding to payment.');
+        } else {
+            alert(`⚠️ Failed to create booking: ${bookingResult.message}`);
+            return;
+        }
+
+
+        // record payment
+        const paymentPayload = {
+            passenger_username: userData.name,
+            ride_id: bookingData._id || bookingData.id,
             payment_method: paymentData.method,
             payment_amount: paymentData.amount
         };
 
-        console.log('Sending payload:', payload);
-
-        // call createBooking
-        const response = await fetch('../Server/Models/user-model.php?action=createBooking', {
+        const paymentRes = await fetch('../Server/Models/user-model.php?action=recordPayment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(paymentPayload)
         });
 
-        const result = await response.json();
-        console.log('API result:', result);
+        const paymentResult = await paymentRes.json();
 
-        if (result.success) {
-            alert(`✅ Payment Successful!\n\nBooking confirmed.\nBooking ID: ${result.booking_id}\nAmount Paid: ₱${paymentData.amount}`);
+        if (paymentResult.success) {
+            alert(`✅ Payment Successful!\nBooking confirmed and marked as completed.`);
         } else {
-            alert(`⚠️ Booking failed: ${result.message}`);
+            alert(`⚠️ Payment recorded but booking not updated: ${paymentResult.message}`);
         }
+
+        // short delay
+        setTimeout(() => {
             window.location.href = '../html/booking.html';
+        }, 1500);
 
     } catch (error) {
-        console.error('Error saving booking:', error);
-        alert('⚠️ Payment succeeded, but we encountered an error saving your booking.');
+        console.error('Error processing booking/payment:', error);
+        alert('⚠️ An error occurred while processing your payment.');
     }
 }
+
 
 async function createBookingAfterPayment() {
     const bookingData = JSON.parse(sessionStorage.getItem('bookingData'));

@@ -532,8 +532,13 @@ function createBooking($passengerUsername, $rideId, $db) {
         ]);
 
         if ($existing) {
-            return ["success" => false, "message" => "You have already booked this ride."];
+            return [
+                "success" => true,
+                "message" => "Booking already exists.",
+                "booking_id" => (string)$existing['_id']
+            ];
         }
+
 
         // booking document 
         $bookingDoc = [
@@ -543,7 +548,7 @@ function createBooking($passengerUsername, $rideId, $db) {
             'plate_number' => $ride['plate_number'] ?? '',
             'fare' => $ride['fare'] ?? 0,
             'date' => $ride['date'] ?? date('Y-m-d'),
-            'status' => 'completed',   // or 'confirmed' after payment verification
+            'status' => 'pending',   // or 'confirmed' after payment verification
             'created_at' => new UTCDateTime()
         ];
 
@@ -569,6 +574,54 @@ function createBooking($passengerUsername, $rideId, $db) {
         ];
     }
 }
+function recordPayment($passengerUsername, $rideId, $paymentMethod, $amount, $db) {
+    try {
+        $payments = $db->payments;
+        $bookings = $db->bookings;
+
+        // Check if the booking exists
+        $booking = $bookings->findOne([
+            'ride_id' => new ObjectId($rideId),
+            'passenger_username' => $passengerUsername
+        ]);
+
+        if (!$booking) {
+            return ["success" => false, "message" => "Booking not found for payment."];
+        }
+
+        // Create payment record
+        $paymentDoc = [
+            'passenger_username' => $passengerUsername,
+            'driver_username' => $booking['driver_username'] ?? 'Unknown',
+            'ride_id' => new ObjectId($rideId),
+            'amount' => (float)$amount,
+            'status' => 'paid',
+            'transaction_id' => 'TXN' . strtoupper(uniqid()),
+            'method' => $paymentMethod,
+            'created_at' => new MongoDB\BSON\UTCDateTime(),
+            'updated_at' => new MongoDB\BSON\UTCDateTime()
+        ];
+
+        $payments->insertOne($paymentDoc);
+
+        // Update booking to "completed"
+        $bookings->updateOne(
+            [
+                'ride_id' => new ObjectId($rideId),
+                'passenger_username' => $passengerUsername
+            ],
+            ['$set' => ['status' => 'completed']]
+        );
+
+        return [
+            "success" => true,
+            "message" => "Payment recorded and booking marked as completed."
+        ];
+
+    } catch (Exception $e) {
+        return ["success" => false, "message" => "Error recording payment: " . $e->getMessage()];
+    }
+}
 
 if (isset($_GET['action']) && $_GET['action'] === 'createBooking') {
     header('Content-Type: application/json');
@@ -582,6 +635,24 @@ if (isset($_GET['action']) && $_GET['action'] === 'createBooking') {
         exit;
     }
     $result = createBooking($passengerUsername, $rideId, $db);
+    echo json_encode($result, JSON_PRETTY_PRINT);
+    exit;
+}
+if (isset($_GET['action']) && $_GET['action'] === 'recordPayment') {
+    header('Content-Type: application/json');
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    $passengerUsername = $input['passenger_username'] ?? null;
+    $rideId = $input['ride_id'] ?? null;
+    $paymentMethod = $input['payment_method'] ?? null;
+    $amount = $input['payment_amount'] ?? 0;
+
+    if (!$passengerUsername || !$rideId) {
+        echo json_encode(["success" => false, "message" => "Missing required fields."]);
+        exit;
+    }
+
+    $result = recordPayment($passengerUsername, $rideId, $paymentMethod, $amount, $db);
     echo json_encode($result, JSON_PRETTY_PRINT);
     exit;
 }
