@@ -171,12 +171,6 @@ function renderMainContent() {
                     <div class="rides-section">
                         <div class="rides-header">
                             <h2>Available Rides</h2>
-                            <button class="btn-filter">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M3 7h18M6 12h12M9 17h6"/>
-                                </svg>
-                                Filters
-                            </button>
                         </div>
 
                         <div class="filter-chips">
