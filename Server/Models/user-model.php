@@ -510,7 +510,7 @@ function createBooking($passengerUsername, $rideId, $db) {
         $rides = $db->rides;
         $bookings = $db->bookings;
 
-        // Find the ride
+        // find ride
         $ride = $rides->findOne(['_id' => new ObjectId($rideId)]);
         if (!$ride) {
             return ["success" => false, "message" => "Ride not found."];
@@ -528,19 +528,14 @@ function createBooking($passengerUsername, $rideId, $db) {
         $existing = $bookings->findOne([
             'ride_id' => new ObjectId($rideId),
             'passenger_username' => $passengerUsername,
-            'status' => ['$in' => ['pending', 'completed']]
+            'status' => ['$in' => ['pending', 'confirmed', 'completed']]
         ]);
 
         if ($existing) {
-            return [
-                "success" => true,
-                "message" => "Booking already exists.",
-                "booking_id" => (string)$existing['_id']
-            ];
+            return ["success" => false, "message" => "You have already booked this ride."];
         }
 
-
-        // booking document 
+        // format for booking document
         $bookingDoc = [
             'ride_id' => new ObjectId($rideId),
             'passenger_username' => $passengerUsername,
@@ -548,17 +543,26 @@ function createBooking($passengerUsername, $rideId, $db) {
             'plate_number' => $ride['plate_number'] ?? '',
             'fare' => $ride['fare'] ?? 0,
             'date' => $ride['date'] ?? date('Y-m-d'),
-            'status' => 'pending',   // or 'confirmed' after payment verification
+            'status' => 'pending', // still pending until payment
             'created_at' => new UTCDateTime()
         ];
 
-        // Insert
+        // insert
         $result = $bookings->insertOne($bookingDoc);
 
-        // decrement seats
+        // decrement available seats
         $rides->updateOne(
             ['_id' => new ObjectId($rideId), 'available_seats' => ['$gt' => 0]],
             ['$inc' => ['available_seats' => -1]]
+        );
+
+        // --- Add passenger name to ride document (if not already there)
+        $rides->updateOne(
+            ['_id' => new ObjectId($rideId)],
+            [
+                // ✅ $addToSet ensures no duplicate passenger names
+                '$addToSet' => ['passengers' => $passengerUsername]
+            ]
         );
 
         return [
@@ -588,7 +592,18 @@ function recordPayment($passengerUsername, $rideId, $paymentMethod, $amount, $db
         if (!$booking) {
             return ["success" => false, "message" => "Booking not found for payment."];
         }
+        $existingPayment = $payments->findOne([
+            'ride_id' => new ObjectId($rideId),
+            'passenger_username' => $passengerUsername,
+            'status' => 'paid'
+        ]);
 
+        if ($existingPayment) {
+            return [
+                "success" => false,
+                "message" => "Payment already exists for this booking."
+            ];
+        }
         // Create payment record
         $paymentDoc = [
             'passenger_username' => $passengerUsername,
