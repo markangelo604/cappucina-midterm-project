@@ -259,20 +259,94 @@ function processPayment(method) {
 }
 
 // Redirect to Confirmation Page
-function redirectToConfirmation(paymentData) {
-    // Store confirmation data
-    sessionStorage.setItem('confirmationData', JSON.stringify({
-        ...paymentData,
-        status: 'success',
-        confirmation_number: 'ML' + Math.random().toString(36).substr(2, 9).toUpperCase()
-    }));
-    
-    // Redirect to confirmation page (you'll need to create this)
-    // For now, show success message
-    alert(`Payment Successful!\n\nBooking ID: ${paymentData.booking_id}\nAmount Paid: ₱${paymentData.amount}\n\nYou will receive a confirmation email shortly.`);
-    
-    // Redirect to bookings page or home
-    window.location.href = '../html/booking.html';
+async function redirectToConfirmation(paymentData) {
+    try {
+        // store confirmation data
+        sessionStorage.setItem('confirmationData', JSON.stringify({
+            ...paymentData,
+            status: 'success',
+            confirmation_number: 'ML' + Math.random().toString(36).substr(2, 9).toUpperCase()
+        }));
+
+        // booking details
+        const bookingData = JSON.parse(sessionStorage.getItem('bookingData'));
+        const userData = JSON.parse(sessionStorage.getItem('userData')) || {};
+
+        if (!userData?.name || !bookingData?._id) {
+            alert('⚠️ Missing booking or user data. Cannot create booking.');
+            return;
+        }
+
+        // booking payload
+        const payload = {
+            passenger_username: userData.name,                
+            ride_id: bookingData._id || bookingData.id,     
+            driver_username: bookingData.username || 'Unknown',
+            plate_number: bookingData.plate_number || '',
+            fare: parseFloat((bookingData.price || '0').replace(/[₱,]/g, '')),
+            date: bookingData.date || new Date().toISOString(),
+            payment_method: paymentData.method,
+            payment_amount: paymentData.amount
+        };
+
+        console.log('Sending payload:', payload);
+
+        // call createBooking
+        const response = await fetch('../Server/Models/user-model.php?action=createBooking', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        console.log('API result:', result);
+
+        if (result.success) {
+            alert(`✅ Payment Successful!\n\nBooking confirmed.\nBooking ID: ${result.booking_id}\nAmount Paid: ₱${paymentData.amount}`);
+        } else {
+            alert(`⚠️ Booking failed: ${result.message}`);
+        }
+            window.location.href = '../html/booking.html';
+
+    } catch (error) {
+        console.error('Error saving booking:', error);
+        alert('⚠️ Payment succeeded, but we encountered an error saving your booking.');
+    }
+}
+
+async function createBookingAfterPayment() {
+    const bookingData = JSON.parse(sessionStorage.getItem('bookingData'));
+    const userData = JSON.parse(sessionStorage.getItem('userData'));
+
+    console.log('bookingData:', bookingData);
+    console.log('userData:', userData);
+
+    if (!userData?.name || !bookingData?._id) {
+        alert('⚠️ Missing booking or user data. Cannot create booking.');
+        return;
+    }
+
+    const payload = {
+        passenger_username: userData.name,  
+        ride_id: bookingData._id || bookingData.id 
+    };
+
+    console.log('Sending payload:', payload);
+
+    const response = await fetch('../php/user-model.php?action=createBooking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    console.log('API result:', result);
+
+    if (result.success) {
+        alert(`✅ Booking created!\nBooking ID: ${result.booking_id}`);
+    } else {
+        alert(`⚠️ Booking failed: ${result.message}`);
+    }
 }
 
 // Phone number formatting

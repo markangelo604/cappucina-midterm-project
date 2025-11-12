@@ -505,7 +505,86 @@ function viewAllAvailableRides() {
         ];
     }
 }
+function createBooking($passengerUsername, $rideId, $db) {
+    try {
+        $rides = $db->rides;
+        $bookings = $db->bookings;
 
+        // Find the ride
+        $ride = $rides->findOne(['_id' => new ObjectId($rideId)]);
+        if (!$ride) {
+            return ["success" => false, "message" => "Ride not found."];
+        }
+
+        if (($ride['ride_status'] ?? '') !== 'upcoming') {
+            return ["success" => false, "message" => "Ride not available for booking."];
+        }
+
+        if (($ride['available_seats'] ?? 0) <= 0) {
+            return ["success" => false, "message" => "No seats available."];
+        }
+
+        // no duplicate booking by same passenger
+        $existing = $bookings->findOne([
+            'ride_id' => new ObjectId($rideId),
+            'passenger_username' => $passengerUsername,
+            'status' => ['$in' => ['pending', 'completed']]
+        ]);
+
+        if ($existing) {
+            return ["success" => false, "message" => "You have already booked this ride."];
+        }
+
+        // booking document 
+        $bookingDoc = [
+            'ride_id' => new ObjectId($rideId),
+            'passenger_username' => $passengerUsername,
+            'driver_username' => $ride['driver_username'] ?? 'Unknown',
+            'plate_number' => $ride['plate_number'] ?? '',
+            'fare' => $ride['fare'] ?? 0,
+            'date' => $ride['date'] ?? date('Y-m-d'),
+            'status' => 'completed',   // or 'confirmed' after payment verification
+            'created_at' => new UTCDateTime()
+        ];
+
+        // Insert
+        $result = $bookings->insertOne($bookingDoc);
+
+        // decrement seats
+        $rides->updateOne(
+            ['_id' => new ObjectId($rideId), 'available_seats' => ['$gt' => 0]],
+            ['$inc' => ['available_seats' => -1]]
+        );
+
+        return [
+            "success" => true,
+            "message" => "Booking created successfully.",
+            "booking_id" => (string)$result->getInsertedId()
+        ];
+
+    } catch (Exception $e) {
+        return [
+            "success" => false,
+            "message" => "Error creating booking: " . $e->getMessage()
+        ];
+    }
+}
+
+if (isset($_GET['action']) && $_GET['action'] === 'createBooking') {
+    header('Content-Type: application/json');
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    $passengerUsername = $input['passenger_username'] ?? null;
+    $rideId = $input['ride_id'] ?? null;
+
+    if (!$passengerUsername || !$rideId) {
+        echo json_encode(["success" => false, "message" => "Missing passenger username or ride ID."]);
+        exit;
+    }
+    $result = createBooking($passengerUsername, $rideId, $db);
+    echo json_encode($result, JSON_PRETTY_PRINT);
+    exit;
+}
 
 
 ?>
