@@ -67,12 +67,6 @@ try {
         if (!$driver) {
             sendResponse(false, 'Driver not found');
         }
-        
-        // Get driver's vehicle info
-        $plateNumber = null;
-        if (isset($driver['vehicle']) && is_array($driver['vehicle']) && count($driver['vehicle']) > 0) {
-            $plateNumber = $driver['vehicle'][0]['plate_number'] ?? null;
-        }
     }
     
     // ==========================================
@@ -93,6 +87,7 @@ try {
             $formattedRides[] = [
                 '_id' => (string)$ride['_id'],
                 'id' => (string)$ride['_id'],
+                'plate_number' => $ride['plate_number'] ?? 'N/A',
                 'pickup' => $ride['from'] ?? '',
                 'destination' => $ride['to'] ?? '',
                 'date' => $ride['date'] ?? '',
@@ -123,11 +118,17 @@ try {
         }
         
         // Validate required fields
-        $required = ['pickup', 'destination', 'date', 'time', 'seats', 'price'];
+        $required = ['plate_number', 'pickup', 'destination', 'date', 'time', 'seats', 'price'];
         foreach ($required as $field) {
-            if (empty($input[$field])) {
+            if (empty($input[$field]) && $input[$field] !== 0) {
                 sendResponse(false, "Field '{$field}' is required");
             }
+        }
+        
+        // Validate plate number format (basic validation)
+        $plateNumber = strtoupper(trim($input['plate_number']));
+        if (strlen($plateNumber) < 3 || strlen($plateNumber) > 15) {
+            sendResponse(false, 'Invalid plate number format');
         }
         
         // Validate date is not in the past
@@ -150,7 +151,7 @@ try {
         // Create ride document
         $newRide = [
             'driver_username' => $driverUsername,
-            'plate_number' => $plateNumber ?? 'N/A',
+            'plate_number' => $plateNumber,
             'from' => $input['pickup'],
             'to' => $input['destination'],
             'date' => $input['date'],
@@ -219,6 +220,14 @@ try {
         
         // Prepare update data
         $updateData = [];
+        
+        if (isset($input['plate_number'])) {
+            $plateNumber = strtoupper(trim($input['plate_number']));
+            if (strlen($plateNumber) < 3 || strlen($plateNumber) > 15) {
+                sendResponse(false, 'Invalid plate number format');
+            }
+            $updateData['plate_number'] = $plateNumber;
+        }
         
         if (isset($input['pickup'])) {
             $updateData['from'] = $input['pickup'];

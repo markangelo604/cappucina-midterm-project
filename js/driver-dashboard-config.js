@@ -1,5 +1,5 @@
 // ========================================
-// DRIVER DASHBOARD JAVASCRIPT - FIXED WITH ENHANCED DEBUGGING
+// DRIVER DASHBOARD JAVASCRIPT - WITH PLATE NUMBER
 // ========================================
 
 // Get driver username from session
@@ -126,6 +126,7 @@ async function createRide(rideData) {
         
         const payload = {
             driver_username: driverUsername,
+            plate_number: rideData.plateNumber,
             pickup: rideData.pickup,
             destination: rideData.destination,
             date: rideData.date,
@@ -179,6 +180,7 @@ async function updateRide(rideId, rideData) {
         const payload = {
             driver_username: driverUsername,
             ride_id: rideId,
+            plate_number: rideData.plateNumber,
             pickup: rideData.pickup,
             destination: rideData.destination,
             date: rideData.date,
@@ -266,6 +268,7 @@ async function handleAddDestination(e) {
     
     // Get form data
     const formData = {
+        plateNumber: document.getElementById('plateNumber').value.trim().toUpperCase(),
         pickup: document.getElementById('pickup').value.trim(),
         destination: document.getElementById('destination').value.trim(),
         date: document.getElementById('date').value,
@@ -278,6 +281,12 @@ async function handleAddDestination(e) {
     console.log('Form data:', formData);
     
     // Validate form data
+    if (!formData.plateNumber) {
+        console.error('❌ Validation failed: Missing plate number');
+        showError('Please enter your vehicle plate number');
+        return;
+    }
+    
     if (!formData.pickup || !formData.destination) {
         console.error('❌ Validation failed: Missing pickup or destination');
         showError('Please enter pickup and destination locations');
@@ -352,6 +361,7 @@ function renderDestinations() {
         <div class="destination-card" data-id="${dest.id}">
             <div class="destination-header">
                 <span class="destination-status ${dest.status}">${dest.status}</span>
+                <span class="plate-badge">${dest.plate_number || 'N/A'}</span>
                 ${dest.passengers > 0 ? `<span class="passengers-badge">${dest.passengers} passenger${dest.passengers > 1 ? 's' : ''}</span>` : ''}
             </div>
             
@@ -482,6 +492,7 @@ function editDestination(destinationId) {
     }
     
     // Populate form
+    document.getElementById('plateNumber').value = destination.plate_number || '';
     document.getElementById('pickup').value = destination.pickup;
     document.getElementById('destination').value = destination.destination;
     document.getElementById('date').value = destination.date;
@@ -522,6 +533,7 @@ async function handleUpdateDestination(e) {
     
     // Get form data
     const formData = {
+        plateNumber: document.getElementById('plateNumber').value.trim().toUpperCase(),
         pickup: document.getElementById('pickup').value.trim(),
         destination: document.getElementById('destination').value.trim(),
         date: document.getElementById('date').value,
@@ -800,6 +812,16 @@ style.textContent = `
 .empty-state h3 {
     margin-bottom: 10px;
     color: #333;
+}
+
+.plate-badge {
+    background: #073066;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 `;
 document.head.appendChild(style);

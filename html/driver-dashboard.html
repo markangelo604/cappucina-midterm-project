@@ -16,7 +16,7 @@
                     <img src="../images/merrylift-transparent.png" alt="Logo">
                 </div>
                 <ul class="nav-menu">
-                    <li><a href="driver.html" class="active">My Rides</a></li>
+                    <li><a href="driver-dashboard.html" class="active">My Rides</a></li>
                 </ul>
                 <div class="nav-buttons">
                     <button class="btn-outline">Profile</button>
@@ -38,6 +38,20 @@
             <div class="add-destination-card">
                 <h2>Add New Destination</h2>
                 <form id="addDestinationForm" class="destination-form">
+                    <!-- Vehicle Info Row -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="plateNumber">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <rect x="2" y="5" width="12" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                                    <rect x="4" y="6.5" width="8" height="3" rx="0.5" fill="currentColor"/>
+                                </svg>
+                                Plate Number
+                            </label>
+                            <input type="text" id="plateNumber" name="plateNumber" placeholder="e.g., ABC-1234" required pattern="[A-Za-z0-9\-]+" title="Please enter a valid plate number">
+                        </div>
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="pickup">
