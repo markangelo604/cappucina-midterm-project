@@ -625,7 +625,7 @@ function recordPayment($passengerUsername, $rideId, $paymentMethod, $amount, $db
                 'ride_id' => new ObjectId($rideId),
                 'passenger_username' => $passengerUsername
             ],
-            ['$set' => ['status' => 'completed']]
+            ['$set' => ['status' => 'pending']]
         );
 
         return [

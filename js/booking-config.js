@@ -30,7 +30,7 @@ async function fetchBookings() {
         // Get username from session storage or URL parameter
         // In production, this should come from authenticated session
         const urlParams = new URLSearchParams(window.location.search);
-        const username = urlParams.get('username') || sessionStorage.getItem('username') || 'passenger1';
+        const username = urlParams.get('username') || sessionStorage.getItem('username');
         
         const response = await fetch(`../php/get-bookings.php?username=${username}`);
         const data = await response.json();
