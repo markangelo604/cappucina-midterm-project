@@ -38,10 +38,11 @@ try {
     $ridesCollection = $db->rides;
     
     // Find all bookings for this passenger
+      $sessionName = $_GET['name'] ?? ($_SESSION['name'] ?? '');
      $bookings = $bookingsCollection->find([
         '$or' => [
-            ['passenger_username' => $username],
-            ['passenger_username' => $_SESSION['name'] ?? $username]
+        ['passenger_username' => $username],
+        ['passenger_username' => $sessionName],
         ]
     ])->toArray();
     

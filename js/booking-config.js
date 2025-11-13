@@ -27,14 +27,22 @@ navMenu.innerHTML = navItems.map(item => `
 // --- Fetch Bookings from Database ---
 async function fetchBookings() {
     try {
-        // Get username from session storage or URL parameter
-        // In production, this should come from authenticated session
-        const urlParams = new URLSearchParams(window.location.search);
-        const username = urlParams.get('username') || sessionStorage.getItem('username');
-        
-        const response = await fetch(`../php/get-bookings.php?username=${username}`);
+     const urlParams = new URLSearchParams(window.location.search);
+        const storedUser = JSON.parse(sessionStorage.getItem('userData') || '{}');
+
+        const name =
+            urlParams.get('name') ||
+            storedUser.name ||
+            storedUser.displayName || 
+            'guest';
+
+        const response = await fetch(
+            `../php/get-bookings.php?username=${(name)}`,
+            { credentials: 'include' }
+        );
+
         const data = await response.json();
-        
+
         if (data.success) {
             bookings = data.bookings;
             displayBookings(bookings);
