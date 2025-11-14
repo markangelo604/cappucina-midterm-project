@@ -143,13 +143,13 @@ function displayBookings(bookingsToShow) {
 
                     <div class="action-buttons">
                         ${booking.status === 'Confirmed' || booking.status === 'Pending' ? `
-                            <button class="btn-secondary" onclick="viewDetails('${booking.id}')">View Details</button>
-                            <button class="btn-danger" onclick="cancelBooking('${booking.id}')">Cancel Booking</button>
+                            <button class="btn-secondary" onclick="viewDetails('${booking.booking_id}')">View Details</button>
+                            <button class="btn-danger" onclick="cancelBooking('${booking.booking_id}', event)">Cancel Booking</button>
                         ` : booking.status === 'Completed' ? `
-                            <button class="btn-secondary" onclick="viewDetails('${booking.id}')">View Details</button>
-                            <button class="btn-primary-action" onclick="rateDriver('${booking.id}')">Rate Driver</button>
+                            <button class="btn-secondary" onclick="viewDetails('${booking.booking_id}')">View Details</button>
+                            <button class="btn-primary-action" onclick="rateDriver('${booking.booking_id}')">Rate Driver</button>
                         ` : `
-                            <button class="btn-secondary" onclick="viewDetails('${booking.id}')">View Details</button>
+                            <button class="btn-secondary" onclick="viewDetails('${booking.booking_id}')">View Details</button>
                         `}
                     </div>
                 </div>
@@ -224,12 +224,91 @@ function viewDetails(bookingId) {
     // Implement view details functionality
 }
 
-function cancelBooking(bookingId) {
-    if (confirm(`Are you sure you want to cancel booking ${bookingId}?`)) {
-        // Implement cancel booking functionality
-        alert(`Booking ${bookingId} has been cancelled.`);
-        // Refresh bookings
-        fetchBookings();
+async function cancelBooking(bookingId, event) {
+    // Prevent any default behavior
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    // Clean the booking ID - remove any # or extra characters
+    const cleanBookingId = String(bookingId).replace(/[#\s]/g, '');
+    
+    console.log('Original booking ID:', bookingId);
+    console.log('Cleaned booking ID:', cleanBookingId);
+
+    // Get cancel reason from user
+    const reason = prompt('Please provide a reason for cancellation (optional):');
+    
+    // If user clicks cancel on the prompt, don't proceed
+    if (reason === null) {
+        return;
+    }
+
+    // Confirm cancellation
+    if (!confirm(`Are you sure you want to cancel booking #${cleanBookingId}?`)) {
+        return;
+    }
+
+    try {
+        // Show loading state
+        const button = event?.target;
+        const originalText = button?.textContent || 'Cancel Booking';
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Cancelling...';
+        }
+
+        console.log('Sending cancel request with:', {
+            booking_id: cleanBookingId,
+            cancel_reason: reason || 'No reason provided'
+        });
+
+        const response = await fetch('../php/cancel-booking.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                booking_id: cleanBookingId,
+                cancel_reason: reason || 'No reason provided'
+            })
+        });
+
+        console.log('Response status:', response.status);
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON response');
+        }
+
+        const data = await response.json();
+        console.log('Response data:', data);
+
+        if (data.success) {
+            alert('Booking cancelled successfully!');
+            // Refresh bookings to show updated status
+            await fetchBookings();
+        } else {
+            alert(`Failed to cancel booking: ${data.message}`);
+            // Re-enable button if failed
+            if (button) {
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        }
+    } catch (error) {
+        console.error('Error cancelling booking:', error);
+        alert('Failed to cancel booking. Please try again later.');
+        
+        // Re-enable button on error
+        const button = event?.target;
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'Cancel Booking';
+        }
     }
 }
 
