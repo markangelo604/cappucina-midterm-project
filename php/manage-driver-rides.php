@@ -2,6 +2,7 @@
 /**
  * Driver Rides Management Endpoint
  * Handles CRUD operations for driver rides/destinations
+ * NOW WITH COMPLETE RIDE SUPPORT
  */
 
 header('Content-Type: application/json');
@@ -184,7 +185,7 @@ try {
     }
     
     // ==========================================
-    // PUT - Update existing ride
+    // PUT - Update existing ride OR Complete ride
     // ==========================================
     if ($method === 'PUT') {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -213,9 +214,50 @@ try {
             sendResponse(false, 'Ride not found or you do not have permission to edit it');
         }
         
+        // CHECK IF THIS IS A COMPLETE REQUEST
+        if (isset($input['status']) && $input['status'] === 'completed') {
+            // Mark ride as completed
+            $result = $ridesCollection->updateOne(
+                ['_id' => $rideId],
+                ['$set' => [
+                    'ride_status' => 'completed',
+                    'completed_at' => new MongoDB\BSON\UTCDateTime()
+                ]]
+            );
+            
+            if ($result->getModifiedCount() > 0 || $result->getMatchedCount() > 0) {
+                // ALSO UPDATE ALL BOOKINGS FOR THIS RIDE TO COMPLETED STATUS
+                $bookingsCollection = $db->bookings;
+                $bookingsResult = $bookingsCollection->updateMany(
+                    [
+                        'ride_id' => $rideId,
+                        'status' => ['$in' => ['pending', 'ongoing']]
+                    ],
+                    ['$set' => [
+                        'status' => 'completed',
+                        'completed_at' => new MongoDB\BSON\UTCDateTime()
+                    ]]
+                );
+                
+                sendResponse(true, 'Ride marked as completed', [
+                    'modified' => $result->getModifiedCount(),
+                    'bookings_updated' => $bookingsResult->getModifiedCount()
+                ]);
+            } else {
+                sendResponse(false, 'Failed to complete ride');
+            }
+        }
+        
+        // OTHERWISE, THIS IS A REGULAR UPDATE
+        
         // Check if ride has passengers
         if (isset($ride['passengers']) && count($ride['passengers']) > 0) {
             sendResponse(false, 'Cannot edit ride with existing bookings. Please cancel the ride instead.');
+        }
+        
+        // Check if ride is completed
+        if (isset($ride['ride_status']) && $ride['ride_status'] === 'completed') {
+            sendResponse(false, 'Cannot edit completed rides');
         }
         
         // Prepare update data

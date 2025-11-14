@@ -2,6 +2,7 @@
 /**
  * Get Bookings Endpoint
  * Fetches bookings for a specific user from MongoDB
+ * NOW WITH COMPLETED STATUS SUPPORT
  */
 
 header('Content-Type: application/json');
@@ -38,11 +39,11 @@ try {
     $ridesCollection = $db->rides;
     
     // Find all bookings for this passenger
-      $sessionName = $_GET['name'] ?? ($_SESSION['name'] ?? '');
-     $bookings = $bookingsCollection->find([
+    $sessionName = $_GET['name'] ?? ($_SESSION['name'] ?? '');
+    $bookings = $bookingsCollection->find([
         '$or' => [
-        ['passenger_username' => $username],
-        ['passenger_username' => $sessionName],
+            ['passenger_username' => $username],
+            ['passenger_username' => $sessionName],
         ]
     ])->toArray();
     
@@ -83,8 +84,17 @@ try {
         $colorIndex = ord($initials[0] ?? 'A') % count($colors);
         $driverColor = $colors[$colorIndex];
         
-        // Determine status class
-        $statusClass = strtolower($booking['status']);
+        // Determine booking status based on both booking and ride status
+        $bookingStatus = $booking['status'];
+        $rideStatus = $ride['ride_status'] ?? 'upcoming';
+        
+        // If ride is completed, mark booking as completed too
+        if ($rideStatus === 'completed' && $bookingStatus !== 'cancelled') {
+            $bookingStatus = 'completed';
+        }
+        
+        // Determine status class for UI
+        $statusClass = strtolower($bookingStatus);
         if ($statusClass === 'pending') {
             $statusClass = 'confirmed';
         }
@@ -104,12 +114,25 @@ try {
             }
         }
         
+        // Determine payment/ride status message
+        $paymentStatus = 'Pending';
+        if ($bookingStatus === 'completed') {
+            $paymentStatus = 'Ride completed';
+        } elseif ($bookingStatus === 'cancelled') {
+            $paymentStatus = 'Refunded';
+        } elseif ($bookingStatus === 'confirmed' || $bookingStatus === 'pending') {
+            $paymentStatus = ucfirst($bookingStatus);
+        }
+        
         // Format booking data
         $formattedBooking = [
             'id' => '#' . substr((string)$booking['_id'], -5),
-            'status' => ucfirst($booking['status']),
+            'booking_id' => (string)$booking['_id'],
+            'ride_id' => (string)$booking['ride_id'],
+            'status' => ucfirst($bookingStatus),
             'status_class' => $statusClass,
             'driver_name' => $driverName,
+            'driver_username' => $booking['driver_username'],
             'driver_initials' => $initials,
             'driver_color' => $driverColor,
             'rating' => $rating,
@@ -118,14 +141,23 @@ try {
             'destination' => $ride['to'] ?? 'N/A',
             'date' => formatDateTime($ride['time'] ?? '', $ride['date'] ?? ''),
             'passengers' => '1 seat booked', // You can enhance this based on actual booking
-            'payment_status' => $booking['status'] === 'completed' ? 'Ride completed' : ucfirst($booking['status']),
-            'price' => formatPrice($booking['fare'] ?? 0)
+            'payment_status' => $paymentStatus,
+            'price' => formatPrice($booking['fare'] ?? 0),
+            'plate_number' => $booking['plate_number'] ?? ($ride['plate_number'] ?? 'N/A')
         ];
         
         // Add cancellation info if cancelled
-        if ($booking['status'] === 'cancelled') {
+        if ($bookingStatus === 'cancelled') {
             $formattedBooking['cancel_reason'] = $booking['cancel_reason'] ?? 'Cancelled by user';
-            $formattedBooking['payment_status'] = 'Refunded';
+        }
+        
+        // Add completion timestamp if available
+        if ($bookingStatus === 'completed') {
+            if (isset($booking['completed_at'])) {
+                $formattedBooking['completed_at'] = $booking['completed_at']->toDateTime()->format('Y-m-d H:i:s');
+            } elseif (isset($ride['completed_at'])) {
+                $formattedBooking['completed_at'] = $ride['completed_at']->toDateTime()->format('Y-m-d H:i:s');
+            }
         }
         
         $formattedBookings[] = $formattedBooking;

@@ -1,5 +1,5 @@
 // ========================================
-// DRIVER DASHBOARD JAVASCRIPT - WITH PLATE NUMBER
+// DRIVER DASHBOARD JAVASCRIPT - WITH COMPLETE BUTTON
 // ========================================
 
 // Get driver username from session
@@ -215,6 +215,51 @@ async function updateRide(rideId, rideData) {
         }
     } catch (error) {
         console.error('❌ Error updating ride:', error);
+        hideLoading();
+        showError('Failed to connect to server: ' + error.message);
+        return false;
+    }
+}
+
+/**
+ * Complete ride - mark as completed
+ */
+async function completeRide(rideId) {
+    try {
+        console.log('✅ Completing ride:', rideId);
+        showLoading('Completing ride...');
+        
+        const payload = {
+            driver_username: driverUsername,
+            ride_id: rideId,
+            status: 'completed'
+        };
+        
+        console.log('PUT request payload:', payload);
+        
+        const response = await fetch('../php/manage-driver-rides.php', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        console.log('Complete ride response:', data);
+        
+        if (data.success) {
+            console.log('✅ Ride completed successfully');
+            hideLoading();
+            return true;
+        } else {
+            console.error('❌ Failed to complete ride:', data.message);
+            hideLoading();
+            showError(data.message || 'Failed to complete ride');
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Error completing ride:', error);
         hideLoading();
         showError('Failed to connect to server: ' + error.message);
         return false;
@@ -439,13 +484,21 @@ function renderDestinations() {
             ` : ''}
             
             <div class="destination-actions">
-                <button class="btn-edit" onclick="editDestination('${dest.id}')" ${dest.passengers > 0 ? 'disabled title="Cannot edit ride with bookings"' : ''}>
+                ${dest.status === 'upcoming' ? `
+                    <button class="btn-complete" onclick="handleCompleteRide('${dest.id}')" title="Mark as completed">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                        </svg>
+                        Complete
+                    </button>
+                ` : ''}
+                <button class="btn-edit" onclick="editDestination('${dest.id}')" ${dest.passengers > 0 || dest.status === 'completed' ? 'disabled title="Cannot edit ride with bookings or completed rides"' : ''}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                         <path d="M12.854 1.146a.5.5 0 0 0-.708 0L11 2.293 13.707 5l1.147-1.146a.5.5 0 0 0 0-.708l-2-2zM10.5 2.793 2.793 10.5l-.793 3.793 3.793-.793 7.707-7.707L10.5 2.793z"/>
                     </svg>
                     Edit
                 </button>
-                <button class="btn-delete" onclick="deleteDestination('${dest.id}')">
+                <button class="btn-delete" onclick="deleteDestination('${dest.id}')" ${dest.status === 'completed' ? 'title="Delete completed ride"' : ''}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                         <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
                         <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
@@ -460,8 +513,22 @@ function renderDestinations() {
 }
 
 // ========================================
-// EDIT & DELETE FUNCTIONS
+// EDIT, DELETE & COMPLETE FUNCTIONS
 // ========================================
+
+async function handleCompleteRide(destinationId) {
+    if (!confirm('Mark this ride as completed?')) {
+        return;
+    }
+    
+    const success = await completeRide(destinationId);
+    
+    if (success) {
+        // Reload destinations
+        await loadDestinations();
+        showSuccessMessage('Ride marked as completed!');
+    }
+}
 
 async function deleteDestination(destinationId) {
     if (!confirm('Are you sure you want to delete this ride?')) {
@@ -485,9 +552,14 @@ function editDestination(destinationId) {
         return;
     }
     
-    // Check if ride has passengers
+    // Check if ride has passengers or is completed
     if (destination.passengers > 0) {
         showError('Cannot edit ride with existing bookings');
+        return;
+    }
+    
+    if (destination.status === 'completed') {
+        showError('Cannot edit completed rides');
         return;
     }
     
@@ -791,6 +863,36 @@ style.textContent = `
 .btn-edit:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.btn-complete {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-complete:hover {
+    background: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-complete:active {
+    transform: translateY(0);
+}
+
+.destination-status.completed {
+    background: #28a745;
+    color: white;
 }
 
 .empty-state {
