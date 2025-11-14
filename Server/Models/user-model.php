@@ -598,12 +598,6 @@ function recordPayment($passengerUsername, $rideId, $paymentMethod, $amount, $db
             'status' => 'paid'
         ]);
 
-        if ($existingPayment) {
-            return [
-                "success" => false,
-                "message" => "Payment already exists for this booking."
-            ];
-        }
         // Create payment record
         $paymentDoc = [
             'passenger_username' => $passengerUsername,
