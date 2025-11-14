@@ -93,6 +93,11 @@ try {
             $bookingStatus = 'completed';
         }
         
+        // If ride is cancelled, mark booking as cancelled too
+        if ($rideStatus === 'cancelled' && $bookingStatus !== 'cancelled') {
+            $bookingStatus = 'cancelled';
+        }
+        
         // Determine status class for UI
         $statusClass = strtolower($bookingStatus);
         if ($statusClass === 'pending') {

@@ -231,7 +231,7 @@ try {
                 $bookingsResult = $bookingsCollection->updateMany(
                     [
                         'ride_id' => $rideId,
-                        'status' => ['$in' => ['pending', 'ongoing']]
+                        'status' => ['$in' => ['pending', 'confirmed']]
                     ],
                     ['$set' => [
                         'status' => 'completed',
@@ -350,13 +350,30 @@ try {
                 ['_id' => $rideObjectId],
                 ['$set' => [
                     'ride_status' => 'cancelled',
-                    'cancelled_at' => new MongoDB\BSON\UTCDateTime()
+                    'cancelled_at' => new MongoDB\BSON\UTCDateTime(),
+                    'cancelled_by' => 'driver'
                 ]]
             );
             
             if ($result->getModifiedCount() > 0) {
+                // ALSO CANCEL ALL BOOKINGS FOR THIS RIDE
+                $bookingsCollection = $db->bookings;
+                $bookingsResult = $bookingsCollection->updateMany(
+                    [
+                        'ride_id' => $rideObjectId,
+                        'status' => ['$in' => ['pending', 'confirmed', 'ongoing']]
+                    ],
+                    ['$set' => [
+                        'status' => 'cancelled',
+                        'cancelled_at' => new MongoDB\BSON\UTCDateTime(),
+                        'cancelled_by' => 'driver',
+                        'cancel_reason' => 'Ride cancelled by driver'
+                    ]]
+                );
+                
                 sendResponse(true, 'Ride cancelled successfully (had bookings)', [
-                    'action' => 'cancelled'
+                    'action' => 'cancelled',
+                    'bookings_cancelled' => $bookingsResult->getModifiedCount()
                 ]);
             } else {
                 sendResponse(false, 'Failed to cancel ride');
