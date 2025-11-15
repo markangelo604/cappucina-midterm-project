@@ -592,11 +592,6 @@ function recordPayment($passengerUsername, $rideId, $paymentMethod, $amount, $db
         if (!$booking) {
             return ["success" => false, "message" => "Booking not found for payment."];
         }
-        $existingPayment = $payments->findOne([
-            'ride_id' => new ObjectId($rideId),
-            'passenger_username' => $passengerUsername,
-            'status' => 'paid'
-        ]);
 
         // Create payment record
         $paymentDoc = [
