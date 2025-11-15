@@ -69,19 +69,19 @@ navItems.forEach(item => {
 
 // Populate Summary
 function populateSummary() {
-    document.getElementById("summary-pickup").textContent = bookingData.departure_location;
-    document.getElementById("summary-pickup-time").textContent = bookingData.departure_time;
-    document.getElementById("summary-destination").textContent = bookingData.arrival_location;
+    document.getElementById("summary-pickup").textContent = bookingData.from;
+    document.getElementById("summary-pickup-time").textContent = bookingData.time;
+    document.getElementById("summary-destination").textContent = bookingData.to;
     document.getElementById("summary-arrival-time").textContent = bookingData.arrival_time;
     
     const driverAvatar = document.getElementById("summary-driver-avatar");
-    driverAvatar.textContent = bookingData.driver_initials;
+    driverAvatar.textContent = getInitials(bookingData.name);
     driverAvatar.style.backgroundColor = bookingData.driver_color;
     
-    document.getElementById("summary-driver-name").textContent = bookingData.driver_name;
+    document.getElementById("summary-driver-name").textContent = bookingData.driver_name || bookingData.username || bookingData.name;
     document.getElementById("summary-rating").textContent = bookingData.rating;
-    document.getElementById("summary-vehicle").textContent = `${bookingData.vehicle} • ${bookingData.seats} Seats`;
-    
+    document.getElementById("summary-vehicle").textContent = `${bookingData.car_details.model} • ${bookingData.car_details.seats} Seats`;
+   
     document.getElementById("summary-passenger-name").textContent = bookingData.passenger_name || "-";
     document.getElementById("summary-passenger-phone").textContent = bookingData.passenger_phone || "-";
     document.getElementById("summary-num-passengers").textContent = bookingData.num_passengers ? `${bookingData.num_passengers} Passenger(s)` : "-";
@@ -384,7 +384,14 @@ function formatPhoneNumber(input) {
         e.target.value = value;
     });
 }
-
+function getInitials(name) {
+    return name
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+}
 // Apply phone formatting to all phone inputs
 const gcashNumber = document.getElementById('gcashNumber');
 const paymayaNumber = document.getElementById('paymayaNumber');
