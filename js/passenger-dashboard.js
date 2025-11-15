@@ -871,6 +871,12 @@ function openBookingModal(rideIndex) {
     document.getElementById('modal-date').textContent = `${tripDate} at ${departureTime}`;
     document.getElementById('modal-price').textContent = price;
     
+     if (userData) {
+        document.getElementById('passengerName').value = userData.name || "";
+        document.getElementById('passengerEmail').value = userData.email || "";
+        document.getElementById('passengerPhone').value = userData.phone || "";
+    }
+    
     const modal = document.getElementById('bookingModal');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -908,7 +914,7 @@ function handleBookingSubmit(e) {
         passenger_id: userData.id,
         booking_date: new Date().toISOString()
     };
-    
+
     sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
     
     console.log('Booking data stored:', bookingData);

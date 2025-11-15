@@ -31,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         'name' => $data['name'] ?? '',
         'username' => $data['username'] ?? '',
         'email' => $data['email'] ?? '',
+        'phone' => $data['phone'] ?? '',
         'password' => $data['password'] ?? ''
     ];
 

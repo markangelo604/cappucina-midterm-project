@@ -79,6 +79,8 @@ loginForm.addEventListener('submit', async (e) => {
                 id: data.id,
                 username: username,           // ← ADDED: Store the actual username
                 name: data.name,              // ← Keep display name for UI
+                email: data.email,
+                phone: data.phone,
                 displayName: data.name,       // ← Explicit display name
                 role: role                    // ← Normalized role
             };

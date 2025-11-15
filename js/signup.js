@@ -21,11 +21,12 @@ signupForm.addEventListener('submit', async (e) => {
     const name = document.getElementById('name').value.trim();
     const username = document.getElementById('username').value.trim();
     const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
     const password = document.getElementById('password').value.trim();
     const confirmPassword = document.getElementById('confirmPassword').value.trim();
 
     // Validate form fields
-    if (!name || !username || !email || !password || !confirmPassword) {
+    if (!name || !username || !email || !phone || !password || !confirmPassword) {
         errorMsg.textContent = 'Please fill in all fields.';
         errorMsg.style.display = 'block';
         signupBtn.disabled = false;
@@ -71,6 +72,7 @@ signupForm.addEventListener('submit', async (e) => {
             body: JSON.stringify({
                 name: name,
                 username: username,
+                phone: phone,
                 email: email,
                 password: password
             })

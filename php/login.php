@@ -65,6 +65,8 @@ function loginUser($data) {
             "success" => true,
             "message" => "Login successful.",
             "name" => $user['profile']['name'] ?? $user['username'],
+            "email" => $user['email'],
+            "phone" => $user['profile']['phone'],
             "id" => (string)$user['_id'],
             "role" => $user['role']
         ];
