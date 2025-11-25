@@ -1,6 +1,3 @@
-// Admin Page JavaScript
-// Note: common.js should be loaded before this file in the HTML
-
 // Admin Management
 let adminList = [
     {

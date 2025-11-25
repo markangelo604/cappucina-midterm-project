@@ -1,4 +1,3 @@
-
 // Drivers Management
 let driversList = [
     {
