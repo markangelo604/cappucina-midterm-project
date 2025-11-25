@@ -1,48 +1,53 @@
 // server.js
 // ===============================================
 // PURPOSE:
-//  • Loads environment variables from .env
-//  • Connects to MongoDB
-//  • Exports the connection and database handle
-//  • Can be imported by other JS files
+//  • Create Express server
+//  • Connect to MongoDB using db.js
+//  • Register routes
+//  • Start HTTP server
 // ===============================================
 
 require('dotenv').config();
-const { MongoClient } = require('mongodb');
+const express = require('express');
+const cors = require('cors');
 
-const mongoUri = process.env.LOCALHOST;
-const database = process.env.DATABASE;
+// Import Mongo connection utilities
+const { connectDB, getCollections } = require('./db');
 
-let client;
-let db;
+const app = express();
 
-async function connectDB() {
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Connect to DB then start server
+async function startServer() {
   try {
-    if (!client) {
-      client = new MongoClient(mongoUri);
-      await client.connect();
-      db = client.db(database);
-      console.log('✅ MongoDB connected (Node.js)');
-    }
-    return db;
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error.message);
+    await connectDB();
+    const collections = getCollections();
+
+    console.log("Collections loaded:", Object.keys(collections));
+
+    // Example route
+    app.get('/', (req, res) => {
+      res.send('🚀 Server is running and MongoDB is connected!');
+    });
+
+    // Example API route using DB
+    app.get('/users', async (req, res) => {
+      const { users } = collections;
+      const data = await users.find().toArray();
+      res.json(data);
+    });
+
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () =>
+      console.log(`Server running on http://localhost:${PORT}`)
+    );
+  } catch (err) {
+    console.error("Failed to start server:", err.message);
     process.exit(1);
   }
 }
 
-function getCollections() {
-  if (!db) throw new Error('Database not connected. Call connectDB() first.');
-
-  return {
-    users: db.collection(process.env.USERCOLLECTION),
-    rides: db.collection(process.env.RIDESCOLLECTION),
-    bookings: db.collection(process.env.BOOKINGSCOLLECTION),
-    reviews: db.collection(process.env.REVIEWSCOLLECTION)
-  };
-}
-
-module.exports = {
-  connectDB,
-  getCollections
-};
+startServer();
