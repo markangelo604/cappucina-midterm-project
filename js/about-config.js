@@ -21,10 +21,10 @@ const siteConfig = {
     teamMembers: [
         { name: "Javier, Charles Louis", role: "CEO & Founder", image: "../images/charles.jpg" },
         { name: "Domalanta, Mark Angelo", role: "CTO", image: "../images/charles.jpg" },
-        { name: "Beset, Sam Raleigh", role: "Head of Operations", image: "../images/charles.jpg" },
+        { name: "Beset, Sam Raleigh", role: "Head of Operations", image: "../images/sam.JPG" },
         { name: "Damocles, Jheezren", role: "Lead Developer", image: "../images/charles.jpg" },
         { name: "Bautista, Josh Marcus", role: "CEO & Founder", image: "../images/charles.jpg" },
-        { name: "Contillo, Daniel Roi", role: "CTO", image: "../images/charles.jpg" },
+        { name: "Contillo, Daniel Roi", role: "CTO", image: "../images/daniel.jpg" },
         { name: "Manaois, John Michael", role: "Head of Operations", image: "../images/charles.jpg" }
     ],
 };
