@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - MerryLift Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../css/admin-dashboard.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <img src="../images/merrylift-transparent.png" alt="MerryLift Logo" class="logo-image">
+                <span>MerryLift</span>
+            </div>
+        </div>
+        
+        <div class="sidebar-menu">
+            <div class="menu-section">
+                <a href="admin-dashboard.html" class="menu-item active">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+            
+            <div class="menu-section">
+                <p class="menu-label">MANAGEMENT</p>
+                <a href="admin.html" class="menu-item">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Admin</span>
+                </a>
+                <a href="admin-users.html" class="menu-item">
+                    <i class="bi bi-person"></i>
+                    <span>Users</span>
+                </a>
+                <a href="admin-drivers.html" class="menu-item">
+                    <i class="bi bi-people"></i>
+                    <span>Drivers</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navigation -->
+        <nav class="top-navbar">
+            <button class="btn-toggle" id="sidebarToggle">
+                <i class="bi bi-list"></i>
+            </button>
+            
+            <div class="navbar-right">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Search...">
+                </div>
+                
+                <div class="admin-profile">
+                    <span class="admin-name">Admin</span>
+                    <div class="admin-avatar">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Dashboard Content -->
+        <div class="content-area">
+            <div class="page-header">
+                <h1>Dashboard</h1>
+                <p class="text-muted">Welcome to MerryLift Admin Panel</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #e3f2fd;">
+                            <i class="bi bi-people-fill" style="color: #1976d2;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalUsers">0</h3>
+                            <p>Total Users</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #f3e5f5;">
+                            <i class="bi bi-car-front-fill" style="color: #7b1fa2;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="activeDrivers">37</h3>
+                            <p>Active Drivers</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #fff3e0;">
+                            <i class="bi bi-calendar-check-fill" style="color: #f57c00;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalTrips">0</h3>
+                            <p>Total Trips</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #ffebee;">
+                            <i class="bi bi-exclamation-triangle-fill" style="color: #c62828;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="emergencies">24</h3>
+                            <p>Emergencies</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- God's View Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">God's View - Driver Locations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="god-view-stats mb-3">
+                        <div class="view-stat">
+                            <i class="bi bi-geo-alt"></i>
+                            <span>Available: <strong>6</strong></span>
+                        </div>
+                        <div class="view-stat">
+                            <i class="bi bi-hourglass-split"></i>
+                            <span>Reached Pickup: <strong>0</strong></span>
+                        </div>
+                        <div class="view-stat">
+                            <i class="bi bi-arrow-right-circle"></i>
+                            <span>On Trip: <strong>0</strong></span>
+                        </div>
+                        <div class="view-stat">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Overall: <strong>0</strong></span>
+                        </div>
+                    </div>
+                    <div id="map" style="height: 400px; background: #e9ecef; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div style="text-align: center;">
+                            <i class="bi bi-map" style="font-size: 48px; color: #6c757d; margin-bottom: 15px;"></i>
+                            <p class="text-muted">Map will be integrated here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trip Statistics -->
+            <div class="row g-4">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Recent Trips</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Trip ID</th>
+                                            <th>Driver</th>
+                                            <th>Passenger</th>
+                                            <th>Status</th>
+                                            <th>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentTripsTable">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">No recent trips</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Trip Statistics</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="trip-stat-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span>Total Trips</span>
+                                </div>
+                                <h4 class="mb-0">5</h4>
+                            </div>
+                            <hr>
+                            <div class="trip-stat-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-arrow-repeat text-primary me-2"></i>
+                                    <span>Upcoming Trips</span>
+                                </div>
+                                <h4 class="mb-0">0</h4>
+                            </div>
+                            <hr>
+                            <div class="trip-stat-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                                    <span>Cancelled Trips</span>
+                                </div>
+                                <h4 class="mb-0">10</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script src="../js/admin-config.js"></script>
+</body>
+</html>
