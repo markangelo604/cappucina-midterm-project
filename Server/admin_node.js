@@ -25,9 +25,6 @@ app.use(express.json());
 // Connect to DB then start Node server
 async function startServer() {
   try {
-    // Start PHP server
-    const phpProcess = startPhpServer();
-
     // Connect to MongoDB
     await connectDB();
     const collections = getCollections();
