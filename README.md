@@ -1,6 +1,9 @@
-# USE THIS COMMAND IN YOUR PROJECT FOLDER TO USE .ENV AND MONGO DB
-*composer require mongodb/mongodb vlucas/phpdotenv*
+# USE THIS COMMANDS IN YOUR PROJECT FOLDER TO USE .ENV, MONGODB AND EXPRESS
+*composer require mongodb/mongodb vlucas/phpdotenv react/http psr/http-message react/socket*
+*npm install express cors dotenv*
 
+# TO RUN BOTH ADMIN AND CLIENT SERVERS EXECUTE THE admin_node.js USING:
+**
 # Team Cappucina's Midterm Project - Carpooling App
 
 ## 📌 Project Overview
