@@ -1,54 +1,58 @@
-// Users Management
-let usersList = [
-    {
-        id: 1,
-        name: 'MARIA SANTOS',
-        email: 'maria.santos@email.com',
-        phone: '+63 912 345 6789',
-        accountType: 'premium',
-        status: 'active'
-    },
-    {
-        id: 2,
-        name: 'JUAN DELA CRUZ',
-        email: 'juan.delacruz@email.com',
-        phone: '+63 923 456 7890',
-        accountType: 'regular',
-        status: 'active'
-    },
-    {
-        id: 3,
-        name: 'ANNA REYES',
-        email: 'anna.reyes@email.com',
-        phone: '+63 934 567 8901',
-        accountType: 'verified',
-        status: 'suspended'
-    }
-];
+// admin-users.js
+let usersData = [];
 
-// Render Users Table
-function renderUsersTable(data = usersList) {
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadUsers();
+    setupEventListeners();
+});
+
+async function loadUsers() {
+    try {
+        showLoading(true);
+        const response = await fetch('/api/users');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        usersData = await response.json();
+        renderUsersTable(usersData);
+        showLoading(false);
+    } catch (error) {
+        console.error('Error loading users:', error);
+        showNotification('Error loading users: ' + error.message, 'error');
+        showLoading(false);
+    }
+}
+
+function showLoading(show) {
     const tableBody = document.getElementById('usersTableBody');
-    
+    if (tableBody) {
+        if (show) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+        }
+    }
+}
+
+function renderUsersTable(data) {
+    const tableBody = document.getElementById('usersTableBody');
     if (!tableBody) return;
-    
+
     if (data.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No users found</td></tr>';
         return;
     }
-    
+
     tableBody.innerHTML = data.map(user => `
         <tr>
-            <td>${user.name}</td>
-            <td>${user.email}</td>
-            <td>${user.phone}</td>
-            <td>${user.accountType.charAt(0).toUpperCase() + user.accountType.slice(1)}</td>
-            <td>${user.status.charAt(0).toUpperCase() + user.status.slice(1)}</td>
+            <td>${user.username || 'N/A'}</td>
+            <td>${user.profile?.name || 'N/A'}</td>
+            <td>${user.email || 'N/A'}</td>
+            <td>${user.profile?.phone || 'N/A'}</td>
+            <td>${user.account_status?.charAt(0).toUpperCase() + user.account_status?.slice(1) || 'N/A'}</td>
             <td>
-                <button class="btn-action btn-edit" onclick="editUser(${user.id})" title="Edit">
+                <button class="btn-action btn-edit" onclick="editUser('${user._id}')" title="Edit">
                     ✏️
                 </button>
-                <button class="btn-action btn-delete" onclick="deleteUser(${user.id})" title="Delete">
+                <button class="btn-action btn-delete" onclick="deleteUser('${user._id}')" title="Delete">
                     🗑️
                 </button>
             </td>
@@ -56,70 +60,40 @@ function renderUsersTable(data = usersList) {
     `).join('');
 }
 
-// Search and Filter Functionality
 function setupEventListeners() {
     const searchBtn = document.getElementById('searchBtn');
     const resetBtn = document.getElementById('resetBtn');
     const searchInput = document.getElementById('searchInput');
     
-    if (searchBtn) {
-        searchBtn.addEventListener('click', filterUsers);
-    }
-    
-    if (resetBtn) {
-        resetBtn.addEventListener('click', resetFilters);
-    }
-    
+    if (searchBtn) searchBtn.addEventListener('click', filterUsers);
+    if (resetBtn) resetBtn.addEventListener('click', resetFilters);
     if (searchInput) {
         searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                filterUsers();
-            }
+            if (e.key === 'Enter') filterUsers();
         });
     }
     
-    // Add User Form Handler
     const addUserBtn = document.getElementById('addUserBtn');
-    if (addUserBtn) {
-        addUserBtn.addEventListener('click', addNewUser);
-    }
+    if (addUserBtn) addUserBtn.addEventListener('click', addNewUser);
 }
 
 function filterUsers() {
-    let filtered = [...usersList];
+    const searchValue = document.getElementById('searchInput').value.toLowerCase();
+    const statusValue = document.getElementById('statusFilter').value;
     
-    const searchInput = document.getElementById('searchInput');
-    const searchType = document.getElementById('searchType');
-    const statusFilter = document.getElementById('statusFilter');
-    const accountTypeFilter = document.getElementById('accountTypeFilter');
-    
-    const searchValue = searchInput?.value.toLowerCase().trim();
-    const searchTypeValue = searchType?.value;
+    let filtered = usersData;
     
     if (searchValue) {
-        filtered = filtered.filter(user => {
-            if (searchTypeValue === 'Name') {
-                return user.name.toLowerCase().includes(searchValue);
-            } else if (searchTypeValue === 'Email') {
-                return user.email.toLowerCase().includes(searchValue);
-            } else if (searchTypeValue === 'Phone') {
-                return user.phone.toLowerCase().includes(searchValue);
-            } else {
-                return user.name.toLowerCase().includes(searchValue) || 
-                       user.email.toLowerCase().includes(searchValue) ||
-                       user.phone.toLowerCase().includes(searchValue);
-            }
-        });
+        filtered = filtered.filter(user => 
+            (user.username?.toLowerCase().includes(searchValue) ||
+             user.profile?.name?.toLowerCase().includes(searchValue) ||
+             user.email?.toLowerCase().includes(searchValue) ||
+             user.profile?.phone?.toLowerCase().includes(searchValue))
+        );
     }
     
-    const statusValue = statusFilter?.value;
     if (statusValue) {
-        filtered = filtered.filter(user => user.status === statusValue);
-    }
-    
-    const accountTypeValue = accountTypeFilter?.value;
-    if (accountTypeValue) {
-        filtered = filtered.filter(user => user.accountType === accountTypeValue);
+        filtered = filtered.filter(user => user.account_status === statusValue);
     }
     
     renderUsersTable(filtered);
@@ -127,85 +101,167 @@ function filterUsers() {
 
 function resetFilters() {
     const searchInput = document.getElementById('searchInput');
-    const searchType = document.getElementById('searchType');
     const statusFilter = document.getElementById('statusFilter');
-    const accountTypeFilter = document.getElementById('accountTypeFilter');
     
     if (searchInput) searchInput.value = '';
-    if (searchType) searchType.value = 'All';
     if (statusFilter) statusFilter.value = '';
-    if (accountTypeFilter) accountTypeFilter.value = '';
-    renderUsersTable();
+    renderUsersTable(usersData);
 }
 
-// Edit User
-function editUser(id) {
-    const user = usersList.find(u => u.id === id);
-    if (user) {
-        alert(`Edit User: ${user.name}\n\nThis would open an edit modal with the user's information.`);
+async function editUser(id) {
+    try {
+        const response = await fetch(`/api/users/${id}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const user = await response.json();
+        
+        // Populate edit modal with user data
+        document.getElementById('editUserId').value = user._id;
+        document.getElementById('editUserUsername').value = user.username || '';
+        document.getElementById('editUserName').value = user.profile?.name || '';
+        document.getElementById('editUserEmail').value = user.email || '';
+        document.getElementById('editUserPhone').value = user.profile?.phone || '';
+        document.getElementById('editUserStatus').value = user.account_status || 'active';
+        
+        // Show edit modal
+        const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+        editModal.show();
+    } catch (error) {
+        console.error('Error fetching user for edit:', error);
+        showNotification('Error loading user data: ' + error.message, 'error');
     }
 }
 
-// Delete User
-function deleteUser(id) {
-    const user = usersList.find(u => u.id === id);
-    if (user && confirm(`Are you sure you want to delete ${user.name}?`)) {
-        usersList = usersList.filter(u => u.id !== id);
-        renderUsersTable();
+async function updateUser() {
+    const form = document.getElementById('editUserForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const userId = document.getElementById('editUserId').value;
+    const formData = new FormData(form);
+    
+    const userData = {
+        username: formData.get('username'),
+        profile: {
+            name: formData.get('name'),
+            phone: formData.get('phone')
+        },
+        email: formData.get('email'),
+        account_status: formData.get('status')
+    };
+    
+    // Only include password if provided
+    const password = formData.get('password');
+    if (password) {
+        userData.password = password;
+    }
+
+    try {
+        const response = await fetch(`/api/users/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
         
-        // Show notification if function exists
-        if (typeof showNotification === 'function') {
-            showNotification('User deleted successfully', 'success');
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('User updated successfully', 'success');
+            const editModal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+            editModal.hide();
+            await loadUsers();
+        } else {
+            showNotification(result.message || 'Error updating user', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating user:', error);
+        showNotification('Error updating user: ' + error.message, 'error');
+    }
+}
+
+async function deleteUser(id) {
+    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+        try {
+            const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('User deleted successfully', 'success');
+                await loadUsers();
+            } else {
+                showNotification(result.message || 'Error deleting user', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            showNotification('Error deleting user: ' + error.message, 'error');
         }
     }
 }
 
-// Add User Form Handler
-function addNewUser() {
-    const addUserForm = document.getElementById('addUserForm');
-    
-    // Validate form
-    if (!addUserForm.checkValidity()) {
-        addUserForm.reportValidity();
+async function addNewUser() {
+    const form = document.getElementById('addUserForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
         return;
     }
-    
-    const formData = new FormData(addUserForm);
-    const newUser = {
-        id: usersList.length > 0 ? Math.max(...usersList.map(u => u.id)) + 1 : 1,
-        name: formData.get('name'),
+
+    const formData = new FormData(form);
+    const userData = {
+        username: formData.get('username'),
+        profile: {
+            name: formData.get('name'),
+            phone: formData.get('phone')
+        },
         email: formData.get('email'),
-        phone: formData.get('phone'),
-        accountType: formData.get('accountType'),
-        status: formData.get('status')
+        password: formData.get('password'),
+        account_status: formData.get('status')
     };
-    
-    usersList.push(newUser);
-    renderUsersTable();
-    
-    // Close modal
-    const modalElement = document.getElementById('addUserModal');
-    const modal = bootstrap.Modal.getInstance(modalElement);
-    if (modal) {
-        modal.hide();
-    }
-    
-    // Reset form
-    addUserForm.reset();
-    
-    // Show notification if function exists
-    if (typeof showNotification === 'function') {
-        showNotification('User added successfully', 'success');
+
+    try {
+        const response = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('User created successfully', 'success');
+            form.reset();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
+            modal.hide();
+            await loadUsers();
+        } else {
+            showNotification(result.message || 'Error creating user', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding user:', error);
+        showNotification('Error creating user: ' + error.message, 'error');
     }
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    setupEventListeners();
-    renderUsersTable();
-    console.log('Users page initialized');
-});
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = message;
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 3000);
+}
 
 // Export functions
 window.editUser = editUser;
 window.deleteUser = deleteUser;
+window.updateUser = updateUser;
