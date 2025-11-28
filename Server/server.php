@@ -4,7 +4,7 @@
 // PURPOSE:
 //  • Loads environment variables from .env
 //  • Connects to MongoDB
-//  • Starts a PHP HTTP server on a specified port
+//  • Can be used as a library (returns connections) or as a server (starts HTTP server)
 // ===============================================
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -17,32 +17,29 @@ use React\EventLoop\Factory;
 use Psr\Http\Message\ServerRequestInterface;
 
 $projectRoot = dirname(__DIR__);
-$envPath = $projectRoot . '/.env';
 
 // Load environment variables
 $dotenv = Dotenv::createImmutable($projectRoot);
 $dotenv->load();
 
-$mongoUri  = getenv('LOCALHOST');
-$database  = getenv('DATABASE');
-$port      = getenv('PORT');
+$mongoUri  = $_ENV['LOCALHOST'] ?? getenv('LOCALHOST');
+$database  = $_ENV['DATABASE'] ?? getenv('DATABASE');
+$port      = $_ENV['PORT'] ?? getenv('PORT');
 
 try {
     $client = new Client($mongoUri);
     $db = $client->selectDatabase($database);
     
-    // Use getenv() here too
-    $usersCollection     = $db->selectCollection(getenv('USERCOLLECTION'));
-    $ridesCollection     = $db->selectCollection(getenv('RIDESCOLLECTION'));
-    $bookingsCollection  = $db->selectCollection(getenv('BOOKINGSCOLLECTION'));
-    $reviewsCollection   = $db->selectCollection(getenv('REVIEWSCOLLECTION'));
+    $usersCollection     = $db->selectCollection($_ENV['USERCOLLECTION'] ?? getenv('USERCOLLECTION'));
+    $ridesCollection     = $db->selectCollection($_ENV['RIDESCOLLECTION'] ?? getenv('RIDESCOLLECTION'));
+    $bookingsCollection  = $db->selectCollection($_ENV['BOOKINGSCOLLECTION'] ?? getenv('BOOKINGSCOLLECTION'));
+    $reviewsCollection   = $db->selectCollection($_ENV['REVIEWSCOLLECTION'] ?? getenv('REVIEWSCOLLECTION'));
 
     echo "Connected to MongoDB database '{$database}' successfully.\n";
 
 } catch (Exception $e) {
     die('Error connecting to MongoDB: ' . $e->getMessage());
-}
-
+} 
 // Create ReactPHP event loop
 $loop = Factory::create();
 
@@ -98,7 +95,6 @@ $server = new HttpServer(function (ServerRequestInterface $request) use ($usersC
 
     return new Response(404, ['Content-Type' => 'text/plain'], "Not Found");
 });
-
 
 // Listen on specified port
 $socket = new React\Socket\SocketServer("0.0.0.0:$port");
