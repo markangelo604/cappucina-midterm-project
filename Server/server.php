@@ -16,24 +16,26 @@ use React\Http\Message\Response;
 use React\EventLoop\Factory;
 use Psr\Http\Message\ServerRequestInterface;
 
+$projectRoot = dirname(__DIR__);
+$envPath = $projectRoot . '/.env';
+
 // Load environment variables
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv = Dotenv::createImmutable($projectRoot);
 $dotenv->load();
 
-// Retrieve environment variables
-$mongoUri   = $_ENV['LOCALHOST'];
-$database   = $_ENV['DATABASE'];
-$port       = $_ENV['PORT'] ?? 3000; // Default to 3000 if not set
+$mongoUri  = getenv('LOCALHOST');
+$database  = getenv('DATABASE');
+$port      = getenv('PORT');
 
-// Create MongoDB client connection
 try {
     $client = new Client($mongoUri);
     $db = $client->selectDatabase($database);
-
-    $usersCollection     = $db->selectCollection($_ENV['USERCOLLECTION']);
-    $ridesCollection     = $db->selectCollection($_ENV['RIDESCOLLECTION']);
-    $bookingsCollection  = $db->selectCollection($_ENV['BOOKINGSCOLLECTION']);
-    $reviewsCollection   = $db->selectCollection($_ENV['REVIEWSCOLLECTION']);
+    
+    // Use getenv() here too
+    $usersCollection     = $db->selectCollection(getenv('USERCOLLECTION'));
+    $ridesCollection     = $db->selectCollection(getenv('RIDESCOLLECTION'));
+    $bookingsCollection  = $db->selectCollection(getenv('BOOKINGSCOLLECTION'));
+    $reviewsCollection   = $db->selectCollection(getenv('REVIEWSCOLLECTION'));
 
     echo "Connected to MongoDB database '{$database}' successfully.\n";
 

@@ -1,4 +1,4 @@
-// admin_node.js
+// admin-node.js
 // ===============================================
 // PURPOSE:
 //  • Create Express server
@@ -21,6 +21,27 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '..')));
+
+function startPHPServer() {
+  const phpPath = 'php';
+  const serverScript = path.join(__dirname, '../Server/server.php');
+  
+  const phpServer = spawn(phpPath, [serverScript], {
+    cwd: path.join(__dirname, '..'),
+    stdio: 'pipe',
+  });
+
+  phpServer.stdout.on('data', (data) => process.stdout.write(`[PHP] ${data}`));
+  phpServer.stderr.on('data', (data) => process.stderr.write(`[PHP ERROR] ${data}`));
+
+  phpServer.on('close', (code) => {
+    console.log(`[PHP] Exited with code ${code}`);
+  });
+
+  return phpServer;
+}
+
 
 // Connect to DB then start Node server
 async function startServer() {
@@ -31,9 +52,11 @@ async function startServer() {
 
     console.log("Collections loaded:", Object.keys(collections));
 
+    const phpProcess = startPHPServer(); //php sevrer
+
     // Routes
     app.get('/', (req, res) => {
-      res.send('🚀 Admin server is running and MongoDB is connected!');
+      res.sendFile(path.join(__dirname, '../index.html'));
     });
 
     app.get('/users', async (req, res) => {
