@@ -13,26 +13,26 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "..")));
 
-function startPHPServer() {
-  const phpPath = "php";
-  const serverScript = path.join(__dirname, "../Server/server.php");
+// function startPHPServer() {
+//   const phpPath = "php";
+//   const serverScript = path.join(__dirname, "../Server/server.php");
 
-  const phpServer = spawn(phpPath, [serverScript], {
-    cwd: path.join(__dirname, ".."),
-    stdio: "pipe",
-  });
+//   const phpServer = spawn(phpPath, [serverScript], {
+//     cwd: path.join(__dirname, ".."),
+//     stdio: "pipe",
+//   });
 
-  phpServer.stdout.on("data", (data) => process.stdout.write(`[PHP] ${data}`));
-  phpServer.stderr.on("data", (data) =>
-    process.stderr.write(`[PHP ERROR] ${data}`)
-  );
+//   phpServer.stdout.on("data", (data) => process.stdout.write(`[PHP] ${data}`));
+//   phpServer.stderr.on("data", (data) =>
+//     process.stderr.write(`[PHP ERROR] ${data}`)
+//   );
 
-  phpServer.on("close", (code) => {
-    console.log(`[PHP] Exited with code ${code}`);
-  });
+//   phpServer.on("close", (code) => {
+//     console.log(`[PHP] Exited with code ${code}`);
+//   });
 
-  return phpServer;
-}
+//   return phpServer;
+// }
 
 // Function to hash password in PHP-compatible format
 async function hashPasswordPHPCompatible(password) {
@@ -69,7 +69,7 @@ async function startServer() {
     const collections = getCollections();
     console.log("Collections loaded:", Object.keys(collections));
 
-    const phpProcess = startPHPServer();
+    // const phpProcess = startPHPServer();
 
     // Login endpoint
     app.post("/admin/login", async (req, res) => {
