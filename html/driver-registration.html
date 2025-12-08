@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Registration - MerryLift</title>
+    <link rel="stylesheet" href="../css/driver-registration.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Registration Section -->
+        <div class="registration-section">
+            <div class="registration-card">
+                <!-- Logo -->
+                <div class="logo-container">
+                    <img src="../images/merrylift-transparent.png" alt="MerryLift Logo" class="app-logo">
+                    <h2>Become a Driver</h2>
+                    <p class="subtitle">Start earning by sharing rides with your community</p>
+                </div>
+
+                <!-- Progress Indicator -->
+                <div class="progress-container">
+                    <div class="progress-step active" data-step="1">
+                        <div class="step-circle">1</div>
+                        <span class="step-label">Personal Info</span>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step" data-step="2">
+                        <div class="step-circle">2</div>
+                        <span class="step-label">Vehicle Info</span>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step" data-step="3">
+                        <div class="step-circle">3</div>
+                        <span class="step-label">Documents</span>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step" data-step="4">
+                        <div class="step-circle">4</div>
+                        <span class="step-label">Review</span>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div class="error-message" id="errorMsg"></div>
+                <div class="success-message" id="successMsg"></div>
+
+                <!-- Multi-Step Form -->
+                <form id="driverRegistrationForm" class="driver-registration-form">
+                    
+                    <!-- Step 1: Personal Information -->
+                    <div class="form-step active" id="step1">
+                        <h3 class="step-title">Personal Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="fullName">Full Name *</label>
+                            <input type="text" id="fullName" name="fullName" placeholder="Juan Dela Cruz" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="username">Username *</label>
+                            <input type="text" id="username" name="username" placeholder="Choose a username" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="email">Email Address *</label>
+                                <input type="email" id="email" name="email" placeholder="your.email@example.com" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phone">Phone Number *</label>
+                                <input type="tel" id="phone" name="phone" placeholder="+63 912 345 6789" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address">Address *</label>
+                            <input type="text" id="address" name="address" placeholder="Complete address" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="password">Password *</label>
+                                <input type="password" id="password" name="password" placeholder="Minimum 8 characters" required minlength="8">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm Password *</label>
+                                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter password" required>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="window.location.href='../html/login.html'">Cancel</button>
+                            <button type="button" class="btn-next" onclick="nextStep(2)">Next</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Vehicle Information -->
+                    <div class="form-step" id="step2">
+                        <h3 class="step-title">Vehicle Information</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vehicleBrand">Vehicle Brand *</label>
+                                <input type="text" id="vehicleBrand" name="vehicleBrand" placeholder="e.g., Toyota" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="vehicleModel">Vehicle Model *</label>
+                                <input type="text" id="vehicleModel" name="vehicleModel" placeholder="e.g., Vios" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vehicleYear">Year *</label>
+                                <input type="number" id="vehicleYear" name="vehicleYear" placeholder="2022" min="1990" max="2099" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="vehicleColor">Vehicle Color *</label>
+                                <input type="text" id="vehicleColor" name="vehicleColor" placeholder="e.g., White" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="plateNumber">Plate Number *</label>
+                                <input type="text" id="plateNumber" name="plateNumber" placeholder="ABC-1234" required pattern="[A-Za-z0-9\-]+" style="text-transform: uppercase;">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="availableSeats">Available Seats *</label>
+                                <input type="number" id="availableSeats" name="availableSeats" placeholder="4" min="1" max="8" required>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="previousStep(1)">Back</button>
+                            <button type="button" class="btn-next" onclick="nextStep(3)">Next</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Documents Upload -->
+                    <div class="form-step" id="step3">
+                        <h3 class="step-title">Required Documents</h3>
+                        <p class="step-description">Please upload clear photos of your documents</p>
+
+                        <div class="document-group">
+                            <label class="document-label">
+                                <span class="label-text">Driver's License *</span>
+                                <div class="file-upload-box" id="licenseUploadBox">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    <p>Click to upload or drag & drop</p>
+                                    <small>PNG, JPG or PDF (max 5MB)</small>
+                                </div>
+                                <input type="file" id="driversLicense" name="driversLicense" accept="image/*,.pdf" required hidden>
+                                <div class="file-preview" id="licensePreview"></div>
+                            </label>
+                        </div>
+
+                        <div class="document-group">
+                            <label class="document-label">
+                                <span class="label-text">Vehicle Registration (OR/CR) *</span>
+                                <div class="file-upload-box" id="registrationUploadBox">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    <p>Click to upload or drag & drop</p>
+                                    <small>PNG, JPG or PDF (max 5MB)</small>
+                                </div>
+                                <input type="file" id="vehicleRegistration" name="vehicleRegistration" accept="image/*,.pdf" required hidden>
+                                <div class="file-preview" id="registrationPreview"></div>
+                            </label>
+                        </div>
+
+                        <div class="document-group">
+                            <label class="document-label">
+                                <span class="label-text">Vehicle Photo *</span>
+                                <div class="file-upload-box" id="vehiclePhotoUploadBox">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    <p>Click to upload or drag & drop</p>
+                                    <small>PNG or JPG (max 5MB)</small>
+                                </div>
+                                <input type="file" id="vehiclePhoto" name="vehiclePhoto" accept="image/*" required hidden>
+                                <div class="file-preview" id="vehiclePhotoPreview"></div>
+                            </label>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="previousStep(2)">Back</button>
+                            <button type="button" class="btn-next" onclick="nextStep(4)">Next</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Review & Submit -->
+                    <div class="form-step" id="step4">
+                        <h3 class="step-title">Review Your Information</h3>
+                        <p class="step-description">Please verify all details before submitting</p>
+
+                        <div class="review-section">
+                            <h4>Personal Information</h4>
+                            <div class="review-item">
+                                <span class="review-label">Full Name:</span>
+                                <span class="review-value" id="reviewName"></span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Username:</span>
+                                <span class="review-value" id="reviewUsername"></span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Email:</span>
+                                <span class="review-value" id="reviewEmail"></span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Phone:</span>
+                                <span class="review-value" id="reviewPhone"></span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Address:</span>
+                                <span class="review-value" id="reviewAddress"></span>
+                            </div>
+                        </div>
+
+                        <div class="review-section">
+                            <h4>Vehicle Information</h4>
+                            <div class="review-item">
+                                <span class="review-label">Vehicle:</span>
+                                <span class="review-value" id="reviewVehicle"></span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Plate Number:</span>
+                                <span class="review-value" id="reviewPlateNumber"></span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Available Seats:</span>
+                                <span class="review-value" id="reviewSeats"></span>
+                            </div>
+                        </div>
+
+                        <div class="review-section">
+                            <h4>Documents</h4>
+                            <div class="review-item">
+                                <span class="review-label">Driver's License:</span>
+                                <span class="review-value" id="reviewLicense"></span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Vehicle Registration:</span>
+                                <span class="review-value" id="reviewRegistration"></span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Vehicle Photo:</span>
+                                <span class="review-value" id="reviewVehiclePhoto"></span>
+                            </div>
+                        </div>
+
+                        <div class="terms-checkbox">
+                            <input type="checkbox" id="acceptTerms" required>
+                            <label for="acceptTerms">
+                                I agree to the <a href="#" target="_blank">Terms and Conditions</a> and <a href="#" target="_blank">Privacy Policy</a>
+                            </label>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="previousStep(3)">Back</button>
+                            <button type="submit" class="btn-submit" id="submitBtn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                                Submit Application
+                            </button>
+                        </div>
+                    </div>
+
+                </form>
+
+                <!-- Login Link -->
+                <div class="login-link">
+                    <p>Already have an account? <a href="../html/login.html">Sign In</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/driver-registration.js"></script>
+</body>
+</html>
