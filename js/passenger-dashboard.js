@@ -1,3 +1,48 @@
+let map;
+let pickupAutocomplete;
+let destinationAutocomplete;
+let pickupMarker = null;
+let destinationMarker = null;
+let directionsService;
+let directionsRenderer;
+function initGoogleMap() {
+    // lat: 16.3846, lng: 120.5940 within SLU MaryHeights   
+    const baguioCity = {  lat: 16.4023, lng: 120.5960 };
+
+    map = new google.maps.Map(document.getElementById("map"), {
+        center: baguioCity,
+        zoom: 15,
+    });
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true // we’ll use custom pickup/destination markers
+    });
+    initAutocomplete();
+    // Try to get user's current location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                // Add user marker
+                userMarker = new google.maps.Marker({
+                    position: userLocation,
+                    map: map,
+                    title: "Your Location",
+                    icon: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                });
+            },
+            (error) => {
+                console.warn("Geolocation failed or denied.", error);
+            }
+        );
+    } else {
+        console.warn("Geolocation is not supported by this browser.");
+    }
+}
 // Get user credentials from sessionStorage
 let userData = {
     id: null,
@@ -35,6 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadUserProfile();
     setupDropdown();
     renderMainContent();
+    loadGoogleMaps();
     fetchAvailableRides();
 });
 
@@ -109,26 +155,19 @@ function renderMainContent() {
 function createMapSection() {
     const section = document.createElement('section');
     section.className = 'map-section';
-    
+
     const mapContainer = document.createElement('div');
     mapContainer.className = 'map-container';
-    
-    const iframe = document.createElement('iframe');
-    iframe.src = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d123523.12345!2d121.0244!3d14.5995!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c90264a0f021%3A0x2b063c8c5b6d8c01!2sMetro%20Manila!5e0!3m2!1sen!2sph!4v1234567890';
-    iframe.width = '100%';
-    iframe.height = '100%';
-    iframe.style.border = '0';
-    iframe.allowFullscreen = true;
-    iframe.loading = 'lazy';
-    iframe.referrerPolicy = 'no-referrer-when-downgrade';
-    
-    const mapMarker = document.createElement('div');
-    mapMarker.className = 'map-marker';
-    
-    mapContainer.appendChild(iframe);
-    mapContainer.appendChild(mapMarker);
+
+    // GOOGLE MAP DIV
+    const mapDiv = document.createElement('div');
+    mapDiv.id = "map";
+    mapDiv.style.width = "100%";
+    mapDiv.style.height = "100%";
+
+    mapContainer.appendChild(mapDiv);
     section.appendChild(mapContainer);
-    
+
     return section;
 }
 
@@ -889,7 +928,134 @@ function closeBookingModal() {
     document.getElementById('bookingForm').reset();
     currentRideData = null;
 }
+// --------------------- Maps ---------------------
+// autocomplete for pickup and destination
+function initAutocomplete() {
+    const pickupInput = document.querySelector('input[name="pickup"]');
+    const destinationInput = document.querySelector('input[name="destination"]');
 
+    pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput, {
+        fields: ["geometry", "formatted_address", "name"]
+    });
+
+    destinationAutocomplete = new google.maps.places.Autocomplete(destinationInput, {
+        fields: ["geometry", "formatted_address", "name"]
+    });
+
+pickupAutocomplete.addListener("place_changed", () => {
+    pickupPlace = pickupAutocomplete.getPlace();
+    
+    if (pickupPlace && pickupPlace.geometry) {
+        if (pickupMarker) pickupMarker.setMap(null);
+        pickupMarker = new google.maps.Marker({
+            map: map,
+            position: pickupPlace.geometry.location,
+            title: "Pickup: " + pickupPlace.formatted_address
+        });
+    }
+
+    adjustMapBounds();
+    drawRoute(); // Draw the route if both points exist
+});
+
+destinationAutocomplete.addListener("place_changed", () => {
+    destinationPlace = destinationAutocomplete.getPlace();
+    
+    if (destinationPlace && destinationPlace.geometry) {
+        if (destinationMarker) destinationMarker.setMap(null);
+        destinationMarker = new google.maps.Marker({
+            map: map,
+            position: destinationPlace.geometry.location,
+            title: "Destination: " + destinationPlace.formatted_address
+        });
+    }
+
+    adjustMapBounds();
+    drawRoute();
+});
+}
+// add marker for pickup and destination
+function addRideMarkers(pickupPlace, destinationPlace) {
+   if (pickupMarker) pickupMarker.setMap(null);
+    if (destinationMarker) destinationMarker.setMap(null);
+
+    if (pickupPlace && pickupPlace.geometry) {
+        pickupMarker = new google.maps.Marker({
+            map: map,
+            position: pickupPlace.geometry.location,
+            title: "Pickup: " + pickupPlace.formatted_address
+        });
+    }
+
+    if (destinationPlace && destinationPlace.geometry) {
+        destinationMarker = new google.maps.Marker({
+            map: map,
+            position: destinationPlace.geometry.location,
+            title: "Destination: " + destinationPlace.formatted_address
+        });
+    }
+
+    if (pickupMarker && destinationMarker) {
+        const bounds = new google.maps.LatLngBounds();
+        bounds.extend(pickupMarker.getPosition());
+        bounds.extend(destinationMarker.getPosition());
+        map.fitBounds(bounds);
+    }
+}
+function adjustMapBounds() {
+        const bounds = new google.maps.LatLngBounds();
+    let hasBothMarkers = pickupMarker && destinationMarker;
+
+    if (pickupMarker) bounds.extend(pickupMarker.getPosition());
+    if (destinationMarker) bounds.extend(destinationMarker.getPosition());
+
+    if (hasBothMarkers) {
+        // Fit bounds only if both markers are present
+        map.fitBounds(bounds);
+    } else if (pickupMarker) {
+        map.setCenter(pickupMarker.getPosition());
+        map.setZoom(15); // default zoom
+    } else if (destinationMarker) {
+        map.setCenter(destinationMarker.getPosition());
+        map.setZoom(15); // default zoom
+    }
+}
+function drawRoute() {
+    if (!pickupPlace || !destinationPlace) return; // Need both places to draw
+
+    directionsService.route(
+        {
+            origin: pickupPlace.geometry.location,
+            destination: destinationPlace.geometry.location,
+            travelMode: google.maps.TravelMode.DRIVING // or WALKING
+        },
+        (result, status) => {
+            if (status === google.maps.DirectionsStatus.OK) {
+                directionsRenderer.setDirections(result);
+            } else {
+                console.error("Error fetching directions", status);
+            }
+        }
+    );
+}
+async function loadGoogleMaps() {
+    try {
+        // Fetch key from PHP 
+        const response = await fetch('/../../Server/Models/get-api-key.php');
+        const data = await response.json();
+
+        if (!data.key) throw new Error('API key not found');
+
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&libraries=places&callback=initGoogleMap`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+
+    } catch (error) {
+        console.error('Error loading Google Maps:', error);
+    }
+}
 // BOOKING SUBMISSION
 function handleBookingSubmit(e) {
     e.preventDefault();
