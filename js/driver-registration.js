@@ -1,5 +1,5 @@
 // ========================================
-// DRIVER REGISTRATION JAVASCRIPT
+// DRIVER REGISTRATION JAVASCRIPT - FIXED PASSWORD VALIDATION
 // ========================================
 
 // Current step tracker
@@ -19,12 +19,19 @@ let uploadedFiles = {
     vehiclePhoto: null
 };
 
+// Track if this is an upgrade or new registration
+let isUpgrade = false;
+let existingUserData = null;
+
 // ========================================
 // INITIALIZATION
 // ========================================
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Driver Registration initialized');
+    
+    // Check if user is already logged in
+    checkExistingUser();
     
     // Setup file upload handlers
     setupFileUploads();
@@ -33,45 +40,159 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('driverRegistrationForm');
     form.addEventListener('submit', handleFormSubmit);
     
-    // Setup password confirmation
-    const password = document.getElementById('password');
-    const confirmPassword = document.getElementById('confirmPassword');
-    confirmPassword.addEventListener('input', function() {
-        if (this.value !== password.value) {
-            this.setCustomValidity('Passwords do not match');
-        } else {
-            this.setCustomValidity('');
+    // Setup password confirmation (only if not upgrading)
+    if (!isUpgrade) {
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirmPassword');
+        if (password && confirmPassword) {
+            confirmPassword.addEventListener('input', function() {
+                if (this.value !== password.value) {
+                    this.setCustomValidity('Passwords do not match');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
         }
-    });
+    }
     
     // Setup plate number uppercase
     const plateNumber = document.getElementById('plateNumber');
-    plateNumber.addEventListener('input', function() {
-        this.value = this.value.toUpperCase();
-    });
+    if (plateNumber) {
+        plateNumber.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
 });
+
+// ========================================
+// CHECK EXISTING USER - FIXED
+// ========================================
+
+function checkExistingUser() {
+    const userDataStr = sessionStorage.getItem('userData');
+    if (userDataStr) {
+        try {
+            existingUserData = JSON.parse(userDataStr);
+            isUpgrade = true;
+            console.log('✅ User is logged in - UPGRADE MODE:', existingUserData.username);
+            
+            // Pre-fill Step 1 with user data
+            const fullName = document.getElementById('fullName');
+            const username = document.getElementById('username');
+            const email = document.getElementById('email');
+            const phone = document.getElementById('phone');
+            
+            if (fullName) fullName.value = existingUserData.name || '';
+            if (username) {
+                username.value = existingUserData.username || '';
+                username.readOnly = true;
+                username.style.backgroundColor = '#f5f5f5';
+            }
+            if (email) {
+                email.value = existingUserData.email || '';
+                email.readOnly = true;
+                email.style.backgroundColor = '#f5f5f5';
+            }
+            if (phone) phone.value = existingUserData.phone || '';
+            
+            // ⚠️ FIX: Hide password fields AND remove required attribute
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirmPassword');
+            
+            if (password && confirmPassword) {
+                // Hide the entire row
+                const passwordRow = password.closest('.form-row');
+                if (passwordRow) {
+                    passwordRow.style.display = 'none';
+                }
+                
+                // CRITICAL: Remove required attribute to prevent validation errors
+                password.removeAttribute('required');
+                confirmPassword.removeAttribute('required');
+                
+                // Also remove minlength to prevent validation
+                password.removeAttribute('minlength');
+                
+                // Clear any values
+                password.value = '';
+                confirmPassword.value = '';
+                
+                // Mark as not required in HTML5 validation
+                password.setAttribute('data-upgrade-skip', 'true');
+                confirmPassword.setAttribute('data-upgrade-skip', 'true');
+                
+                console.log('✅ Password fields: hidden & validation disabled');
+            }
+            
+            // Update UI messaging
+            const subtitle = document.querySelector('.subtitle');
+            if (subtitle) {
+                subtitle.textContent = 'Upgrade your account to start offering rides';
+            }
+            
+            const stepTitle = document.querySelector('#step1 .step-title');
+            if (stepTitle) {
+                stepTitle.textContent = 'Confirm Your Information';
+            }
+            
+            // Show info message
+            showInfo('✨ You\'re upgrading your existing account to become a driver. No need to create a new account!');
+            
+        } catch (e) {
+            console.log('No valid session found - NEW REGISTRATION MODE');
+            isUpgrade = false;
+        }
+    } else {
+        console.log('No user logged in - NEW REGISTRATION MODE');
+        isUpgrade = false;
+    }
+}
+
+function showInfo(message) {
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'info-message';
+    infoDiv.style.cssText = `
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin: 20px 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        animation: slideDown 0.5s ease;
+    `;
+    infoDiv.innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+        </svg>
+        <span style="flex: 1;">${message}</span>
+    `;
+    
+    // Insert after logo
+    const logoContainer = document.querySelector('.logo-container');
+    if (logoContainer && logoContainer.parentNode) {
+        const existingInfo = document.querySelector('.info-message');
+        if (existingInfo) existingInfo.remove();
+        logoContainer.parentNode.insertBefore(infoDiv, logoContainer.nextSibling);
+    }
+}
 
 // ========================================
 // STEP NAVIGATION
 // ========================================
 
 function nextStep(step) {
-    // Validate current step before moving forward
     if (!validateStep(currentStep)) {
         return;
     }
     
-    // Save current step data
     saveStepData(currentStep);
-    
-    // Update step
     currentStep = step;
     showStep(step);
-    
-    // Update progress indicator
     updateProgress(step);
     
-    // If moving to review step, populate review data
     if (step === 4) {
         populateReview();
     }
@@ -84,15 +205,11 @@ function previousStep(step) {
 }
 
 function showStep(step) {
-    // Hide all steps
     document.querySelectorAll('.form-step').forEach(el => {
         el.classList.remove('active');
     });
     
-    // Show current step
     document.getElementById('step' + step).classList.add('active');
-    
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -111,46 +228,46 @@ function updateProgress(step) {
 }
 
 // ========================================
-// FORM VALIDATION
+// FORM VALIDATION - FIXED
 // ========================================
 
 function validateStep(step) {
     let isValid = true;
     const stepElement = document.getElementById('step' + step);
-    
-    // Get all required inputs in current step
     const inputs = stepElement.querySelectorAll('input[required], select[required]');
     
     inputs.forEach(input => {
+        // ⚠️ FIX: Skip validation for password fields in upgrade mode
+        if (isUpgrade && input.hasAttribute('data-upgrade-skip')) {
+            console.log('⏭️ Skipping validation for:', input.id);
+            return; // Skip this field
+        }
+        
         if (!input.value || (input.type === 'checkbox' && !input.checked)) {
             isValid = false;
             input.classList.add('error');
-            
-            // Show error message
             showError(`Please fill in all required fields in ${getStepName(step)}`);
         } else {
             input.classList.remove('error');
         }
     });
     
-    // Special validations for each step
-    if (step === 1 && isValid) {
-        // Validate email format
+    // Special validations for step 1 (only for new registration)
+    if (step === 1 && isValid && !isUpgrade) {
         const email = document.getElementById('email').value;
         if (!isValidEmail(email)) {
             showError('Please enter a valid email address');
             return false;
         }
         
-        // Validate password match
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
+        
         if (password !== confirmPassword) {
             showError('Passwords do not match');
             return false;
         }
         
-        // Validate password length
         if (password.length < 8) {
             showError('Password must be at least 8 characters long');
             return false;
@@ -158,14 +275,12 @@ function validateStep(step) {
     }
     
     if (step === 2 && isValid) {
-        // Validate plate number format
         const plateNumber = document.getElementById('plateNumber').value;
         if (plateNumber.length < 3 || plateNumber.length > 15) {
             showError('Invalid plate number format');
             return false;
         }
         
-        // Validate year
         const year = parseInt(document.getElementById('vehicleYear').value);
         const currentYear = new Date().getFullYear();
         if (year < 1990 || year > currentYear + 1) {
@@ -175,7 +290,6 @@ function validateStep(step) {
     }
     
     if (step === 3 && isValid) {
-        // Validate file uploads
         if (!uploadedFiles.driversLicense || !uploadedFiles.vehicleRegistration || !uploadedFiles.vehiclePhoto) {
             showError('Please upload all required documents');
             return false;
@@ -211,9 +325,13 @@ function saveStepData(step) {
             username: document.getElementById('username').value,
             email: document.getElementById('email').value,
             phone: document.getElementById('phone').value,
-            address: document.getElementById('address').value,
-            password: document.getElementById('password').value
+            address: document.getElementById('address').value
         };
+        
+        // Only save password if not upgrading
+        if (!isUpgrade) {
+            formData.personal.password = document.getElementById('password').value;
+        }
     } else if (step === 2) {
         formData.vehicle = {
             brand: document.getElementById('vehicleBrand').value,
@@ -227,20 +345,17 @@ function saveStepData(step) {
 }
 
 function populateReview() {
-    // Personal Information
     document.getElementById('reviewName').textContent = formData.personal.fullName;
     document.getElementById('reviewUsername').textContent = formData.personal.username;
     document.getElementById('reviewEmail').textContent = formData.personal.email;
     document.getElementById('reviewPhone').textContent = formData.personal.phone;
     document.getElementById('reviewAddress').textContent = formData.personal.address;
     
-    // Vehicle Information
     const vehicleInfo = `${formData.vehicle.brand} ${formData.vehicle.model} (${formData.vehicle.year}) - ${formData.vehicle.color}`;
     document.getElementById('reviewVehicle').textContent = vehicleInfo;
     document.getElementById('reviewPlateNumber').textContent = formData.vehicle.plateNumber;
     document.getElementById('reviewSeats').textContent = formData.vehicle.availableSeats;
     
-    // Documents
     document.getElementById('reviewLicense').textContent = uploadedFiles.driversLicense ? '✓ Uploaded' : '✗ Missing';
     document.getElementById('reviewRegistration').textContent = uploadedFiles.vehicleRegistration ? '✓ Uploaded' : '✗ Missing';
     document.getElementById('reviewVehiclePhoto').textContent = uploadedFiles.vehiclePhoto ? '✓ Uploaded' : '✗ Missing';
@@ -261,38 +376,36 @@ function setupFileUpload(inputId, boxId, previewId) {
     const box = document.getElementById(boxId);
     const preview = document.getElementById(previewId);
     
-    // Click handler
+    if (!input || !box || !preview) return;
+    
     box.addEventListener('click', () => input.click());
     
-    // File change handler
     input.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
-            // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
                 showError('File size must be less than 5MB');
                 input.value = '';
                 return;
             }
             
-            // Store file
             uploadedFiles[inputId] = file;
-            
-            // Update UI
             box.classList.add('has-file');
             preview.innerHTML = `
-                <div style="color: var(--success-color); font-weight: 600;">
+                <div style="color: #4CAF50; font-weight: 600; padding: 10px;">
                     ✓ ${file.name} (${formatFileSize(file.size)})
                 </div>
             `;
             preview.classList.add('show');
             
-            // Show image preview if it's an image
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const img = document.createElement('img');
                     img.src = e.target.result;
+                    img.style.maxWidth = '200px';
+                    img.style.marginTop = '10px';
+                    img.style.borderRadius = '8px';
                     preview.appendChild(img);
                 };
                 reader.readAsDataURL(file);
@@ -300,7 +413,6 @@ function setupFileUpload(inputId, boxId, previewId) {
         }
     });
     
-    // Drag and drop
     box.addEventListener('dragover', (e) => {
         e.preventDefault();
         box.style.borderColor = 'var(--accent-gold)';
@@ -337,88 +449,125 @@ function formatFileSize(bytes) {
 async function handleFormSubmit(e) {
     e.preventDefault();
     
-    console.log('📤 Submitting driver registration...');
+    console.log('📤 Submitting driver application...');
+    console.log('Mode:', isUpgrade ? 'UPGRADE' : 'NEW REGISTRATION');
     
-    // Validate terms checkbox
     const acceptTerms = document.getElementById('acceptTerms');
     if (!acceptTerms.checked) {
         showError('Please accept the Terms and Conditions to continue');
         return;
     }
     
-    // Show loading
-    showLoading('Submitting your application...');
+    showLoading(isUpgrade ? 'Upgrading your account...' : 'Submitting your application...');
     
-    // Disable submit button
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     
     try {
-        // Prepare form data for submission
-        const registrationData = {
-            // Personal information
-            username: formData.personal.username,
-            email: formData.personal.email,
-            password: formData.personal.password,
-            role: 'car_owner',
-            profile: {
-                name: formData.personal.fullName,
-                phone: formData.personal.phone,
-                address: formData.personal.address
-            },
-            // Vehicle information
-            vehicle: [{
-                plate_number: formData.vehicle.plateNumber,
-                brand: formData.vehicle.brand,
-                model: formData.vehicle.model,
-                year: formData.vehicle.year,
-                color: formData.vehicle.color,
-                available_seats: formData.vehicle.availableSeats,
-                verified: false, // Will be verified by admin
-                document: {
-                    license: 'PENDING_UPLOAD',
-                    registration: 'PENDING_UPLOAD',
-                    photo: 'PENDING_UPLOAD'
-                }
-            }],
-            account_status: 'pending' // Pending approval
-        };
+        let endpoint, payload, successMessage, redirectUrl;
         
-        console.log('Registration data:', registrationData);
+        if (isUpgrade && existingUserData) {
+            // ===== UPGRADE EXISTING USER =====
+            console.log('🔄 Upgrading user:', existingUserData.username);
+            
+            endpoint = '../php/upgrade-to-driver.php';
+            payload = {
+                username: existingUserData.username,
+                profile: {
+                    phone: formData.personal.phone || existingUserData.phone,
+                    address: formData.personal.address || ''
+                },
+                vehicle: [{
+                    plate_number: formData.vehicle.plateNumber,
+                    brand: formData.vehicle.brand,
+                    model: formData.vehicle.model,
+                    year: formData.vehicle.year,
+                    color: formData.vehicle.color,
+                    available_seats: formData.vehicle.availableSeats
+                }]
+            };
+            successMessage = '🎉 Successfully upgraded to driver! Your application is pending approval.';
+            redirectUrl = '../html/passenger-dashboard.html';
+            
+        } else {
+            // ===== NEW REGISTRATION =====
+            console.log('📝 Creating new driver account');
+            
+            endpoint = '../php/driver-registration.php';
+            payload = {
+                username: formData.personal.username,
+                email: formData.personal.email,
+                password: formData.personal.password,
+                role: 'car_owner',
+                profile: {
+                    name: formData.personal.fullName,
+                    phone: formData.personal.phone,
+                    address: formData.personal.address
+                },
+                vehicle: [{
+                    plate_number: formData.vehicle.plateNumber,
+                    brand: formData.vehicle.brand,
+                    model: formData.vehicle.model,
+                    year: formData.vehicle.year,
+                    color: formData.vehicle.color,
+                    available_seats: formData.vehicle.availableSeats,
+                    verified: false,
+                    document: {
+                        license: 'PENDING_UPLOAD',
+                        registration: 'PENDING_UPLOAD',
+                        photo: 'PENDING_UPLOAD'
+                    }
+                }],
+                account_status: 'pending'
+            };
+            successMessage = '🎉 Application submitted successfully! Your account is pending approval.';
+            redirectUrl = '../html/login.html';
+        }
         
-        // Submit to backend
-        const response = await fetch('../php/driver-registration.php', {
+        console.log('Submitting to:', endpoint);
+        console.log('Payload:', JSON.stringify(payload, null, 2));
+        
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(registrationData)
+            body: JSON.stringify(payload)
         });
         
         const result = await response.json();
+        console.log('Response:', result);
         
         hideLoading();
         
         if (result.success) {
-            console.log('✅ Registration successful');
+            console.log('✅ Submission successful');
             
-            // Show success message
-            showSuccess('Application submitted successfully! Your account is pending approval. You will receive an email once verified.');
+            // If upgrade, update session data
+            if (isUpgrade && result.user_data) {
+                const updatedUserData = {
+                    ...existingUserData,
+                    ...result.user_data
+                };
+                sessionStorage.setItem('userData', JSON.stringify(updatedUserData));
+                console.log('✅ Session updated with new driver role');
+            }
             
-            // Redirect to login after 3 seconds
+            showSuccess(successMessage);
+            
             setTimeout(() => {
-                window.location.href = '../html/login.html';
+                window.location.href = redirectUrl;
             }, 3000);
         } else {
-            console.error('❌ Registration failed:', result.message);
-            showError(result.message || 'Registration failed. Please try again.');
+            console.error('❌ Submission failed:', result.message);
+            showError(result.message || 'Operation failed. Please try again.');
             submitBtn.disabled = false;
         }
         
     } catch (error) {
-        console.error('❌ Registration error:', error);
+        console.error('❌ Submission error:', error);
         hideLoading();
-        showError('An error occurred during registration. Please try again.');
+        showError('An error occurred. Please try again.');
         submitBtn.disabled = false;
     }
 }
@@ -429,29 +578,29 @@ async function handleFormSubmit(e) {
 
 function showError(message) {
     const errorMsg = document.getElementById('errorMsg');
-    errorMsg.textContent = message;
-    errorMsg.style.display = 'block';
-    
-    // Hide after 5 seconds
-    setTimeout(() => {
-        errorMsg.style.display = 'none';
-    }, 5000);
-    
-    // Scroll to top to show error
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (errorMsg) {
+        errorMsg.textContent = message;
+        errorMsg.style.display = 'block';
+        
+        setTimeout(() => {
+            errorMsg.style.display = 'none';
+        }, 5000);
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 }
 
 function showSuccess(message) {
     const successMsg = document.getElementById('successMsg');
-    successMsg.textContent = message;
-    successMsg.style.display = 'block';
-    
-    // Scroll to top to show success
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (successMsg) {
+        successMsg.textContent = message;
+        successMsg.style.display = 'block';
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 }
 
 function showLoading(message = 'Loading...') {
-    // Remove existing loader if any
     let loader = document.querySelector('.loading-overlay');
     if (!loader) {
         loader = document.createElement('div');
@@ -463,6 +612,8 @@ function showLoading(message = 'Loading...') {
             </div>
         `;
         document.body.appendChild(loader);
+    } else {
+        loader.querySelector('p').textContent = message;
     }
     loader.classList.add('show');
 }
@@ -475,7 +626,7 @@ function hideLoading() {
 }
 
 // ========================================
-// EXPORT FUNCTIONS FOR INLINE ONCLICK
+// EXPORT FUNCTIONS
 // ========================================
 window.nextStep = nextStep;
 window.previousStep = previousStep;
