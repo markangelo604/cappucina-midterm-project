@@ -83,6 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderNavigation();
     loadUserProfile();
     setupDropdown();
+    checkDriverStatus();
     renderMainContent();
     loadGoogleMaps();
     fetchAvailableRides();
@@ -105,6 +106,63 @@ function renderNavigation() {
         navMenu.appendChild(li);
     });
 }
+
+async function checkDriverStatus() {
+    try {
+        if (!userData || !userData.username) {
+            console.log('No user data available for driver status check');
+            return;
+        }
+        
+        const response = await fetch(`../php/check-driver-status.php?username=${encodeURIComponent(userData.username)}`);
+        const result = await response.json();
+        
+        console.log('Driver status check:', result);
+        
+        if (result.success && result.is_driver) {
+            // User is also a driver - show role switcher
+            updateNavButtonsForDriver(result.driver_status);
+        }
+    } catch (error) {
+        console.error('Error checking driver status:', error);
+    }
+}
+
+function updateNavButtonsForDriver(driverStatus) {
+    const navButtons = document.querySelector('.nav-buttons');
+    
+    if (!navButtons) {
+        console.error('Nav buttons container not found');
+        return;
+    }
+    
+    // Find the "Become a Driver" button
+    const becomeDriverBtn = Array.from(navButtons.querySelectorAll('button')).find(
+        btn => btn.textContent.includes('Become a Driver')
+    );
+    
+    if (becomeDriverBtn) {
+        // Replace "Become a Driver" with "Switch to Driver"
+        becomeDriverBtn.className = 'btn-Outline role-switcher';
+        becomeDriverBtn.innerHTML = '🚗 Switch to Driver';
+        becomeDriverBtn.onclick = function(e) {
+            e.preventDefault();
+            window.location.href = '../html/driver-dashboard.html';
+        };
+        
+        // Add status indicator badge if pending
+        if (driverStatus === 'pending') {
+            becomeDriverBtn.innerHTML = '🚗 Switch to Driver <span class="status-badge pending">Pending</span>';
+        } else if (driverStatus === 'active') {
+            becomeDriverBtn.innerHTML = '🚗 Switch to Driver <span class="status-badge active">Active</span>';
+        }
+        
+        console.log('✅ Role switcher button added');
+    } else {
+        console.warn('Become a Driver button not found');
+    }
+}
+
 
 // USER PROFILE
 function loadUserProfile() {
