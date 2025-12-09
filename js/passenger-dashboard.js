@@ -1811,7 +1811,7 @@ async function loadGoogleMaps() {
 }
 // BOOKING SUBMISSION
 // Handle booking form submission
-function handleBookingSubmit(e) {
+async function handleBookingSubmit(e) {
     e.preventDefault();
     
     console.log('📝 Submitting booking...');
@@ -1833,11 +1833,19 @@ function handleBookingSubmit(e) {
     
     console.log('✅ Pickup coordinates validated:', { lat: pickupLat, lng: pickupLng });
     
+    const numPassengers = parseInt(document.getElementById('numPassengers').value);
+    const availableSeats = currentRideData.available_seats || currentRideData.seat_available || 0;
+
+    if (numPassengers > availableSeats) {
+        alert(`Not enough seats. Only ${availableSeats} remaining.`);
+        return;
+    }
+
     const formData = {
         passenger_name: document.getElementById('passengerName').value,
         passenger_phone: document.getElementById('passengerPhone').value,
         passenger_email: document.getElementById('passengerEmail').value,
-        num_passengers: document.getElementById('numPassengers').value,
+        num_passengers: numPassengers,
         pickupPoint: pickupField.value,
         pickupCoordinates: {
             lat: parseFloat(pickupLat),
@@ -1846,6 +1854,39 @@ function handleBookingSubmit(e) {
         specialRequests: document.getElementById('specialRequests').value
     };
     
+    // ⚡ NEW: send booking to backend so MongoDB decrements seats
+    try {
+        const createBookingResponse = await fetch(
+            "/../../Server/Models/user-model.php?action=createBooking",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    passenger_username: userData.username,
+                    ride_id: currentRideData._id || currentRideData.ride_id,
+                    num_passengers: numPassengers
+                })
+            }
+        );
+
+        const result = await createBookingResponse.json();
+        console.log("📩 Backend response:", result);
+
+        if (!result.success) {
+            alert(result.message);
+            return;
+        }
+
+        // Store booking ID for payment page
+        formData.booking_id = result.booking_id;
+
+    } catch (err) {
+        console.error("❌ Booking error:", err);
+        alert("Booking failed. Please try again.");
+        return;
+    }
+    // ⚡ END of new block
+
     const bookingData = {
         ...currentRideData,
         ...formData,
@@ -1862,6 +1903,7 @@ function handleBookingSubmit(e) {
     closeBookingModal();
     window.location.href = '../html/payment.html';
 }
+
 
 async function drawRouteWithPickupSelection(pickupPlace, destinationPlace) {
     if (!pickupPlace || !destinationPlace) return;

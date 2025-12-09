@@ -505,12 +505,18 @@ function viewAllAvailableRides() {
         ];
     }
 }
-function createBooking($passengerUsername, $rideId, $db) {
+function createBooking($passengerUsername, $rideId, $numPassengers, $db) {
     try {
         $rides = $db->rides;
         $bookings = $db->bookings;
 
-        // find ride
+        // Validate num_passengers
+        $numPassengers = intval($numPassengers);
+        if ($numPassengers < 1) {
+            return ["success" => false, "message" => "Invalid number of passengers."];
+        }
+
+        // Find ride
         $ride = $rides->findOne(['_id' => new ObjectId($rideId)]);
         if (!$ride) {
             return ["success" => false, "message" => "Ride not found."];
@@ -520,11 +526,12 @@ function createBooking($passengerUsername, $rideId, $db) {
             return ["success" => false, "message" => "Ride not available for booking."];
         }
 
-        if (($ride['available_seats'] ?? 0) <= 0) {
-            return ["success" => false, "message" => "No seats available."];
+        $availableSeats = $ride['available_seats'] ?? 0;
+        if ($availableSeats < $numPassengers) {
+            return ["success" => false, "message" => "Not enough seats available. Only $availableSeats seat(s) remaining."];
         }
 
-        // no duplicate booking by same passenger
+        // No duplicate booking by same passenger
         $existing = $bookings->findOne([
             'ride_id' => new ObjectId($rideId),
             'passenger_username' => $passengerUsername,
@@ -535,39 +542,43 @@ function createBooking($passengerUsername, $rideId, $db) {
             return ["success" => false, "message" => "You have already booked this ride."];
         }
 
-        // format for booking document
+        // Format booking document
         $bookingDoc = [
             'ride_id' => new ObjectId($rideId),
             'passenger_username' => $passengerUsername,
             'driver_username' => $ride['driver_username'] ?? 'Unknown',
             'plate_number' => $ride['plate_number'] ?? '',
             'fare' => $ride['fare'] ?? 0,
+            'num_passengers' => $numPassengers,  // Store number of passengers
             'date' => $ride['date'] ?? date('Y-m-d'),
-            'status' => 'pending', // still pending until payment
+            'status' => 'pending', // Still pending until payment
             'created_at' => new UTCDateTime()
         ];
 
-        // insert
+        // Insert booking
         $result = $bookings->insertOne($bookingDoc);
 
-        // decrement available seats
-        $rides->updateOne(
-            ['_id' => new ObjectId($rideId), 'available_seats' => ['$gt' => 0]],
-            ['$inc' => ['available_seats' => -1]]
+        // Decrement available seats by num_passengers
+        $updateResult = $rides->updateOne(
+            ['_id' => new ObjectId($rideId), 'available_seats' => ['$gte' => $numPassengers]],
+            ['$inc' => ['available_seats' => -$numPassengers]]
         );
 
-        // --- Add passenger name to ride document (if not already there)
+        if ($updateResult->getModifiedCount() === 0) {
+            // Rollback booking if seat update failed
+            $bookings->deleteOne(['_id' => $result->getInsertedId()]);
+            return ["success" => false, "message" => "Seats no longer available."];
+        }
+
+        // Add passenger name to ride document
         $rides->updateOne(
             ['_id' => new ObjectId($rideId)],
-            [
-                // ✅ $addToSet ensures no duplicate passenger names
-                '$addToSet' => ['passengers' => $passengerUsername]
-            ]
+            ['$addToSet' => ['passengers' => $passengerUsername]]
         );
 
         return [
             "success" => true,
-            "message" => "Booking created successfully.",
+            "message" => "Booking created successfully for $numPassengers passenger(s).",
             "booking_id" => (string)$result->getInsertedId()
         ];
 
@@ -633,12 +644,14 @@ if (isset($_GET['action']) && $_GET['action'] === 'createBooking') {
 
     $passengerUsername = $input['passenger_username'] ?? null;
     $rideId = $input['ride_id'] ?? null;
+    $numPassengers = $input['num_passengers'] ?? 1;  // Get num_passengers from input
 
     if (!$passengerUsername || !$rideId) {
         echo json_encode(["success" => false, "message" => "Missing passenger username or ride ID."]);
         exit;
     }
-    $result = createBooking($passengerUsername, $rideId, $db);
+    
+    $result = createBooking($passengerUsername, $rideId, $numPassengers, $db);
     echo json_encode($result, JSON_PRETTY_PRINT);
     exit;
 }
