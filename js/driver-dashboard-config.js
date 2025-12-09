@@ -262,6 +262,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         await loadGoogleMapsForDriver();
         await waitForGoogleMaps();
         attachFareComputation();
+
+        addRoleSwitcherToDriverDashboard();
+
     } catch (err) {
         console.error('Failed to initialize driver dashboard', err);
     }
@@ -326,6 +329,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Add form submit handler
     addDestinationForm.addEventListener('submit', handleAddDestination);
 });
+
+
 
 // Add this new function to fetch and populate user data
 async function loadUserData() {
@@ -1606,3 +1611,81 @@ style.textContent = `
 }
 `;
 document.head.appendChild(style);
+
+function addRoleSwitcherToDriverDashboard() {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) {
+        console.error('Navbar not found');
+        return;
+    }
+    
+    let navButtons = navbar.querySelector('.nav-buttons');
+    
+    if (!navButtons) {
+        navButtons = document.createElement('div');
+        navButtons.className = 'nav-buttons';
+        
+        const navContent = navbar.querySelector('.nav-content');
+        if (navContent) {
+            navContent.appendChild(navButtons);
+        }
+    }
+    
+    if (navButtons.querySelector('.role-switcher')) {
+        return;
+    }
+    
+    const switchBtn = document.createElement('button');
+    switchBtn.className = 'btn-Outline role-switcher';
+    switchBtn.innerHTML = '👤 Switch to Passenger';
+    switchBtn.onclick = function(e) {
+        e.preventDefault();
+        window.location.href = '../html/passenger-dashboard.html';
+    };
+    
+    const logoutBtn = navButtons.querySelector('.btn-primary');
+    if (logoutBtn) {
+        navButtons.insertBefore(switchBtn, logoutBtn);
+    } else {
+        navButtons.appendChild(switchBtn);
+    }
+    
+    console.log('✅ Role switcher button added to driver dashboard');
+}
+
+const driverSwitcherStyle = document.createElement('style');
+driverSwitcherStyle.textContent = `
+.role-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.role-switcher:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.nav-buttons .role-switcher {
+    background: white;
+    color: #073066;
+    border: 2px solid #073066;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.nav-buttons .role-switcher:hover {
+    background: #073066;
+    color: white;
+}
+`;
+document.head.appendChild(driverSwitcherStyle);
