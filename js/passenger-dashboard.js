@@ -12,6 +12,8 @@ function initGoogleMap() {
     map = new google.maps.Map(document.getElementById("map"), {
         center: baguioCity,
         zoom: 15,
+        streetView: null,         
+        streetViewControl: false,
     });
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer({
@@ -891,7 +893,38 @@ function filterRides(filterType) {
 }
 
 // BOOKING MODAL
-function openBookingModal(rideIndex) {
+// function openBookingModal(rideIndex) {
+//     if (!window.availableRidesData) return;
+    
+//     const ride = window.availableRidesData[rideIndex];
+//     currentRideData = ride;
+    
+//     const driverName = ride.driver?.name || ride.name || ride.username || "Unknown Driver";
+//     const pickupLocation = ride.starting_point || ride.from || "TBD";
+//     const destinationLocation = ride.destination || ride.to || "TBD";
+//     const tripDate = ride.date || "TBD";
+//     const departureTime = ride.time || "TBD";
+//     const price = ride.fare || ride.price || "₱0.00";
+    
+//     document.getElementById('modal-driver').textContent = driverName;
+//     document.getElementById('modal-from').textContent = pickupLocation;
+//     document.getElementById('modal-to').textContent = destinationLocation;
+//     document.getElementById('modal-date').textContent = `${tripDate} at ${departureTime}`;
+//     document.getElementById('modal-price').textContent = price;
+    
+//      if (userData) {
+//         document.getElementById('passengerName').value = userData.name || "";
+//         document.getElementById('passengerEmail').value = userData.email || "";
+//         document.getElementById('passengerPhone').value = userData.phone || "";
+//     }
+    
+//     const modal = document.getElementById('bookingModal');
+//     modal.style.display = 'flex';
+//     document.body.style.overflow = 'hidden';
+// }
+
+// BOOKING MODAL (TESTING KUNG PWEDE NA MAG BOOK UNG USER BASED DOON SA STARTING)
+async function openBookingModal(rideIndex) {
     if (!window.availableRidesData) return;
     
     const ride = window.availableRidesData[rideIndex];
@@ -910,10 +943,58 @@ function openBookingModal(rideIndex) {
     document.getElementById('modal-date').textContent = `${tripDate} at ${departureTime}`;
     document.getElementById('modal-price').textContent = price;
     
+    // Prefill booking form contact info
      if (userData) {
         document.getElementById('passengerName').value = userData.name || "";
         document.getElementById('passengerEmail').value = userData.email || "";
         document.getElementById('passengerPhone').value = userData.phone || "";
+    }
+
+    // Prefill pickup/destination inputs in the search form so the map shows the ride's locations
+    const pickupInput = document.querySelector('input[name="pickup"]');
+    const destinationInput = document.querySelector('input[name="destination"]');
+    if (pickupInput) pickupInput.value = pickupLocation;
+    if (destinationInput) destinationInput.value = destinationLocation;
+
+    // Also store the pickup point inside the modal's pickupPoint field (user can edit if needed)
+    const modalPickup = document.getElementById('pickupPoint');
+    if (modalPickup) modalPickup.value = pickupLocation;
+
+    // Try to geocode addresses and show markers + route on the map
+    try {
+        // wait until maps API is ready
+        if (typeof google === 'undefined' || !google.maps) {
+            console.warn('Google Maps not ready yet');
+        } else {
+            const geocode = (address) => new Promise(resolve => {
+                if (!address) return resolve(null);
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ address }, (results, status) => {
+                    if (status === google.maps.GeocoderStatus.OK && results[0]) {
+                        resolve(results[0]);
+                    } else {
+                        resolve(null);
+                    }
+                });
+            });
+
+            // Geocode both addresses in parallel
+            const [pResult, dResult] = await Promise.all([
+                geocode(pickupLocation),
+                geocode(destinationLocation)
+            ]);
+
+            // convert geocode results to place-like objects used by the rest of the code
+            pickupPlace = pResult ? { geometry: { location: pResult.geometry.location }, formatted_address: pResult.formatted_address } : null;
+            destinationPlace = dResult ? { geometry: { location: dResult.geometry.location }, formatted_address: dResult.formatted_address } : null;
+
+            // add markers and draw route if both were found
+            addRideMarkers(pickupPlace, destinationPlace);
+            adjustMapBounds();
+            drawRoute();
+        }
+    } catch (err) {
+        console.warn('Could not geocode ride locations:', err);
     }
     
     const modal = document.getElementById('bookingModal');
