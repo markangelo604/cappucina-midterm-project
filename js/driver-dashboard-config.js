@@ -198,12 +198,15 @@ async function loadGoogleMapsForDriver() {
 // ========================================
 
 document.addEventListener('DOMContentLoaded', async function() {
-     try {
+    try {
+        // Load user data FIRST before initializing other components
+        await loadUserData();
+        
         await loadGoogleMapsForDriver();
         await waitForGoogleMaps();
         attachFareComputation();
     } catch (err) {
-        console.error('Failed to load Google Maps for driver dashboard', err);
+        console.error('Failed to initialize driver dashboard', err);
     }
 
     console.log('=== DRIVER DASHBOARD INITIALIZED ===');
@@ -267,9 +270,43 @@ document.addEventListener('DOMContentLoaded', async function() {
     addDestinationForm.addEventListener('submit', handleAddDestination);
 });
 
-// ========================================
-// DATABASE FUNCTIONS
-// ========================================
+// Add this new function to fetch and populate user data
+async function loadUserData() {
+    try {
+        const userDataStr = sessionStorage.getItem('userData');
+        if (!userDataStr) {
+            console.error('No user data found in session');
+            return;
+        }
+
+        const userData = JSON.parse(userDataStr);
+        const username = userData.username;
+
+        // Fetch user data from server
+        const response = await fetch(`../php/get-user-data.php?username=${encodeURIComponent(username)}`);
+        const result = await response.json();
+
+        if (result.success && result.data.vehicle && result.data.vehicle.length > 0) {
+            const plateNumber = result.data.vehicle[0].plate_number;
+            const plateInput = document.getElementById('plateNumber');
+            
+            if (plateInput) {
+                plateInput.value = plateNumber;
+                plateInput.readOnly = true; // Make it non-editable
+                plateInput.classList.add('auto-filled');
+                
+                // Add visual indicator
+                const hint = plateInput.parentNode.querySelector('.plate-hint');
+                if (hint) {
+                    hint.textContent = `Auto-filled from your vehicle registration (${plateNumber})`;
+                    hint.classList.add('filled');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error loading user data:', error);
+    }
+}
 
 /**
  * Load destinations from database

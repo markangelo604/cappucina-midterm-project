@@ -410,6 +410,25 @@ body {
     background: #c82333;
 }
 
+/* Add these styles to your driver-dashboard.css */
+#plateNumber.auto-filled {
+    background-color: #f0f8ff;
+    border-color: #4CAF50;
+}
+
+.plate-hint {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.85em;
+    color: #666;
+}
+
+.plate-hint.filled {
+    color: #4CAF50;
+    font-weight: 500;
+}
+
+
 /* Empty State */
 .empty-state {
     text-align: center;
