@@ -1,9 +1,11 @@
 # USE THIS COMMANDS IN YOUR PROJECT FOLDER TO USE .ENV, MONGODB AND EXPRESS
-*composer require mongodb/mongodb vlucas/phpdotenv react/http psr/http-message react/socket*
-*npm install express cors dotenv*
+- `composer require mongodb/mongodb vlucas/phpdotenv react/http psr/http-message react/socket`
+- `npm install`
 
 # TO RUN BOTH ADMIN AND CLIENT SERVERS EXECUTE THE admin_node.js USING:
-**
+- *Double click the start-servers.bat*
+  or
+- *use the command `.\start-servers.bat`*
 # Team Cappucina's Midterm Project - Carpooling App
 
 ## 📌 Project Overview
