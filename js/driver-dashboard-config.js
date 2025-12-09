@@ -79,23 +79,29 @@ function initDriverAutocomplete() {
     startAutocomplete = new google.maps.places.Autocomplete(pickupInput, options);
     destAutocomplete = new google.maps.places.Autocomplete(destInput, options);
 
-    startAutocomplete.addListener('place_changed', () => {
-        const place = startAutocomplete.getPlace();
-        if (!place.geometry) return;
-        startPlaceDriver = place;
-        placeDriverMarker('start', place.geometry.location, place.formatted_address || place.name);
-        fitDriverBounds();
-        drawDriverRoute();
-    });
+    startAutocomplete.addListener('place_changed', async () => {
+    const place = startAutocomplete.getPlace();
+    if (!place.geometry) return;
+    startPlaceDriver = place;
+    placeDriverMarker('start', place.geometry.location, place.formatted_address || place.name);
+    fitDriverBounds();
+    drawDriverRoute();
 
-    destAutocomplete.addListener('place_changed', () => {
-        const place = destAutocomplete.getPlace();
-        if (!place.geometry) return;
-        destPlaceDriver = place;
-        placeDriverMarker('dest', place.geometry.location, place.formatted_address || place.name);
-        fitDriverBounds();
-        drawDriverRoute();
-    });
+    // Compute fare after selecting place
+    await computeAndSetFare();
+});
+
+destAutocomplete.addListener('place_changed', async () => {
+    const place = destAutocomplete.getPlace();
+    if (!place.geometry) return;
+    destPlaceDriver = place;
+    placeDriverMarker('dest', place.geometry.location, place.formatted_address || place.name);
+    fitDriverBounds();
+    drawDriverRoute();
+
+    // Compute fare after selecting place
+    await computeAndSetFare();
+});
 }
 
 function placeDriverMarker(type, latLng, title) {
@@ -194,6 +200,8 @@ async function loadGoogleMapsForDriver() {
 document.addEventListener('DOMContentLoaded', async function() {
      try {
         await loadGoogleMapsForDriver();
+        await waitForGoogleMaps();
+        attachFareComputation();
     } catch (err) {
         console.error('Failed to load Google Maps for driver dashboard', err);
     }
@@ -841,6 +849,113 @@ function cancelEdit() {
 // ========================================
 // HELPER FUNCTIONS
 // ========================================
+async function computeFare(origin, destination) {
+    return new Promise((resolve) => {
+
+        // Prepare origin/destination request
+        const originRequest = origin.place_id ? { placeId: origin.place_id } : origin.address ? origin.address : null;
+        const destinationRequest = destination.place_id ? { placeId: destination.place_id } : destination.address ? destination.address : null;
+
+        // Stop early if missing place_id or address
+        if (!originRequest || !destinationRequest) {
+            console.error("Missing place_id or address for origin/destination");
+            return resolve(null);
+        }
+
+        const directions = new google.maps.DirectionsService();
+
+        directions.route(
+            {
+                origin: originRequest,
+                destination: destinationRequest,
+                travelMode: google.maps.TravelMode.DRIVING
+            },
+            (result, status) => {
+                console.log("Directions API status:", status);
+                console.log("Directions API result:", result);
+
+                if (status !== "OK" || !result) {
+                    return resolve(null);
+                }
+
+                const leg = result.routes[0].legs[0];
+                const distanceKm = leg.distance.value / 1000;
+
+                const baseFare = 30;
+                const ratePerKm = 5;
+                const fare = baseFare + distanceKm * ratePerKm;
+
+                resolve({
+                    origin,
+                    destination,
+                    distanceKm,
+                    duration: leg.duration.text,
+                    fare: Math.round(fare)
+                });
+            }
+        );
+    });
+}
+
+
+async function computeAndSetFare() {
+    const priceInput = document.getElementById('price');
+    const seatsInput = document.getElementById('seats');
+
+    if (!startPlaceDriver || !destPlaceDriver || !priceInput || !seatsInput) {
+        return;
+    }
+
+    showLoading('Computing fare...');
+    const fareData = await computeFare(startPlaceDriver, destPlaceDriver);
+    hideLoading();
+
+    console.log('fareData:', fareData); // debug
+
+    if (fareData) {
+        const seats = parseInt(seatsInput.value) || 1;
+        const pricePerSeat = fareData.fare / seats;
+        priceInput.value = pricePerSeat.toFixed(2);
+
+        console.log(`Route: ${fareData.origin.formatted_address} → ${fareData.destination.formatted_address}`);
+        console.log(`Distance: ${fareData.distanceKm} km`);
+        console.log(`Duration: ${fareData.duration}`);
+        console.log(`Total Fare: ₱${fareData.fare.toFixed(2)}`);
+        console.log(`Seats: ${seats}`);
+        console.log(`Price per Seat: ₱${pricePerSeat.toFixed(2)}`);
+    } else {
+        priceInput.value = '';
+        showError('Could not compute fare. Please try again.');
+    }
+}
+
+// Call computeFare when both pickup and destination are selected
+function attachFareComputation() {
+    const pickupInput = document.getElementById('pickup');
+    const destInput = document.getElementById('destination');
+    const priceInput = document.getElementById('price');
+    const seatsInput = document.getElementById('seats');
+
+    if (!pickupInput || !destInput || !priceInput || !seatsInput) {
+        return;
+    }
+
+    // Attach listeners to both inputs
+    pickupInput.addEventListener('change', computeAndSetFare);
+    destInput.addEventListener('change', computeAndSetFare);
+    seatsInput.addEventListener('change', computeAndSetFare);
+}
+
+async function waitForGoogleMaps() {
+    return new Promise(resolve => {
+        const timer = setInterval(() => {
+            if (window.google && google.maps && google.maps.DirectionsService) {
+                clearInterval(timer);
+                resolve();
+            }
+        }, 100);
+    });
+}
 
 function updateDestinationCount() {
     const count = destinations.length;
