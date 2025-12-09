@@ -387,7 +387,7 @@ async function handleFormSubmit(e) {
         console.log('Registration data:', registrationData);
         
         // Submit to backend
-        const response = await fetch('/api/drivers', {
+        const response = await fetch('../php/driver-registration.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
