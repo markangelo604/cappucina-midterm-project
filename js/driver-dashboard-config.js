@@ -883,6 +883,12 @@ async function displayDriverRouteOnMap(destinationId) {
         // Clear previous markers
         if (window.popupStartMarker) window.popupStartMarker.setMap(null);
         if (window.popupDestMarker) window.popupDestMarker.setMap(null);
+        if (window.popupDriverLocationMarker) window.popupDriverLocationMarker.setMap(null);
+
+        // Clear previous route by setting empty directions
+        if (window.popupDirectionsRendererDriver) {
+            window.popupDirectionsRendererDriver.setDirections({ routes: [] });
+        }
 
         // Add markers to popup map
         window.popupStartMarker = new google.maps.Marker({
@@ -899,13 +905,37 @@ async function displayDriverRouteOnMap(destinationId) {
             icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
         });
 
-        // Draw route on popup map
-        const directionsService = new google.maps.DirectionsService();
-        const directionsRenderer = new google.maps.DirectionsRenderer({
-            map: popupMap,
-            suppressMarkers: true
-        });
+        // Add driver's current location marker if available
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const driverLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    if (window.popupDriverLocationMarker) window.popupDriverLocationMarker.setMap(null);
+                    window.popupDriverLocationMarker = new google.maps.Marker({
+                        position: driverLocation,
+                        map: popupMap,
+                        title: 'Your Location',
+                        icon: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                    });
+                },
+                (error) => {
+                    console.warn('Could not get driver location:', error);
+                }
+            );
+        }
 
+        // Draw route on popup map (create once and reuse)
+        if (!window.popupDirectionsRendererDriver) {
+            window.popupDirectionsRendererDriver = new google.maps.DirectionsRenderer({
+                map: popupMap,
+                suppressMarkers: true
+            });
+        }
+
+        const directionsService = new google.maps.DirectionsService();
         directionsService.route(
             {
                 origin: pResult.geometry.location,
@@ -914,7 +944,7 @@ async function displayDriverRouteOnMap(destinationId) {
             },
             (result, status) => {
                 if (status === 'OK' && result) {
-                    directionsRenderer.setDirections(result);
+                    window.popupDirectionsRendererDriver.setDirections(result);
                     // Fit bounds to show entire route
                     const bounds = new google.maps.LatLngBounds();
                     bounds.extend(pResult.geometry.location);

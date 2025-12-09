@@ -1151,6 +1151,12 @@ async function displayRidePathOnMap(ride) {
         // Clear previous markers
         if (window.popupPickupMarker) window.popupPickupMarker.setMap(null);
         if (window.popupDestMarker) window.popupDestMarker.setMap(null);
+        if (window.popupUserLocationMarker) window.popupUserLocationMarker.setMap(null);
+
+        // Clear previous route by setting empty directions
+        if (window.popupDirectionsRenderer) {
+            window.popupDirectionsRenderer.setDirections({ routes: [] });
+        }
 
         // Add markers to popup map
         window.popupPickupMarker = new google.maps.Marker({
@@ -1167,13 +1173,37 @@ async function displayRidePathOnMap(ride) {
             icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
         });
 
-        // Draw route on popup map
-        const directionsService = new google.maps.DirectionsService();
-        const directionsRenderer = new google.maps.DirectionsRenderer({
-            map: popupMap,
-            suppressMarkers: true
-        });
+        // Add user's current location marker if available
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    if (window.popupUserLocationMarker) window.popupUserLocationMarker.setMap(null);
+                    window.popupUserLocationMarker = new google.maps.Marker({
+                        position: userLocation,
+                        map: popupMap,
+                        title: 'Your Location',
+                        icon: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                    });
+                },
+                (error) => {
+                    console.warn('Could not get user location:', error);
+                }
+            );
+        }
 
+        // Draw route on popup map (create once and reuse)
+        if (!window.popupDirectionsRenderer) {
+            window.popupDirectionsRenderer = new google.maps.DirectionsRenderer({
+                map: popupMap,
+                suppressMarkers: true
+            });
+        }
+
+        const directionsService = new google.maps.DirectionsService();
         directionsService.route(
             {
                 origin: pResult.geometry.location,
@@ -1182,7 +1212,7 @@ async function displayRidePathOnMap(ride) {
             },
             (result, status) => {
                 if (status === 'OK' && result) {
-                    directionsRenderer.setDirections(result);
+                    window.popupDirectionsRenderer.setDirections(result);
                     // Fit bounds to show entire route
                     const bounds = new google.maps.LatLngBounds();
                     bounds.extend(pResult.geometry.location);
