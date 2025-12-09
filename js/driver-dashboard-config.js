@@ -28,6 +28,30 @@ const currentYearSpan = document.getElementById('currentYear');
 // ========================================
 // GOOGLE MAPS
 // ========================================
+
+// Baguio City, Benguet bounds for location validation
+const BAGUIO_CITY_BOUNDS_DRIVER = {
+    north: 16.45,
+    south: 16.35,
+    east: 120.65,
+    west: 120.50
+};
+
+// Function to check if location is within Baguio City
+function isWithinBaguioCityDriver(lat, lng) {
+    return lat >= BAGUIO_CITY_BOUNDS_DRIVER.south && 
+           lat <= BAGUIO_CITY_BOUNDS_DRIVER.north && 
+           lng >= BAGUIO_CITY_BOUNDS_DRIVER.west && 
+           lng <= BAGUIO_CITY_BOUNDS_DRIVER.east;
+}
+
+// Function to check if location name contains Baguio City indicators
+function isBaguioCityLocationDriver(address) {
+    const baguioIndicators = ['baguio', 'benguet', 'baguio city'];
+    const lowerAddress = address.toLowerCase();
+    return baguioIndicators.some(indicator => lowerAddress.includes(indicator));
+}
+
 function initGoogleMap() {
     const baguioCity = { lat: 16.4023, lng: 120.5960 };
     map = new google.maps.Map(document.getElementById("map") || document.createElement('div'), {
@@ -74,7 +98,16 @@ function initDriverAutocomplete() {
         return;
     }
 
-    const options = { fields: ['place_id', 'geometry', 'formatted_address', 'name'] };
+    const baguioBounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(BAGUIO_CITY_BOUNDS_DRIVER.south, BAGUIO_CITY_BOUNDS_DRIVER.west),
+        new google.maps.LatLng(BAGUIO_CITY_BOUNDS_DRIVER.north, BAGUIO_CITY_BOUNDS_DRIVER.east)
+    );
+
+    const options = { 
+        fields: ['place_id', 'geometry', 'formatted_address', 'name'],
+        bounds: baguioBounds,
+        strictBounds: true
+    };
 
     startAutocomplete = new google.maps.places.Autocomplete(pickupInput, options);
     destAutocomplete = new google.maps.places.Autocomplete(destInput, options);
@@ -82,6 +115,18 @@ function initDriverAutocomplete() {
     startAutocomplete.addListener('place_changed', async () => {
     const place = startAutocomplete.getPlace();
     if (!place.geometry) return;
+    
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+    const address = place.formatted_address || place.name;
+    
+    // Validate location is within Baguio City
+    if (!isWithinBaguioCityDriver(lat, lng) && !isBaguioCityLocationDriver(address)) {
+        alert('Please select a location within Baguio City, Benguet only.');
+        document.getElementById('pickup').value = '';
+        return;
+    }
+    
     startPlaceDriver = place;
     placeDriverMarker('start', place.geometry.location, place.formatted_address || place.name);
     fitDriverBounds();
@@ -94,6 +139,18 @@ function initDriverAutocomplete() {
 destAutocomplete.addListener('place_changed', async () => {
     const place = destAutocomplete.getPlace();
     if (!place.geometry) return;
+    
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+    const address = place.formatted_address || place.name;
+    
+    // Validate location is within Baguio City
+    if (!isWithinBaguioCityDriver(lat, lng) && !isBaguioCityLocationDriver(address)) {
+        alert('Please select a location within Baguio City, Benguet only.');
+        document.getElementById('destination').value = '';
+        return;
+    }
+    
     destPlaceDriver = place;
     placeDriverMarker('dest', place.geometry.location, place.formatted_address || place.name);
     fitDriverBounds();
@@ -742,7 +799,7 @@ function renderDestinations() {
 // ========================================
 
 /**
- * Display driver's route on map when they click on a ride
+ * Display driver's route on map when they click on a ride - in popup modal
  */
 async function displayDriverRouteOnMap(destinationId) {
     try {
@@ -765,11 +822,30 @@ async function displayDriverRouteOnMap(destinationId) {
             return;
         }
 
-        // Use PlacesService to search for location instead of Geocoder
+        // Show the modal
+        const modal = document.getElementById('mapPopupModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('show');
+        }
+
+        // Initialize popup map if not already done
+        let popupMap = window.popupMapDriver;
+        if (!popupMap) {
+            const mapContainer = document.getElementById('popupMapContainer');
+            popupMap = new google.maps.Map(mapContainer, {
+                center: { lat: 16.4023, lng: 120.5960 },
+                zoom: 13,
+                streetViewControl: false
+            });
+            window.popupMapDriver = popupMap;
+        }
+
+        // Use PlacesService to search for location
         const searchPlaceByName = (address) => new Promise(resolve => {
             if (!address) return resolve(null);
             
-            const service = new google.maps.places.PlacesService(map);
+            const service = new google.maps.places.PlacesService(popupMap);
             const request = {
                 query: address,
                 fields: ['geometry', 'formatted_address', 'name']
@@ -799,42 +875,64 @@ async function displayDriverRouteOnMap(destinationId) {
             return;
         }
 
-        // Clear existing markers and routes
-        if (startMarker) startMarker.setMap(null);
-        if (destMarker) destMarker.setMap(null);
+        // Clear previous markers
+        if (window.popupStartMarker) window.popupStartMarker.setMap(null);
+        if (window.popupDestMarker) window.popupDestMarker.setMap(null);
 
-        // Create place-like objects
-        startPlaceDriver = pResult;
-        destPlaceDriver = dResult;
-
-        // Place markers with appropriate colors
-        const startIcon = 'https://maps.google.com/mapfiles/ms/icons/green-dot.png';
-        const destIcon = 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
-
-        startMarker = new google.maps.Marker({
-            position: startPlaceDriver.geometry.location,
-            map: map,
+        // Add markers to popup map
+        window.popupStartMarker = new google.maps.Marker({
+            position: pResult.geometry.location,
+            map: popupMap,
             title: 'Pickup: ' + pickupLocation,
-            icon: startIcon
+            icon: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
         });
 
-        destMarker = new google.maps.Marker({
-            position: destPlaceDriver.geometry.location,
-            map: map,
+        window.popupDestMarker = new google.maps.Marker({
+            position: dResult.geometry.location,
+            map: popupMap,
             title: 'Destination: ' + destinationLocation,
-            icon: destIcon
+            icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
         });
 
-        // Fit bounds to show both markers
-        fitDriverBounds();
+        // Draw route on popup map
+        const directionsService = new google.maps.DirectionsService();
+        const directionsRenderer = new google.maps.DirectionsRenderer({
+            map: popupMap,
+            suppressMarkers: true
+        });
 
-        // Draw the route
-        drawDriverRoute();
+        directionsService.route(
+            {
+                origin: pResult.geometry.location,
+                destination: dResult.geometry.location,
+                travelMode: google.maps.TravelMode.DRIVING
+            },
+            (result, status) => {
+                if (status === 'OK' && result) {
+                    directionsRenderer.setDirections(result);
+                    // Fit bounds to show entire route
+                    const bounds = new google.maps.LatLngBounds();
+                    bounds.extend(pResult.geometry.location);
+                    bounds.extend(dResult.geometry.location);
+                    popupMap.fitBounds(bounds, 100);
+                } else {
+                    console.warn('Directions error:', status);
+                }
+            }
+        );
 
-        console.log('✅ Route displayed for destination:', destinationId);
+        console.log('✅ Route displayed in popup map for destination:', destinationId);
     } catch (err) {
         console.error('❌ Error displaying route on map:', err);
         showError('Could not display route on map');
+    }
+}
+
+function closeMapPopup() {
+    const modal = document.getElementById('mapPopupModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
     }
 }
 

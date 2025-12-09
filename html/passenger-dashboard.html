@@ -36,6 +36,87 @@
         </div>
     </nav>
 
+    <!-- Map Popup Modal for Route Display -->
+    <div id="mapPopupModal" class="map-popup-modal" style="display: none;">
+        <div class="map-popup-content">
+            <div class="map-popup-header">
+                <h2>Route Details</h2>
+                <button class="close-popup" onclick="closeMapPopup()">&times;</button>
+            </div>
+            <div id="popupMapContainer" class="popup-map-container"></div>
+        </div>
+    </div>
+
+    <style>
+        .map-popup-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-popup-modal.show {
+            display: flex !important;
+        }
+
+        .map-popup-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 900px;
+            height: 80vh;
+            max-height: 700px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .map-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .map-popup-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #333;
+        }
+
+        .close-popup {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-popup:hover {
+            color: #333;
+        }
+
+        .popup-map-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            border-radius: 0 0 12px 12px;
+        }
+    </style>
+
 
 
 

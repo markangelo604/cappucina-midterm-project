@@ -143,8 +143,11 @@ function renderMainContent() {
     // Create Booking Modal
     const bookingModal = createBookingModal();
     
+    // Create Map Popup Modal
+    const mapPopupModal = createMapPopupModal();
+    
     // Insert after nav
-    nav.after(mapSection, searchSection, mainContent, bookingModal);
+    nav.after(mapSection, searchSection, mainContent, bookingModal, mapPopupModal);
     
     // Render safety features
     renderSafetyFeatures();
@@ -303,6 +306,49 @@ function createMainContentSection() {
     section.appendChild(container);
     
     return section;
+}
+
+// CREATE MAP POPUP MODAL
+function createMapPopupModal() {
+    const modal = document.createElement('div');
+    modal.id = 'mapPopupModal';
+    modal.className = 'map-popup-modal';
+    
+    const modalContent = document.createElement('div');
+    modalContent.className = 'map-popup-content';
+    
+    // Modal header
+    const modalHeader = document.createElement('div');
+    modalHeader.className = 'map-popup-header';
+    const h2 = document.createElement('h2');
+    h2.textContent = 'Route Details';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'close-popup';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.addEventListener('click', closeMapPopup);
+    modalHeader.appendChild(h2);
+    modalHeader.appendChild(closeBtn);
+    
+    // Map container
+    const mapContainer = document.createElement('div');
+    mapContainer.id = 'popupMapContainer';
+    mapContainer.className = 'popup-map-container';
+    
+    modalContent.appendChild(modalHeader);
+    modalContent.appendChild(mapContainer);
+    modal.appendChild(modalContent);
+    
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeMapPopup();
+    });
+    
+    return modal;
+}
+
+function closeMapPopup() {
+    const modal = document.getElementById('mapPopupModal');
+    if (modal) modal.style.display = 'none';
 }
 
 // CREATE BOOKING MODAL
@@ -978,7 +1024,7 @@ async function openBookingModal(rideIndex) {
     document.body.style.overflow = 'hidden';
 }
 
-// DISPLAY RIDE PATH ON MAP (when ride card is clicked)
+// DISPLAY RIDE PATH ON MAP (when ride card is clicked - in popup modal)
 async function displayRidePathOnMap(ride) {
     try {
         if (typeof google === 'undefined' || !google.maps) {
@@ -994,11 +1040,27 @@ async function displayRidePathOnMap(ride) {
             return;
         }
 
-        // Use PlacesService to search for location instead of Geocoder
+        // Show the modal
+        const modal = document.getElementById('mapPopupModal');
+        modal.style.display = 'flex';
+
+        // Initialize popup map if not already done
+        let popupMap = window.popupMap;
+        if (!popupMap) {
+            const mapContainer = document.getElementById('popupMapContainer');
+            popupMap = new google.maps.Map(mapContainer, {
+                center: { lat: 16.4023, lng: 120.5960 },
+                zoom: 13,
+                streetViewControl: false
+            });
+            window.popupMap = popupMap;
+        }
+
+        // Use PlacesService to search for location
         const searchPlaceByName = (address) => new Promise(resolve => {
             if (!address) return resolve(null);
             
-            const service = new google.maps.places.PlacesService(map);
+            const service = new google.maps.places.PlacesService(popupMap);
             const request = {
                 query: address,
                 fields: ['geometry', 'formatted_address', 'name']
@@ -1023,21 +1085,58 @@ async function displayRidePathOnMap(ride) {
             searchPlaceByName(destinationLocation)
         ]);
 
-        // Convert results to place-like objects
-        pickupPlace = pResult ? pResult : null;
-        destinationPlace = dResult ? dResult : null;
-
-        if (!pickupPlace || !destinationPlace) {
+        if (!pResult || !dResult) {
             console.warn('Could not locate one or both addresses');
             return;
         }
 
-        // Add markers and draw route if both were found
-        addRideMarkers(pickupPlace, destinationPlace);
-        adjustMapBounds();
-        drawRoute();
+        // Clear previous markers
+        if (window.popupPickupMarker) window.popupPickupMarker.setMap(null);
+        if (window.popupDestMarker) window.popupDestMarker.setMap(null);
 
-        console.log('✅ Route displayed on map for ride:', ride);
+        // Add markers to popup map
+        window.popupPickupMarker = new google.maps.Marker({
+            position: pResult.geometry.location,
+            map: popupMap,
+            title: 'Pickup: ' + pickupLocation,
+            icon: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+        });
+
+        window.popupDestMarker = new google.maps.Marker({
+            position: dResult.geometry.location,
+            map: popupMap,
+            title: 'Destination: ' + destinationLocation,
+            icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+        });
+
+        // Draw route on popup map
+        const directionsService = new google.maps.DirectionsService();
+        const directionsRenderer = new google.maps.DirectionsRenderer({
+            map: popupMap,
+            suppressMarkers: true
+        });
+
+        directionsService.route(
+            {
+                origin: pResult.geometry.location,
+                destination: dResult.geometry.location,
+                travelMode: google.maps.TravelMode.DRIVING
+            },
+            (result, status) => {
+                if (status === 'OK' && result) {
+                    directionsRenderer.setDirections(result);
+                    // Fit bounds to show entire route
+                    const bounds = new google.maps.LatLngBounds();
+                    bounds.extend(pResult.geometry.location);
+                    bounds.extend(dResult.geometry.location);
+                    popupMap.fitBounds(bounds, 100);
+                } else {
+                    console.warn('Directions error:', status);
+                }
+            }
+        );
+
+        console.log('✅ Route displayed in popup map for ride:', ride);
     } catch (err) {
         console.warn('Could not display ride path on map:', err);
     }
@@ -1051,23 +1150,68 @@ function closeBookingModal() {
     currentRideData = null;
 }
 // --------------------- Maps ---------------------
+// Baguio City, Benguet bounds for location validation
+const BAGUIO_CITY_BOUNDS = {
+    north: 16.45,
+    south: 16.35,
+    east: 120.65,
+    west: 120.50
+};
+
+// Function to check if location is within Baguio City
+function isWithinBaguioCity(lat, lng) {
+    return lat >= BAGUIO_CITY_BOUNDS.south && 
+           lat <= BAGUIO_CITY_BOUNDS.north && 
+           lng >= BAGUIO_CITY_BOUNDS.west && 
+           lng <= BAGUIO_CITY_BOUNDS.east;
+}
+
+// Function to check if location name contains Baguio City indicators
+function isBaguioCityLocation(address) {
+    const baguioIndicators = ['baguio', 'benguet', 'baguio city'];
+    const lowerAddress = address.toLowerCase();
+    return baguioIndicators.some(indicator => lowerAddress.includes(indicator));
+}
+
 // autocomplete for pickup and destination
 function initAutocomplete() {
     const pickupInput = document.querySelector('input[name="pickup"]');
     const destinationInput = document.querySelector('input[name="destination"]');
 
+    const baguioBounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(BAGUIO_CITY_BOUNDS.south, BAGUIO_CITY_BOUNDS.west),
+        new google.maps.LatLng(BAGUIO_CITY_BOUNDS.north, BAGUIO_CITY_BOUNDS.east)
+    );
+
     pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput, {
-        fields: ["geometry", "formatted_address", "name"]
+        fields: ["geometry", "formatted_address", "name"],
+        bounds: baguioBounds,
+        strictBounds: true
     });
 
     destinationAutocomplete = new google.maps.places.Autocomplete(destinationInput, {
-        fields: ["geometry", "formatted_address", "name"]
+        fields: ["geometry", "formatted_address", "name"],
+        bounds: baguioBounds,
+        strictBounds: true
     });
 
 pickupAutocomplete.addListener("place_changed", () => {
     pickupPlace = pickupAutocomplete.getPlace();
     
     if (pickupPlace && pickupPlace.geometry) {
+        const lat = pickupPlace.geometry.location.lat();
+        const lng = pickupPlace.geometry.location.lng();
+        const address = pickupPlace.formatted_address || pickupPlace.name;
+        
+        // Validate location is within Baguio City
+        if (!isWithinBaguioCity(lat, lng) && !isBaguioCityLocation(address)) {
+            alert('Please select a location within Baguio City, Benguet only.');
+            document.querySelector('input[name="pickup"]').value = '';
+            if (pickupMarker) pickupMarker.setMap(null);
+            pickupPlace = null;
+            return;
+        }
+        
         if (pickupMarker) pickupMarker.setMap(null);
         pickupMarker = new google.maps.Marker({
             map: map,
@@ -1085,6 +1229,19 @@ destinationAutocomplete.addListener("place_changed", () => {
     destinationPlace = destinationAutocomplete.getPlace();
     
     if (destinationPlace && destinationPlace.geometry) {
+        const lat = destinationPlace.geometry.location.lat();
+        const lng = destinationPlace.geometry.location.lng();
+        const address = destinationPlace.formatted_address || destinationPlace.name;
+        
+        // Validate location is within Baguio City
+        if (!isWithinBaguioCity(lat, lng) && !isBaguioCityLocation(address)) {
+            alert('Please select a location within Baguio City, Benguet only.');
+            document.querySelector('input[name="destination"]').value = '';
+            if (destinationMarker) destinationMarker.setMap(null);
+            destinationPlace = null;
+            return;
+        }
+        
         if (destinationMarker) destinationMarker.setMap(null);
         destinationMarker = new google.maps.Marker({
             map: map,

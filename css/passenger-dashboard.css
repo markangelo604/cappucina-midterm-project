@@ -399,12 +399,15 @@ body {
     border-radius: 12px;
     padding: 20px;
     box-shadow: var(--card-shadow);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    border: 2px solid transparent;
+    cursor: pointer;
 }
 
 .ride-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    border-color: #d4af37;
 }
 
 .ride-header {
