@@ -172,7 +172,7 @@ async function loadGoogleMapsForDriver() {
 
                     const script = document.createElement('script');
                     script.id = 'gmaps-driver-script';
-                    script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&libraries=places`;
+                    script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&libraries=places,geometry`;
                     script.async = true;
                     script.defer = true;
                     script.onload = () => {
@@ -635,7 +635,7 @@ function renderDestinations() {
                 ${dest.passengers > 0 ? `<span class="passengers-badge">${dest.passengers} passenger${dest.passengers > 1 ? 's' : ''}</span>` : ''}
             </div>
             
-            <div class="destination-route">
+            <div class="destination-route" onclick="displayDriverRouteOnMap('${dest.id}')" style="cursor: pointer;">
                 <div class="location-item">
                     <div class="location-icon">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -710,7 +710,7 @@ function renderDestinations() {
             
             <div class="destination-actions">
                 ${dest.status === 'upcoming' ? `
-                    <button class="btn-complete" onclick="handleCompleteRide('${dest.id}')" title="Mark as completed">
+                    <button class="btn-complete" id="complete-btn-${dest.id}" disabled>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                             <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
                         </svg>
@@ -733,8 +733,109 @@ function renderDestinations() {
             </div>
         </div>
     `).join('');
-    
+    destinations.forEach(dest => validateDriverDistanceForRide(dest));
     console.log('✅ Destinations rendered');
+}
+
+// ========================================
+// DISPLAY ROUTE ON MAP
+// ========================================
+
+/**
+ * Display driver's route on map when they click on a ride
+ */
+async function displayDriverRouteOnMap(destinationId) {
+    try {
+        const destination = destinations.find(d => d.id === destinationId);
+        if (!destination) {
+            showError('Ride not found');
+            return;
+        }
+
+        if (typeof google === 'undefined' || !google.maps) {
+            console.warn('Google Maps not ready yet');
+            return;
+        }
+
+        const pickupLocation = destination.pickup;
+        const destinationLocation = destination.destination;
+
+        if (!pickupLocation || !destinationLocation) {
+            showError('Ride locations not fully defined');
+            return;
+        }
+
+        // Use PlacesService to search for location instead of Geocoder
+        const searchPlaceByName = (address) => new Promise(resolve => {
+            if (!address) return resolve(null);
+            
+            const service = new google.maps.places.PlacesService(map);
+            const request = {
+                query: address,
+                fields: ['geometry', 'formatted_address', 'name']
+            };
+
+            service.findPlaceFromQuery(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
+                    resolve({
+                        geometry: { location: results[0].geometry.location },
+                        formatted_address: results[0].formatted_address || results[0].name
+                    });
+                } else {
+                    console.warn('Place search failed for:', address, status);
+                    resolve(null);
+                }
+            });
+        });
+
+        // Search for both locations in parallel
+        const [pResult, dResult] = await Promise.all([
+            searchPlaceByName(pickupLocation),
+            searchPlaceByName(destinationLocation)
+        ]);
+
+        if (!pResult || !dResult) {
+            showError('Could not locate one or both addresses');
+            return;
+        }
+
+        // Clear existing markers and routes
+        if (startMarker) startMarker.setMap(null);
+        if (destMarker) destMarker.setMap(null);
+
+        // Create place-like objects
+        startPlaceDriver = pResult;
+        destPlaceDriver = dResult;
+
+        // Place markers with appropriate colors
+        const startIcon = 'https://maps.google.com/mapfiles/ms/icons/green-dot.png';
+        const destIcon = 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
+
+        startMarker = new google.maps.Marker({
+            position: startPlaceDriver.geometry.location,
+            map: map,
+            title: 'Pickup: ' + pickupLocation,
+            icon: startIcon
+        });
+
+        destMarker = new google.maps.Marker({
+            position: destPlaceDriver.geometry.location,
+            map: map,
+            title: 'Destination: ' + destinationLocation,
+            icon: destIcon
+        });
+
+        // Fit bounds to show both markers
+        fitDriverBounds();
+
+        // Draw the route
+        drawDriverRoute();
+
+        console.log('✅ Route displayed for destination:', destinationId);
+    } catch (err) {
+        console.error('❌ Error displaying route on map:', err);
+        showError('Could not display route on map');
+    }
 }
 
 // ========================================
@@ -742,17 +843,77 @@ function renderDestinations() {
 // ========================================
 
 async function handleCompleteRide(destinationId) {
-    if (!confirm('Mark this ride as completed?')) {
+   const destination = destinations.find(d => d.id === destinationId);
+    if (!destination) {
+        showError("Ride not found");
         return;
     }
-    
-    const success = await completeRide(destinationId);
-    
-    if (success) {
-        // Reload destinations
-        await loadDestinations();
-        showSuccessMessage('Ride marked as completed!');
+
+    if (!navigator.geolocation) {
+        showError("Geolocation is not supported by your browser");
+        return;
     }
+
+    showLoading("Checking your location...");
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+        const driverLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+        };
+
+        hideLoading();
+
+        const destinationRequest = destination.place_id
+            ? { placeId: destination.place_id }
+            : destination.destination;
+
+        const directions = new google.maps.DirectionsService();
+
+        directions.route(
+            {
+                origin: driverLocation,
+                destination: destinationRequest,
+                travelMode: google.maps.TravelMode.DRIVING
+            },
+            async (result, status) => {
+                if (status !== "OK" || !result) {
+                    showError("Unable to calculate distance to the destination");
+                    console.error("DirectionsService error:", status, result);
+                    return;
+                }
+
+                const leg = result.routes[0].legs[0];
+                const distanceMeters = leg.distance.value;
+
+                console.log("Distance to destination:", distanceMeters, "meters");
+
+                // REALISTIC NEAR DESTINATION THRESHOLD
+                const ARRIVAL_DISTANCE = 200; // 100 meters
+
+                if (distanceMeters > ARRIVAL_DISTANCE) {
+                    showError("You must be within 100 meters of the destination to complete the ride.");
+                    return;
+                }
+
+                // Confirm completion
+                if (!confirm("You are near the destination. Mark this ride as completed?")) return;
+
+                // Mark ride as completed in DB
+                const success = await completeRide(destinationId);
+
+                if (success) {
+                    await loadDestinations();
+                    showSuccessMessage("Ride completed!");
+                }
+            }
+        );
+
+    }, (err) => {
+        hideLoading();
+        showError("Unable to get your current location");
+        console.error(err);
+    }, { enableHighAccuracy: true });
 }
 
 async function deleteDestination(destinationId) {
@@ -886,6 +1047,75 @@ function cancelEdit() {
 // ========================================
 // HELPER FUNCTIONS
 // ========================================
+function validateDriverDistanceForRide(dest) {
+    const btn = document.getElementById(`complete-btn-${dest.id}`);
+    if (!btn) return;
+
+    // Always start disabled
+    btn.disabled = true;
+
+    if (!navigator.geolocation) {
+        console.warn("Geolocation not supported");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition((pos) => {
+        const driverLocation = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+        };
+
+        console.log(`Validating ride ${dest.id} — driver at`, driverLocation);
+
+        const originRequest = driverLocation;
+
+        // Destination can be place_id or string address
+        const destinationRequest = dest.place_id
+            ? { placeId: dest.place_id }
+            : dest.destination;
+
+        console.log("Destination request used for Directions:", destinationRequest);
+
+        const directions = new google.maps.DirectionsService();
+
+        directions.route(
+            {
+                origin: originRequest,
+                destination: destinationRequest,
+                travelMode: google.maps.TravelMode.DRIVING
+            },
+            (result, status) => {
+                if (status !== "OK" || !result) {
+                    console.error("Directions API failed:", status);
+                    return;
+                }
+
+                const leg = result.routes[0].legs[0];
+                const distanceMeters = leg.distance.value;
+
+                console.log("Leg distance (meters):", distanceMeters);
+
+                // ⭐ Adjust this threshold if needed
+                const ARRIVAL_DISTANCE_METERS = 200; // realistic driving threshold
+
+                if (distanceMeters <= ARRIVAL_DISTANCE_METERS) {
+                    btn.disabled = false;
+                    btn.onclick = () => handleCompleteRide(dest.id);
+                    console.log(
+                        `Complete ENABLED for ${dest.id} — ${distanceMeters}m away`
+                    );
+                } else {
+                    btn.disabled = true;
+                    btn.onclick = null;
+                    console.log(
+                        `Complete DISABLED for ${dest.id} — ${distanceMeters}m away`
+                    );
+                }
+            }
+        );
+    });
+}
+
 async function computeFare(origin, destination) {
     return new Promise((resolve) => {
 
@@ -919,7 +1149,7 @@ async function computeFare(origin, destination) {
                 const distanceKm = leg.distance.value / 1000;
 
                 const baseFare = 30;
-                const ratePerKm = 5;
+                const ratePerKm = 8;
                 const fare = baseFare + distanceKm * ratePerKm;
 
                 resolve({
