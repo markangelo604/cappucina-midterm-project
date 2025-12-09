@@ -598,7 +598,7 @@ function renderDestinations() {
                 ${dest.passengers > 0 ? `<span class="passengers-badge">${dest.passengers} passenger${dest.passengers > 1 ? 's' : ''}</span>` : ''}
             </div>
             
-            <div class="destination-route">
+            <div class="destination-route" onclick="displayDriverRouteOnMap('${dest.id}')" style="cursor: pointer;">
                 <div class="location-item">
                     <div class="location-icon">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -698,6 +698,107 @@ function renderDestinations() {
     `).join('');
     destinations.forEach(dest => validateDriverDistanceForRide(dest));
     console.log('✅ Destinations rendered');
+}
+
+// ========================================
+// DISPLAY ROUTE ON MAP
+// ========================================
+
+/**
+ * Display driver's route on map when they click on a ride
+ */
+async function displayDriverRouteOnMap(destinationId) {
+    try {
+        const destination = destinations.find(d => d.id === destinationId);
+        if (!destination) {
+            showError('Ride not found');
+            return;
+        }
+
+        if (typeof google === 'undefined' || !google.maps) {
+            console.warn('Google Maps not ready yet');
+            return;
+        }
+
+        const pickupLocation = destination.pickup;
+        const destinationLocation = destination.destination;
+
+        if (!pickupLocation || !destinationLocation) {
+            showError('Ride locations not fully defined');
+            return;
+        }
+
+        // Use PlacesService to search for location instead of Geocoder
+        const searchPlaceByName = (address) => new Promise(resolve => {
+            if (!address) return resolve(null);
+            
+            const service = new google.maps.places.PlacesService(map);
+            const request = {
+                query: address,
+                fields: ['geometry', 'formatted_address', 'name']
+            };
+
+            service.findPlaceFromQuery(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
+                    resolve({
+                        geometry: { location: results[0].geometry.location },
+                        formatted_address: results[0].formatted_address || results[0].name
+                    });
+                } else {
+                    console.warn('Place search failed for:', address, status);
+                    resolve(null);
+                }
+            });
+        });
+
+        // Search for both locations in parallel
+        const [pResult, dResult] = await Promise.all([
+            searchPlaceByName(pickupLocation),
+            searchPlaceByName(destinationLocation)
+        ]);
+
+        if (!pResult || !dResult) {
+            showError('Could not locate one or both addresses');
+            return;
+        }
+
+        // Clear existing markers and routes
+        if (startMarker) startMarker.setMap(null);
+        if (destMarker) destMarker.setMap(null);
+
+        // Create place-like objects
+        startPlaceDriver = pResult;
+        destPlaceDriver = dResult;
+
+        // Place markers with appropriate colors
+        const startIcon = 'https://maps.google.com/mapfiles/ms/icons/green-dot.png';
+        const destIcon = 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
+
+        startMarker = new google.maps.Marker({
+            position: startPlaceDriver.geometry.location,
+            map: map,
+            title: 'Pickup: ' + pickupLocation,
+            icon: startIcon
+        });
+
+        destMarker = new google.maps.Marker({
+            position: destPlaceDriver.geometry.location,
+            map: map,
+            title: 'Destination: ' + destinationLocation,
+            icon: destIcon
+        });
+
+        // Fit bounds to show both markers
+        fitDriverBounds();
+
+        // Draw the route
+        drawDriverRoute();
+
+        console.log('✅ Route displayed for destination:', destinationId);
+    } catch (err) {
+        console.error('❌ Error displaying route on map:', err);
+        showError('Could not display route on map');
+    }
 }
 
 // ========================================

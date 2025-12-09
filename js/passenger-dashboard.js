@@ -735,6 +735,13 @@ function createRideCard(ride, index) {
     bookBtn.dataset.rideIndex = index;
     bookBtn.textContent = 'Book Now';
     
+    // Add click handler to display route on map when card is clicked
+    card.addEventListener('click', (e) => {
+        if (e.target !== bookBtn && !bookBtn.contains(e.target)) {
+            displayRidePathOnMap(ride);
+        }
+    });
+    
     // Assemble card
     card.appendChild(rideHeader);
     card.appendChild(rideRoute);
@@ -892,37 +899,6 @@ function filterRides(filterType) {
     renderRides(sortedRides);
 }
 
-// BOOKING MODAL
-// function openBookingModal(rideIndex) {
-//     if (!window.availableRidesData) return;
-    
-//     const ride = window.availableRidesData[rideIndex];
-//     currentRideData = ride;
-    
-//     const driverName = ride.driver?.name || ride.name || ride.username || "Unknown Driver";
-//     const pickupLocation = ride.starting_point || ride.from || "TBD";
-//     const destinationLocation = ride.destination || ride.to || "TBD";
-//     const tripDate = ride.date || "TBD";
-//     const departureTime = ride.time || "TBD";
-//     const price = ride.fare || ride.price || "₱0.00";
-    
-//     document.getElementById('modal-driver').textContent = driverName;
-//     document.getElementById('modal-from').textContent = pickupLocation;
-//     document.getElementById('modal-to').textContent = destinationLocation;
-//     document.getElementById('modal-date').textContent = `${tripDate} at ${departureTime}`;
-//     document.getElementById('modal-price').textContent = price;
-    
-//      if (userData) {
-//         document.getElementById('passengerName').value = userData.name || "";
-//         document.getElementById('passengerEmail').value = userData.email || "";
-//         document.getElementById('passengerPhone').value = userData.phone || "";
-//     }
-    
-//     const modal = document.getElementById('bookingModal');
-//     modal.style.display = 'flex';
-//     document.body.style.overflow = 'hidden';
-// }
-
 // BOOKING MODAL (TESTING KUNG PWEDE NA MAG BOOK UNG USER BASED DOON SA STARTING)
 async function openBookingModal(rideIndex) {
     if (!window.availableRidesData) return;
@@ -1002,6 +978,71 @@ async function openBookingModal(rideIndex) {
     document.body.style.overflow = 'hidden';
 }
 
+// DISPLAY RIDE PATH ON MAP (when ride card is clicked)
+async function displayRidePathOnMap(ride) {
+    try {
+        if (typeof google === 'undefined' || !google.maps) {
+            console.warn('Google Maps not ready yet');
+            return;
+        }
+
+        const pickupLocation = ride.starting_point || ride.from || "TBD";
+        const destinationLocation = ride.destination || ride.to || "TBD";
+
+        if (pickupLocation === "TBD" || destinationLocation === "TBD") {
+            console.warn('Ride locations not fully defined');
+            return;
+        }
+
+        // Use PlacesService to search for location instead of Geocoder
+        const searchPlaceByName = (address) => new Promise(resolve => {
+            if (!address) return resolve(null);
+            
+            const service = new google.maps.places.PlacesService(map);
+            const request = {
+                query: address,
+                fields: ['geometry', 'formatted_address', 'name']
+            };
+
+            service.findPlaceFromQuery(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
+                    resolve({
+                        geometry: { location: results[0].geometry.location },
+                        formatted_address: results[0].formatted_address || results[0].name
+                    });
+                } else {
+                    console.warn('Place search failed for:', address, status);
+                    resolve(null);
+                }
+            });
+        });
+
+        // Search for both locations in parallel
+        const [pResult, dResult] = await Promise.all([
+            searchPlaceByName(pickupLocation),
+            searchPlaceByName(destinationLocation)
+        ]);
+
+        // Convert results to place-like objects
+        pickupPlace = pResult ? pResult : null;
+        destinationPlace = dResult ? dResult : null;
+
+        if (!pickupPlace || !destinationPlace) {
+            console.warn('Could not locate one or both addresses');
+            return;
+        }
+
+        // Add markers and draw route if both were found
+        addRideMarkers(pickupPlace, destinationPlace);
+        adjustMapBounds();
+        drawRoute();
+
+        console.log('✅ Route displayed on map for ride:', ride);
+    } catch (err) {
+        console.warn('Could not display ride path on map:', err);
+    }
+}
+
 function closeBookingModal() {
     const modal = document.getElementById('bookingModal');
     modal.style.display = 'none';
@@ -1031,7 +1072,8 @@ pickupAutocomplete.addListener("place_changed", () => {
         pickupMarker = new google.maps.Marker({
             map: map,
             position: pickupPlace.geometry.location,
-            title: "Pickup: " + pickupPlace.formatted_address
+            title: "Pickup: " + pickupPlace.formatted_address,
+            icon: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
         });
     }
 
@@ -1047,7 +1089,8 @@ destinationAutocomplete.addListener("place_changed", () => {
         destinationMarker = new google.maps.Marker({
             map: map,
             position: destinationPlace.geometry.location,
-            title: "Destination: " + destinationPlace.formatted_address
+            title: "Destination: " + destinationPlace.formatted_address,
+            icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
         });
     }
 
@@ -1064,7 +1107,8 @@ function addRideMarkers(pickupPlace, destinationPlace) {
         pickupMarker = new google.maps.Marker({
             map: map,
             position: pickupPlace.geometry.location,
-            title: "Pickup: " + pickupPlace.formatted_address
+            title: "Pickup: " + pickupPlace.formatted_address,
+            icon: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
         });
     }
 
@@ -1072,7 +1116,8 @@ function addRideMarkers(pickupPlace, destinationPlace) {
         destinationMarker = new google.maps.Marker({
             map: map,
             position: destinationPlace.geometry.location,
-            title: "Destination: " + destinationPlace.formatted_address
+            title: "Destination: " + destinationPlace.formatted_address,
+            icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
         });
     }
 
