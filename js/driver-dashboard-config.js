@@ -2,6 +2,17 @@
 // DRIVER DASHBOARD JAVASCRIPT - WITH COMPLETE BUTTON
 // ========================================
 
+let map;
+let startAutocomplete;
+let destAutocomplete;
+let startMarker = null;
+let destMarker = null;
+let directionsServiceDriver;
+let directionsRendererDriver;
+let startPlaceDriver = null;
+let destPlaceDriver = null;
+let userMarkerDriver = null;
+
 // Get driver username from session
 let driverUsername = null;
 let destinations = [];
@@ -13,11 +24,178 @@ const emptyState = document.getElementById('emptyState');
 const destinationCount = document.getElementById('destinationCount');
 const currentYearSpan = document.getElementById('currentYear');
 
+
+// ========================================
+// GOOGLE MAPS
+// ========================================
+function initGoogleMap() {
+    const baguioCity = { lat: 16.4023, lng: 120.5960 };
+    map = new google.maps.Map(document.getElementById("map") || document.createElement('div'), {
+        center: baguioCity,
+        zoom: 13,
+    });
+
+    directionsServiceDriver = new google.maps.DirectionsService();
+    directionsRendererDriver = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true
+    });
+
+    initDriverAutocomplete();
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+            const userLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            if (userMarkerDriver) userMarkerDriver.setMap(null);
+            userMarkerDriver = new google.maps.Marker({
+                position: userLocation,
+                map: map,
+                title: "Your Location",
+                icon: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+            });
+            map.setCenter(userLocation);
+        }, () => {
+            // geolocation denied/failed
+        });
+    }
+}
+
+function initDriverAutocomplete() {
+    const pickupInput = document.getElementById('pickup');
+    const destInput = document.getElementById('destination');
+
+    if (!pickupInput || !destInput || !google || !google.maps || !google.maps.places) {
+        console.warn('Driver Autocomplete: inputs or Google Places not ready.');
+        return;
+    }
+
+    const options = { fields: ['place_id', 'geometry', 'formatted_address', 'name'] };
+
+    startAutocomplete = new google.maps.places.Autocomplete(pickupInput, options);
+    destAutocomplete = new google.maps.places.Autocomplete(destInput, options);
+
+    startAutocomplete.addListener('place_changed', () => {
+        const place = startAutocomplete.getPlace();
+        if (!place.geometry) return;
+        startPlaceDriver = place;
+        placeDriverMarker('start', place.geometry.location, place.formatted_address || place.name);
+        fitDriverBounds();
+        drawDriverRoute();
+    });
+
+    destAutocomplete.addListener('place_changed', () => {
+        const place = destAutocomplete.getPlace();
+        if (!place.geometry) return;
+        destPlaceDriver = place;
+        placeDriverMarker('dest', place.geometry.location, place.formatted_address || place.name);
+        fitDriverBounds();
+        drawDriverRoute();
+    });
+}
+
+function placeDriverMarker(type, latLng, title) {
+    const icon = type === 'start'
+        ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+        : 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
+
+    if (type === 'start') {
+        if (startMarker) startMarker.setMap(null);
+        startMarker = new google.maps.Marker({ position: latLng, map: map, title, icon });
+    } else {
+        if (destMarker) destMarker.setMap(null);
+        destMarker = new google.maps.Marker({ position: latLng, map: map, title, icon });
+    }
+}
+
+function fitDriverBounds() {
+    const bounds = new google.maps.LatLngBounds();
+    let has = false;
+    if (startMarker && startMarker.getPosition()) { bounds.extend(startMarker.getPosition()); has = true; }
+    if (destMarker && destMarker.getPosition()) { bounds.extend(destMarker.getPosition()); has = true; }
+    if (has) map.fitBounds(bounds, 100);
+}
+
+function drawDriverRoute() {
+    if (!startPlaceDriver || !destPlaceDriver) return;
+    const origin = startPlaceDriver.geometry.location;
+    const destination = destPlaceDriver.geometry.location;
+
+    directionsServiceDriver.route({
+        origin,
+        destination,
+        travelMode: google.maps.TravelMode.DRIVING,
+        provideRouteAlternatives: false
+    }, (result, status) => {
+        if (status === 'OK' && result) {
+            directionsRendererDriver.setDirections(result);
+        } else {
+            console.warn('Driver directions error:', status);
+        }
+    });
+}
+
+async function loadGoogleMapsForDriver() {
+    if (window.google && window.google.maps && window.google.maps.places) {
+        initGoogleMap();
+        return;
+    }
+
+    return new Promise((resolve, reject) => {
+        if (document.getElementById('gmaps-driver-script')) {
+            const check = setInterval(() => {
+                if (window.google && window.google.maps && window.google.maps.places) {
+                    clearInterval(check);
+                    initGoogleMap();
+                    resolve();
+                }
+            }, 200);
+            return;
+        }
+
+        try {
+            // Fetch key from PHP - use correct relative path
+            fetch('/../../Server/Models/get-api-key.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.key) throw new Error('API key not found');
+
+                    const script = document.createElement('script');
+                    script.id = 'gmaps-driver-script';
+                    script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&libraries=places`;
+                    script.async = true;
+                    script.defer = true;
+                    script.onload = () => {
+                        initGoogleMap();
+                        resolve();
+                    };
+                    script.onerror = (e) => reject(e);
+                    document.head.appendChild(script);
+                })
+                .catch(err => {
+                    console.error('Failed to fetch API key:', err);
+                    reject(err);
+                });
+        } catch (err) {
+            console.error('Error loading Google Maps:', err);
+            reject(err);
+        }
+    });
+}
+
 // ========================================
 // INITIALIZATION
 // ========================================
 
 document.addEventListener('DOMContentLoaded', async function() {
+     try {
+        await loadGoogleMapsForDriver();
+    } catch (err) {
+        console.error('Failed to load Google Maps for driver dashboard', err);
+    }
+
     console.log('=== DRIVER DASHBOARD INITIALIZED ===');
     
     // Set current year in footer
