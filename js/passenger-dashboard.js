@@ -12,6 +12,8 @@ function initGoogleMap() {
     map = new google.maps.Map(document.getElementById("map"), {
         center: baguioCity,
         zoom: 15,
+        streetView: null,         
+        streetViewControl: false,
     });
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer({
