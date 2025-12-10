@@ -71,7 +71,6 @@ const safetyFeatures = [
     { icon: "🛡️", text: "Safety First" },
     { icon: "📍", text: "GPS Tracking" },
     { icon: "⭐", text: "Verified Drivers" },
-    { icon: "💬", text: "In-App Chat" },
     { icon: "🔒", text: "Secure Payment" }
 ];
 
