@@ -721,31 +721,9 @@ async function startServer() {
       res.sendFile(path.join(__dirname, "../html/admin.html"));
     });
 
-
-
-    const os = require('os');
-
-    
-
-    const localIp = getLocalIP();
-
-    // Get the first non-internal IPv4 address
-    function getLocalIP() {
-        const interfaces = os.networkInterfaces();
-        for (const name of Object.keys(interfaces)) {
-            for (const iface of interfaces[name]) {
-                if (iface.family === 'IPv4' && !iface.internal) {
-                    return iface.address;
-                }
-            }
-        }
-        return 'localhost'; // fallback
-    }
-
     const PORT = process.env.ADMIN_PORT;
-
     app.listen(PORT, () =>
-      console.log(`Admin server running on http://${localIp}:${PORT}`)
+      console.log(`Admin server running on http://localhost:${PORT}`)
     );
   } catch (err) {
     console.error("Failed to start server:", err.message);

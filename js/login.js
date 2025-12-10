@@ -6,7 +6,7 @@ const successMsg = document.getElementById('successMsg');
 
 // Dashboard redirect mapping
 const dashboardRedirect = {
-    'admin': `http://${window.location.hostname}:4000/admin/dashboard`,
+    'admin': 'http://localhost:4000/admin/dashboard',
     'driver': '../html/passenger-dashboard.html',
     'car_owner': '../html/passenger-dashboard.html',
     'passenger': '../html/passenger-dashboard.html'
@@ -42,7 +42,7 @@ loginForm.addEventListener('submit', async (e) => {
         // TRY ADMIN LOGIN FIRST (Node.js server)
         console.log('Attempting admin login for:', username);
         
-        let response = await fetch(`http://${window.location.hostname}:4000/admin/login`, {
+        let response = await fetch('http://localhost:4000/admin/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ loginForm.addEventListener('submit', async (e) => {
             sessionStorage.setItem('userData', JSON.stringify(userData));
             
             setTimeout(() => {
-                window.location.href = `http://${window.location.hostname}:4000/admin/dashboard`;
+                window.location.href = 'http://localhost:4000/admin/dashboard';
             }, 1000);
             return; // Exit after successful admin login
         }
@@ -80,7 +80,7 @@ loginForm.addEventListener('submit', async (e) => {
         // If admin login failed, try regular user login (PHP server)
         console.log('Not an admin, trying regular user login');
         
-        response = await fetch(`http://${window.location.hostname}:3000/php/login.php`, {
+        response = await fetch('http://localhost:3000/php/login.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
