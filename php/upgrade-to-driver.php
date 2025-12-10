@@ -190,7 +190,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // Prepare update data
         $updateData = [
-            'role' => 'car_owner',
             'vehicle' => $vehicles,
             'driver_status' => 'pending',
             'account_status' => 'active', // Keep account active

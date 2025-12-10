@@ -288,6 +288,7 @@ async function approveDriver() {
             body: JSON.stringify({
                 driver_status: 'active',
                 account_status: 'active',
+                role: 'car_owner',
                 'vehicle.0.verified': true,
                 verified_at: new Date().toISOString(),
                 verified_by: 'admin'
@@ -325,6 +326,7 @@ async function rejectDriver() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 driver_status: 'rejected',
+                role: 'passenger',
                 rejection_reason: reason,
                 rejected_at: new Date().toISOString(),
                 rejected_by: 'admin'

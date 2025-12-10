@@ -307,7 +307,7 @@ async function startServer() {
     app.get("/api/drivers", async (req, res) => {
       try {
         const { users } = getCollections();
-        const data = await users.find({ role: "car_owner" }).toArray();
+        const data = await users.find({ driver_status: { $exists: true } }).toArray();
         res.json(data);
       } catch (err) {
         console.error("Error fetching drivers:", err);
@@ -321,7 +321,7 @@ async function startServer() {
         const { users } = getCollections();
         const driver = await users.findOne({
           _id: new ObjectId(req.params.id),
-          role: "car_owner",
+          driver_status: { $exists: true },
         });
         if (!driver) {
           return res.status(404).json({ error: "Driver not found" });
@@ -420,8 +420,12 @@ async function startServer() {
 
         // Remove fields that shouldn't be updated
         delete updateData._id;
-        delete updateData.role;
         delete updateData.created_at;
+        
+        // Allow role update only if explicitly provided (for approve/reject scenarios)
+        if (!updateData.role) {
+          delete updateData.role;
+        }
 
         // Handle password update
         if (updateData.password && updateData.password.trim() !== "") {
@@ -450,7 +454,7 @@ async function startServer() {
         const result = await users.updateOne(
           {
             _id: new ObjectId(driverId),
-            role: "car_owner",
+            driver_status: { $exists: true },
           },
           { $set: updateData }
         );

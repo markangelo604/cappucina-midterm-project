@@ -76,6 +76,12 @@ function checkExistingUser() {
             isUpgrade = true;
             console.log('✅ User is logged in - UPGRADE MODE:', existingUserData.username);
             
+            // Check if user already has a pending driver application
+            if (existingUserData.driver_status && existingUserData.driver_status === 'pending') {
+                showPendingApplicationMessage();
+                return;
+            }
+            
             // Pre-fill Step 1 with user data
             const fullName = document.getElementById('fullName');
             const username = document.getElementById('username');
@@ -145,6 +151,58 @@ function checkExistingUser() {
     } else {
         console.log('No user logged in - NEW REGISTRATION MODE');
         isUpgrade = false;
+    }
+}
+
+function showPendingApplicationMessage() {
+    // Hide the form and progress indicator
+    const form = document.getElementById('driverRegistrationForm');
+    const progressContainer = document.querySelector('.progress-container');
+    if (form) form.style.display = 'none';
+    if (progressContainer) progressContainer.style.display = 'none';
+    
+    // Create pending message
+    const pendingDiv = document.createElement('div');
+    pendingDiv.className = 'pending-application-message';
+    pendingDiv.style.cssText = `
+        background: white;
+        color: #333;
+        padding: 40px 30px;
+        border-radius: 16px;
+        margin: 40px 0;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border: 3px solid #FFD700;
+    `;
+    pendingDiv.innerHTML = `
+        <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
+        <h2 style="margin: 0 0 10px 0; font-size: 28px; font-weight: bold; color: #1E40AF;">Application Pending</h2>
+        <p style="margin: 0; font-size: 16px; color: #555;">
+            Your driver application has been submitted and is currently under review by our admin team.
+        </p>
+        <p style="margin: 15px 0 0 0; font-size: 14px; color: #666;">
+            We'll notify you once your application has been reviewed. This usually takes 24-48 hours.
+        </p>
+        <button onclick="window.location.href='../html/passenger-dashboard.html'" style="
+            margin-top: 30px;
+            padding: 12px 30px;
+            background: #1E40AF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        " onmouseover="this.style.background='#FFD700'; this.style.color='#1E40AF';" onmouseout="this.style.background='#1E40AF'; this.style.color='white';">
+            Back to Dashboard
+        </button>
+    `;
+    
+    // Insert after logo
+    const logoContainer = document.querySelector('.logo-container');
+    if (logoContainer && logoContainer.parentNode) {
+        logoContainer.parentNode.insertBefore(pendingDiv, logoContainer.nextSibling);
     }
 }
 
