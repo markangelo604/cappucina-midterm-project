@@ -1469,16 +1469,31 @@ async function computeFare(origin, destination) {
 
                 const leg = result.routes[0].legs[0];
                 const distanceKm = leg.distance.value / 1000;
+                const durationSeconds = leg.duration.value;
+                const durationMinutes = Math.ceil(durationSeconds / 60);
 
+                // Fare calculation factors
                 const baseFare = 30;
-                const ratePerKm = 8;
-                const fare = baseFare + distanceKm * ratePerKm;
+                const ratePerKm = 10;
+                const ratePerMinute = 3;
+                const minuteInterval = 1; // Rate is applied every X minutes (e.g., 1 = every 1 minute, 5 = every 5 minutes)
+                
+                // Calculate distance-based fare and time-based fare
+                const distanceFare = distanceKm * ratePerKm;
+                const chargeableMinutes = Math.ceil(durationMinutes / minuteInterval) * minuteInterval;
+                const timeFare = (chargeableMinutes / minuteInterval) * ratePerMinute;
+                
+                // Total fare is base + distance + time
+                const fare = baseFare + distanceFare + timeFare;
 
                 resolve({
                     origin,
                     destination,
                     distanceKm,
+                    durationMinutes,
                     duration: leg.duration.text,
+                    distanceFare,
+                    timeFare,
                     fare: Math.round(fare)
                 });
             }
@@ -1507,8 +1522,11 @@ async function computeAndSetFare() {
         priceInput.value = pricePerSeat.toFixed(2);
 
         console.log(`Route: ${fareData.origin.formatted_address} → ${fareData.destination.formatted_address}`);
-        console.log(`Distance: ${fareData.distanceKm} km`);
-        console.log(`Duration: ${fareData.duration}`);
+        console.log(`Distance: ${fareData.distanceKm.toFixed(2)} km`);
+        console.log(`Duration: ${fareData.duration} (${fareData.durationMinutes} minutes)`);
+        console.log(`Distance Fare: ₱${fareData.distanceFare.toFixed(2)} (${fareData.distanceKm.toFixed(2)} km × ₱8/km)`);
+        console.log(`Time Fare: ₱${fareData.timeFare.toFixed(2)} (${fareData.durationMinutes} minutes × ₱2/min)`);
+        console.log(`Base Fare: ₱30.00`);
         console.log(`Total Fare: ₱${fareData.fare.toFixed(2)}`);
         console.log(`Seats: ${seats}`);
         console.log(`Price per Seat: ₱${pricePerSeat.toFixed(2)}`);
