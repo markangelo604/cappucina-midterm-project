@@ -145,7 +145,7 @@ try {
             'pickup' => $ride['from'] ?? 'N/A',
             'destination' => $ride['to'] ?? 'N/A',
             'date' => formatDateTime($ride['time'] ?? '', $ride['date'] ?? ''),
-            'passengers' => '1 seat booked', // You can enhance this based on actual booking
+            'passengers' => ($booking['num_passengers'] ?? 1) . ' seat' . (($booking['num_passengers'] ?? 1) > 1 ? 's' : '') . ' booked', // You can enhance this based on actual booking
             'payment_status' => $paymentStatus,
             'price' => formatPrice($booking['fare'] ?? 0),
             'plate_number' => $booking['plate_number'] ?? ($ride['plate_number'] ?? 'N/A')

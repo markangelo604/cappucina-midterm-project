@@ -5,6 +5,8 @@ let pickupMarker = null;
 let destinationMarker = null;
 let directionsService;
 let directionsRenderer;
+let routePolyline = null;
+let isSelectingPickup = false;
 function initGoogleMap() {
     // lat: 16.3846, lng: 120.5940 within SLU MaryHeights   
     const baguioCity = {  lat: 16.4023, lng: 120.5960 };
@@ -417,6 +419,9 @@ function createBookingModal() {
     
     const modalContent = document.createElement('div');
     modalContent.className = 'modal-content';
+    modalContent.style.maxWidth = '900px';
+    modalContent.style.maxHeight = '90vh';
+    modalContent.style.overflow = 'auto';
     
     // Modal header
     const modalHeader = document.createElement('div');
@@ -432,15 +437,52 @@ function createBookingModal() {
     // Modal body
     const modalBody = document.createElement('div');
     modalBody.className = 'modal-body';
+    modalBody.style.display = 'grid';
+    modalBody.style.gridTemplateColumns = '1fr 1fr';
+    modalBody.style.gap = '20px';
     
-    // Booking summary
+    // LEFT SIDE: Booking summary + form
+    const leftSide = document.createElement('div');
+    leftSide.style.display = 'flex';
+    leftSide.style.flexDirection = 'column';
+    leftSide.style.gap = '20px';
+    
     const bookingSummary = createBookingSummary();
-    
-    // Booking form
     const bookingForm = createBookingForm();
     
-    modalBody.appendChild(bookingSummary);
-    modalBody.appendChild(bookingForm);
+    leftSide.appendChild(bookingSummary);
+    leftSide.appendChild(bookingForm);
+    
+    // RIGHT SIDE: Interactive Map
+    const rightSide = document.createElement('div');
+    rightSide.style.position = 'sticky';
+    rightSide.style.top = '0';
+    rightSide.style.height = 'fit-content';
+    
+    const mapTitle = document.createElement('h3');
+    mapTitle.textContent = 'Select Your Pickup Point';
+    mapTitle.style.marginBottom = '10px';
+    mapTitle.style.fontSize = '16px';
+    
+    const mapInstruction = document.createElement('p');
+    mapInstruction.style.fontSize = '13px';
+    mapInstruction.style.color = '#2196F3';
+    mapInstruction.style.marginBottom = '10px';
+    mapInstruction.innerHTML = '📍 <strong>Drag the blue pin</strong> to your desired pickup location along the route';
+    
+    const mapContainer = document.createElement('div');
+    mapContainer.id = 'modalMapContainer';
+    mapContainer.style.width = '100%';
+    mapContainer.style.height = '400px';
+    mapContainer.style.borderRadius = '8px';
+    mapContainer.style.border = '2px solid #e0e0e0';
+    
+    rightSide.appendChild(mapTitle);
+    rightSide.appendChild(mapInstruction);
+    rightSide.appendChild(mapContainer);
+    
+    modalBody.appendChild(leftSide);
+    modalBody.appendChild(rightSide);
     
     modalContent.appendChild(modalHeader);
     modalContent.appendChild(modalBody);
@@ -1004,6 +1046,21 @@ function filterRides(filterType) {
 }
 
 // BOOKING MODAL (TESTING KUNG PWEDE NA MAG BOOK UNG USER BASED DOON SA STARTING)
+// ========================================
+// UNIFIED PICKUP POINT SELECTION SYSTEM
+// Uses DirectionsService consistently throughout
+// ========================================
+
+// Global variables for modal map
+let modalMap = null;
+let modalDirectionsService = null;
+let modalDirectionsRenderer = null;
+let modalPickupMarker = null;
+let modalDestinationMarker = null;
+let pickupSelectionMarker = null;
+let currentRouteCoordinates = [];
+
+// Modified openBookingModal - MAIN ENTRY POINT
 async function openBookingModal(rideIndex) {
     if (!window.availableRidesData) return;
     
@@ -1017,70 +1074,356 @@ async function openBookingModal(rideIndex) {
     const departureTime = ride.time || "TBD";
     const price = ride.fare || ride.price || "₱0.00";
     
+    console.log('🚗 Opening booking modal for route:', pickupLocation, '→', destinationLocation);
+    
+    // Update modal summary
     document.getElementById('modal-driver').textContent = driverName;
     document.getElementById('modal-from').textContent = pickupLocation;
     document.getElementById('modal-to').textContent = destinationLocation;
     document.getElementById('modal-date').textContent = `${tripDate} at ${departureTime}`;
     document.getElementById('modal-price').textContent = price;
     
-    // Prefill booking form contact info
-     if (userData) {
+    // Prefill booking form
+    if (userData) {
         document.getElementById('passengerName').value = userData.name || "";
         document.getElementById('passengerEmail').value = userData.email || "";
         document.getElementById('passengerPhone').value = userData.phone || "";
     }
-
-    // Prefill pickup/destination inputs in the search form so the map shows the ride's locations
-    const pickupInput = document.querySelector('input[name="pickup"]');
-    const destinationInput = document.querySelector('input[name="destination"]');
-    if (pickupInput) pickupInput.value = pickupLocation;
-    if (destinationInput) destinationInput.value = destinationLocation;
-
-    // Also store the pickup point inside the modal's pickupPoint field (user can edit if needed)
-    const modalPickup = document.getElementById('pickupPoint');
-    if (modalPickup) modalPickup.value = pickupLocation;
-
-    // Try to geocode addresses and show markers + route on the map
-    try {
-        // wait until maps API is ready
-        if (typeof google === 'undefined' || !google.maps) {
-            console.warn('Google Maps not ready yet');
-        } else {
-            const geocode = (address) => new Promise(resolve => {
-                if (!address) return resolve(null);
-                const geocoder = new google.maps.Geocoder();
-                geocoder.geocode({ address }, (results, status) => {
-                    if (status === google.maps.GeocoderStatus.OK && results[0]) {
-                        resolve(results[0]);
-                    } else {
-                        resolve(null);
-                    }
-                });
-            });
-
-            // Geocode both addresses in parallel
-            const [pResult, dResult] = await Promise.all([
-                geocode(pickupLocation),
-                geocode(destinationLocation)
-            ]);
-
-            // convert geocode results to place-like objects used by the rest of the code
-            pickupPlace = pResult ? { geometry: { location: pResult.geometry.location }, formatted_address: pResult.formatted_address } : null;
-            destinationPlace = dResult ? { geometry: { location: dResult.geometry.location }, formatted_address: dResult.formatted_address } : null;
-
-            // add markers and draw route if both were found
-            addRideMarkers(pickupPlace, destinationPlace);
-            adjustMapBounds();
-            drawRoute();
-        }
-    } catch (err) {
-        console.warn('Could not geocode ride locations:', err);
-    }
     
+    // Show modal FIRST
     const modal = document.getElementById('bookingModal');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+    
+    // Wait for modal to be fully rendered, then initialize map
+    setTimeout(() => {
+        console.log('⏰ Initializing modal map...');
+        initializeModalMapWithRoute(pickupLocation, destinationLocation);
+    }, 300);
 }
+
+// Initialize modal map and draw route using DirectionsService
+async function initializeModalMapWithRoute(origin, destination) {
+    console.log('🗺️ Starting map initialization...');
+    
+    // Check if Google Maps is loaded
+    if (typeof google === 'undefined' || !google.maps) {
+        console.error('❌ Google Maps not loaded yet!');
+        alert('Map is still loading, please wait a moment and try again.');
+        return;
+    }
+    
+    const mapContainer = document.getElementById('modalMapContainer');
+    if (!mapContainer) {
+        console.error('❌ Map container #modalMapContainer not found!');
+        return;
+    }
+    
+    console.log('📦 Map container found');
+    
+    // Force container dimensions
+    mapContainer.style.width = '100%';
+    mapContainer.style.height = '400px';
+    mapContainer.style.minHeight = '400px';
+    
+    try {
+        // Create map instance
+        console.log('🎨 Creating Google Map...');
+        modalMap = new google.maps.Map(mapContainer, {
+            center: { lat: 16.4023, lng: 120.5960 },
+            zoom: 13,
+            streetViewControl: false,
+            mapTypeControl: true,
+            zoomControl: true
+        });
+        
+        console.log('✅ Map created successfully');
+        
+        // Create DirectionsService and Renderer
+        modalDirectionsService = new google.maps.DirectionsService();
+        modalDirectionsRenderer = new google.maps.DirectionsRenderer({
+            map: modalMap,
+            suppressMarkers: true, // We'll add custom markers
+            polylineOptions: {
+                strokeColor: '#4CAF50',
+                strokeWeight: 6,
+                strokeOpacity: 0.8
+            }
+        });
+        
+        console.log('✅ DirectionsService initialized');
+        
+        // Draw route using DirectionsService
+        await drawDriverRoute(origin, destination);
+        
+    } catch (error) {
+        console.error('❌ Error initializing modal map:', error);
+        alert('Failed to load map. Please try again.');
+    }
+}
+async function drawDriverRoute(origin, destination) {
+    console.log('🛣️ Requesting directions from', origin, 'to', destination);
+    
+    if (!origin || !destination || origin === "TBD" || destination === "TBD") {
+        console.error('❌ Invalid origin or destination');
+        alert('Route information is incomplete. Please contact support.');
+        return;
+    }
+    
+    return new Promise((resolve, reject) => {
+        modalDirectionsService.route(
+            {
+                origin: origin,
+                destination: destination,
+                travelMode: google.maps.TravelMode.DRIVING,
+                region: 'PH' // Prioritize Philippines
+            },
+            (response, status) => {
+                if (status === google.maps.DirectionsStatus.OK && response) {
+                    console.log('✅ Directions received successfully');
+                    
+                    // Display the route on map
+                    modalDirectionsRenderer.setDirections(response);
+                    
+                    // Extract route coordinates from the polyline
+                    const route = response.routes[0];
+                    currentRouteCoordinates = [];
+                    
+                    route.overview_path.forEach(point => {
+                        currentRouteCoordinates.push({
+                            lat: point.lat(),
+                            lng: point.lng()
+                        });
+                    });
+                    
+                    console.log(`✅ Extracted ${currentRouteCoordinates.length} route points`);
+                    
+                    // Get origin and destination coordinates from directions response
+                    const originLocation = route.legs[0].start_location;
+                    const destinationLocation = route.legs[0].end_location;
+                    
+                    // Add start/end markers
+                    addDriverMarkers(originLocation, destinationLocation, origin, destination);
+                    
+                    // Initialize draggable pickup marker
+                    setTimeout(() => {
+                        initializePickupMarker();
+                    }, 500);
+                    
+                    resolve(response);
+                    
+                } else {
+                    console.error('❌ Directions request failed:', status);
+                    alert(`Could not find route: ${status}. Please verify the addresses.`);
+                    reject(new Error(status));
+                }
+            }
+        );
+    });
+}
+
+function addDriverMarkers(originLocation, destinationLocation, originAddress, destAddress) {
+    console.log('📍 Adding driver markers');
+    
+    // Clear existing markers
+    if (modalPickupMarker) modalPickupMarker.setMap(null);
+    if (modalDestinationMarker) modalDestinationMarker.setMap(null);
+    
+    // Add green marker for driver's start point
+    modalPickupMarker = new google.maps.Marker({
+        position: originLocation,
+        map: modalMap,
+        title: "Driver's Starting Point: " + originAddress,
+        icon: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+        zIndex: 500
+    });
+    
+    // Add red marker for driver's destination
+    modalDestinationMarker = new google.maps.Marker({
+        position: destinationLocation,
+        map: modalMap,
+        title: "Driver's Destination: " + destAddress,
+        icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+        zIndex: 500
+    });
+    
+    console.log('✅ Driver markers added');
+}
+
+
+
+async function initializeModalMap(pickupLocation, destinationLocation) {
+    console.log('🗺️ Starting map initialization...');
+    
+    // Check if Google Maps is loaded
+    if (typeof google === 'undefined' || !google.maps) {
+        console.error('❌ Google Maps not loaded yet!');
+        alert('Map is loading, please wait a moment and try again.');
+        return;
+    }
+    
+    const mapContainer = document.getElementById('modalMapContainer');
+    if (!mapContainer) {
+        console.error('❌ Map container not found!');
+        return;
+    }
+    
+    console.log('📦 Map container found:', mapContainer);
+    
+    // Force container to have dimensions
+    mapContainer.style.width = '100%';
+    mapContainer.style.height = '400px';
+    mapContainer.style.minHeight = '400px';
+    
+    try {
+        // Create new map instance
+        console.log('🎨 Creating map instance...');
+        modalMap = new google.maps.Map(mapContainer, {
+            center: { lat: 16.4023, lng: 120.5960 },
+            zoom: 13,
+            streetViewControl: false,
+            mapTypeControl: true
+        });
+        
+        console.log('✅ Map created successfully');
+        
+        // Create directions renderer
+        modalDirectionsRenderer = new google.maps.DirectionsRenderer({
+            map: modalMap,
+            suppressMarkers: true,
+            polylineOptions: {
+                strokeColor: '#4CAF50',
+                strokeWeight: 5,
+                strokeOpacity: 0.8
+            }
+        });
+        
+        // Geocode and draw route
+        console.log('📍 Geocoding locations...');
+        await geocodeAndDrawRoute(pickupLocation, destinationLocation);
+        
+    } catch (error) {
+        console.error('❌ Error initializing modal map:', error);
+        alert('Failed to load map. Please try again.');
+    }
+}
+
+function initializePickupMarker() {
+    console.log('🔵 Initializing passenger pickup marker...');
+    
+    if (!currentRouteCoordinates || currentRouteCoordinates.length === 0) {
+        console.error('❌ No route coordinates available');
+        alert('Route not loaded. Please close and try again.');
+        return;
+    }
+    
+    // Clear existing pickup marker
+    if (pickupSelectionMarker) {
+        pickupSelectionMarker.setMap(null);
+    }
+    
+    // Try to get user's current location
+    if (navigator.geolocation) {
+        console.log('📱 Getting user location...');
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                
+                console.log('✅ User location:', userLocation);
+                
+                // Find nearest point on driver's route to user
+                const nearestPoint = findNearestPointOnRoute(userLocation, currentRouteCoordinates);
+                const distance = calculateDistance(userLocation, nearestPoint);
+                
+                console.log(`📏 User is ${(distance/1000).toFixed(2)}km from route`);
+                
+                // Place pickup marker at nearest point on route
+                createDraggablePickupMarker(nearestPoint);
+            },
+            (error) => {
+                console.warn('⚠️ Geolocation failed:', error.message);
+                // Default to 1/4 along the route (near start but not at the very beginning)
+                const defaultIndex = Math.floor(currentRouteCoordinates.length / 4);
+                const defaultPoint = currentRouteCoordinates[defaultIndex];
+                console.log('📍 Using default point at index', defaultIndex);
+                createDraggablePickupMarker(defaultPoint);
+            },
+            {
+                timeout: 5000,
+                enableHighAccuracy: false
+            }
+        );
+    } else {
+        console.warn('⚠️ Geolocation not available');
+        const defaultIndex = Math.floor(currentRouteCoordinates.length / 4);
+        const defaultPoint = currentRouteCoordinates[defaultIndex];
+        createDraggablePickupMarker(defaultPoint);
+    }
+}
+function createDraggablePickupMarker(position) {
+    console.log('🔵 Creating draggable pickup marker at:', position);
+    
+    pickupSelectionMarker = new google.maps.Marker({
+        position: position,
+        map: modalMap,
+        title: "Your Pickup Point - Drag along the route to adjust",
+        icon: {
+            url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+            scaledSize: new google.maps.Size(50, 50)
+        },
+        draggable: true,
+        zIndex: 1000,
+        animation: google.maps.Animation.DROP
+    });
+    
+    console.log('✅ Pickup marker created');
+    
+    // Update the pickup field immediately
+    updatePickupPointField(position);
+    
+    // Center map to show the pickup point
+    modalMap.panTo(position);
+    
+    // Add drag event listeners
+    pickupSelectionMarker.addListener('dragstart', () => {
+        console.log('🖱️ User started dragging pickup marker');
+    });
+    
+    pickupSelectionMarker.addListener('dragend', (event) => {
+        const draggedPos = {
+            lat: event.latLng.lat(),
+            lng: event.latLng.lng()
+        };
+        
+        console.log('🖱️ Marker dragged to:', draggedPos);
+        
+        // Snap to nearest point on route
+        const snappedPoint = findNearestPointOnRoute(draggedPos, currentRouteCoordinates);
+        const distanceFromRoute = calculateDistance(draggedPos, snappedPoint);
+        
+        console.log(`📏 Distance from route: ${distanceFromRoute.toFixed(0)}m`);
+        
+        // Warn if too far from route (more than 1km)
+        if (distanceFromRoute > 1000) {
+            alert('⚠️ Please select a pickup point closer to the driver\'s route (within 1km)');
+        }
+        
+        // Snap marker to route
+        pickupSelectionMarker.setPosition(snappedPoint);
+        updatePickupPointField(snappedPoint);
+        
+        console.log('✅ Marker snapped to route:', snappedPoint);
+    });
+    
+    // Add instruction text below pickup field
+    showPickupInstruction();
+}
+
+
 
 // DISPLAY RIDE PATH ON MAP (when ride card is clicked - in popup modal)
 async function displayRidePathOnMap(ride) {
@@ -1230,12 +1573,51 @@ async function displayRidePathOnMap(ride) {
     }
 }
 
+// Close booking modal and cleanup
 function closeBookingModal() {
+    console.log('🚪 Closing booking modal');
+    
     const modal = document.getElementById('bookingModal');
     modal.style.display = 'none';
     document.body.style.overflow = 'auto';
-    document.getElementById('bookingForm').reset();
+    
+    // Reset form
+    const form = document.getElementById('bookingForm');
+    if (form) form.reset();
+    
+    // Clear all markers
+    if (pickupSelectionMarker) {
+        pickupSelectionMarker.setMap(null);
+        pickupSelectionMarker = null;
+    }
+    if (modalPickupMarker) {
+        modalPickupMarker.setMap(null);
+        modalPickupMarker = null;
+    }
+    if (modalDestinationMarker) {
+        modalDestinationMarker.setMap(null);
+        modalDestinationMarker = null;
+    }
+    
+    // Clear route
+    if (modalDirectionsRenderer) {
+        modalDirectionsRenderer.setDirections({ routes: [] });
+    }
+    
+    // Remove instruction text
+    const instruction = document.getElementById('pickupInstruction');
+    if (instruction) instruction.remove();
+    
+    // Clear route data
+    currentRouteCoordinates = [];
     currentRideData = null;
+    
+    // Destroy map instances to force fresh initialization next time
+    modalMap = null;
+    modalDirectionsService = null;
+    modalDirectionsRenderer = null;
+    
+    console.log('✅ Modal cleanup complete');
 }
 // --------------------- Maps ---------------------
 // Baguio City, Benguet bounds for location validation
@@ -1428,67 +1810,311 @@ async function loadGoogleMaps() {
     }
 }
 // BOOKING SUBMISSION
-function handleBookingSubmit(e) {
+// Handle booking form submission
+async function handleBookingSubmit(e) {
     e.preventDefault();
     
+    console.log('📝 Submitting booking...');
+    
     if (!currentRideData) {
-        alert('No ride selected');
+        alert('❌ No ride selected');
         return;
     }
     
+    const pickupField = document.getElementById('pickupPoint');
+    const pickupLat = pickupField.dataset.lat;
+    const pickupLng = pickupField.dataset.lng;
+    
+    // Validate that pickup coordinates exist
+    if (!pickupLat || !pickupLng) {
+        alert('⚠️ Please select a pickup point on the map by dragging the blue pin along the route');
+        return;
+    }
+    
+    console.log('✅ Pickup coordinates validated:', { lat: pickupLat, lng: pickupLng });
+    
+    const numPassengers = parseInt(document.getElementById('numPassengers').value);
+    const availableSeats = currentRideData.available_seats || currentRideData.seat_available || 0;
+
+    if (numPassengers > availableSeats) {
+        alert(`Not enough seats. Only ${availableSeats} remaining.`);
+        return;
+    }
+
     const formData = {
         passenger_name: document.getElementById('passengerName').value,
         passenger_phone: document.getElementById('passengerPhone').value,
         passenger_email: document.getElementById('passengerEmail').value,
-        num_passengers: document.getElementById('numPassengers').value,
-        pickupPoint: document.getElementById('pickupPoint').value,
+        num_passengers: numPassengers,
+        pickupPoint: pickupField.value,
+        pickupCoordinates: {
+            lat: parseFloat(pickupLat),
+            lng: parseFloat(pickupLng)
+        },
         specialRequests: document.getElementById('specialRequests').value
     };
     
+    // ⚡ NEW: send booking to backend so MongoDB decrements seats
+    try {
+        const createBookingResponse = await fetch(
+            "/../../Server/Models/user-model.php?action=createBooking",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    passenger_username: userData.username,
+                    ride_id: currentRideData._id || currentRideData.ride_id,
+                    num_passengers: numPassengers
+                })
+            }
+        );
+
+        const result = await createBookingResponse.json();
+        console.log("📩 Backend response:", result);
+
+        if (!result.success) {
+            alert(result.message);
+            return;
+        }
+
+        // Store booking ID for payment page
+        formData.booking_id = result.booking_id;
+
+    } catch (err) {
+        console.error("❌ Booking error:", err);
+        alert("Booking failed. Please try again.");
+        return;
+    }
+    // ⚡ END of new block
+
     const bookingData = {
         ...currentRideData,
         ...formData,
         passenger_id: userData.id,
         booking_date: new Date().toISOString()
     };
-
+    
     sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
     
-    console.log('Booking data stored:', bookingData);
+    console.log('✅ Booking data saved to session storage');
+    console.log('📍 Pickup address:', bookingData.pickupPoint);
+    console.log('📍 Pickup coordinates:', bookingData.pickupCoordinates);
     
     closeBookingModal();
     window.location.href = '../html/payment.html';
 }
 
-const passengerSwitcherStyle = document.createElement('style');
-passengerSwitcherStyle.textContent = `
-.role-switcher {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+
+async function drawRouteWithPickupSelection(pickupPlace, destinationPlace) {
+    if (!pickupPlace || !destinationPlace) return;
+
+    // Clear previous markers and route
+    if (pickupMarker) pickupMarker.setMap(null);
+    if (destinationMarker) destinationMarker.setMap(null);
+    if (pickupSelectionMarker) pickupSelectionMarker.setMap(null);
+    if (routePolyline) routePolyline.setMap(null);
+
+    return new Promise((resolve) => {
+        directionsService.route(
+            {
+                origin: pickupPlace.geometry.location,
+                destination: destinationPlace.geometry.location,
+                travelMode: google.maps.TravelMode.DRIVING
+            },
+            (result, status) => {
+                if (status === google.maps.DirectionsStatus.OK) {
+                    // Draw the route
+                    directionsRenderer.setDirections(result);
+
+                    // Extract route coordinates
+                    const route = result.routes[0];
+                    currentRouteCoordinates = [];
+                    route.overview_path.forEach(point => {
+                        currentRouteCoordinates.push({
+                            lat: point.lat(),
+                            lng: point.lng()
+                        });
+                    });
+
+                    // Add driver's start and end markers
+                    pickupMarker = new google.maps.Marker({
+                        position: pickupPlace.geometry.location,
+                        map: map,
+                        title: "Driver Start: " + pickupPlace.formatted_address,
+                        icon: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                    });
+
+                    destinationMarker = new google.maps.Marker({
+                        position: destinationPlace.geometry.location,
+                        map: map,
+                        title: "Driver End: " + destinationPlace.formatted_address,
+                        icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                    });
+
+                    // Add user's current location marker
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const userLocation = {
+                                    lat: position.coords.latitude,
+                                    lng: position.coords.longitude
+                                };
+                                
+                                // Find nearest point on route to user
+                                const nearestPoint = findNearestPointOnRoute(userLocation, currentRouteCoordinates);
+                                
+                                // Place draggable pickup marker at nearest point
+                                if (pickupSelectionMarker) pickupSelectionMarker.setMap(null);
+                                
+                                pickupSelectionMarker = new google.maps.Marker({
+                                    position: nearestPoint,
+                                    map: map,
+                                    title: "Your Pickup Point (drag to adjust)",
+                                    icon: {
+                                        url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                                        scaledSize: new google.maps.Size(40, 40)
+                                    },
+                                    draggable: true,
+                                    zIndex: 1000
+                                });
+
+                                // Update pickup point field with coordinates
+                                updatePickupPointField(nearestPoint);
+
+                                // Add drag listener to snap to route
+                                pickupSelectionMarker.addListener('dragend', (event) => {
+                                    const draggedPos = {
+                                        lat: event.latLng.lat(),
+                                        lng: event.latLng.lng()
+                                    };
+                                    
+                                    // Snap to nearest point on route
+                                    const snappedPoint = findNearestPointOnRoute(draggedPos, currentRouteCoordinates);
+                                    pickupSelectionMarker.setPosition(snappedPoint);
+                                    updatePickupPointField(snappedPoint);
+                                });
+
+                                // Show instruction
+                                showPickupInstruction();
+                            },
+                            (error) => {
+                                console.warn('Geolocation failed:', error);
+                                // Default to start of route
+                                const defaultPoint = currentRouteCoordinates[0];
+                                pickupSelectionMarker = new google.maps.Marker({
+                                    position: defaultPoint,
+                                    map: map,
+                                    title: "Your Pickup Point (drag to adjust)",
+                                    icon: {
+                                        url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                                        scaledSize: new google.maps.Size(40, 40)
+                                    },
+                                    draggable: true,
+                                    zIndex: 1000
+                                });
+                                updatePickupPointField(defaultPoint);
+                                showPickupInstruction();
+                            }
+                        );
+                    }
+
+                    // Fit map to show entire route
+                    const bounds = new google.maps.LatLngBounds();
+                    bounds.extend(pickupPlace.geometry.location);
+                    bounds.extend(destinationPlace.geometry.location);
+                    map.fitBounds(bounds, 100);
+
+                    resolve();
+                } else {
+                    console.error("Error fetching directions", status);
+                    resolve();
+                }
+            }
+        );
+    });
 }
 
-.status-badge {
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+// Find nearest point on route to a given location
+function findNearestPointOnRoute(location, routeCoordinates) {
+    if (!routeCoordinates || routeCoordinates.length === 0) {
+        return location;
+    }
+    
+    let minDistance = Infinity;
+    let nearestPoint = routeCoordinates[0];
+    
+    routeCoordinates.forEach(point => {
+        const distance = calculateDistance(location, point);
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestPoint = point;
+        }
+    });
+    
+    return nearestPoint;
 }
 
-.status-badge.pending {
-    background: #ff9800;
-    color: white;
+// Calculate distance between two lat/lng points using Haversine formula
+function calculateDistance(point1, point2) {
+    const R = 6371e3; // Earth's radius in meters
+    const lat1 = point1.lat * Math.PI / 180;
+    const lat2 = point2.lat * Math.PI / 180;
+    const deltaLat = (point2.lat - point1.lat) * Math.PI / 180;
+    const deltaLng = (point2.lng - point1.lng) * Math.PI / 180;
+    
+    const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+              Math.cos(lat1) * Math.cos(lat2) *
+              Math.sin(deltaLng/2) * Math.sin(deltaLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    
+    return R * c; // Distance in meters
 }
-
-.status-badge.active {
-    background: #4CAF50;
-    color: white;
+// Update pickup point field with address using reverse geocoding
+function updatePickupPointField(point) {
+    const pickupField = document.getElementById('pickupPoint');
+    if (!pickupField) {
+        console.warn('⚠️ Pickup field not found');
+        return;
+    }
+    
+    // Store coordinates immediately in data attributes
+    pickupField.dataset.lat = point.lat;
+    pickupField.dataset.lng = point.lng;
+    
+    console.log('💾 Stored coordinates:', { lat: point.lat, lng: point.lng });
+    
+    // Show loading state
+    pickupField.value = 'Getting address...';
+    
+    // Reverse geocode to get human-readable address
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: point }, (results, status) => {
+        if (status === google.maps.GeocoderStatus.OK && results[0]) {
+            pickupField.value = results[0].formatted_address;
+            console.log('✅ Address updated:', results[0].formatted_address);
+        } else {
+            // Fallback to coordinates if geocoding fails
+            pickupField.value = `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`;
+            console.warn('⚠️ Geocoding failed, using coordinates');
+        }
+    });
 }
-
-.role-switcher:hover .status-badge {
-    transform: scale(1.05);
+// Show instruction text below pickup field
+function showPickupInstruction() {
+    const pickupField = document.getElementById('pickupPoint');
+    if (!pickupField || !pickupField.parentElement) return;
+    
+    // Check if instruction already exists
+    if (document.getElementById('pickupInstruction')) return;
+    
+    const instruction = document.createElement('small');
+    instruction.id = 'pickupInstruction';
+    instruction.style.color = '#2196F3';
+    instruction.style.display = 'block';
+    instruction.style.marginTop = '5px';
+    instruction.style.fontSize = '12px';
+    instruction.innerHTML = '📍 <strong>Drag the blue pin on the map</strong> to adjust your pickup point along the driver\'s route';
+    
+    pickupField.parentElement.appendChild(instruction);
+    console.log('✅ Instruction text added');
 }
-`;
-document.head.appendChild(passengerSwitcherStyle);
