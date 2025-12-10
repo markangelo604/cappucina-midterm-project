@@ -1853,39 +1853,6 @@ async function handleBookingSubmit(e) {
         },
         specialRequests: document.getElementById('specialRequests').value
     };
-    
-    // ⚡ NEW: send booking to backend so MongoDB decrements seats
-    try {
-        const createBookingResponse = await fetch(
-            "/../../Server/Models/user-model.php?action=createBooking",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    passenger_username: userData.username,
-                    ride_id: currentRideData._id || currentRideData.ride_id,
-                    num_passengers: numPassengers
-                })
-            }
-        );
-
-        const result = await createBookingResponse.json();
-        console.log("📩 Backend response:", result);
-
-        if (!result.success) {
-            alert(result.message);
-            return;
-        }
-
-        // Store booking ID for payment page
-        formData.booking_id = result.booking_id;
-
-    } catch (err) {
-        console.error("❌ Booking error:", err);
-        alert("Booking failed. Please try again.");
-        return;
-    }
-    // ⚡ END of new block
 
     const bookingData = {
         ...currentRideData,

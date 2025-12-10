@@ -309,9 +309,23 @@ document.getElementById('cashForm').addEventListener('submit', function(e) {
 });
 
 // Process Payment
-function processPayment(method) {
+async function processPayment(method) {
     const total = baseFare + serviceFee - discountAmount;
     
+    // Validate booking data exists
+    if (!bookingData) {
+        alert('Booking data is missing. Please start over.');
+        return;
+    }
+
+    // Validate pickup coordinates exist
+    if (!bookingData.pickupCoordinates || 
+        !bookingData.pickupCoordinates.lat || 
+        !bookingData.pickupCoordinates.lng) {
+        alert('Pickup location is missing. Please select a valid pickup point.');
+        return;
+    }
+
     // Create payment data object
     const paymentData = {
         booking_id: 'BK' + Date.now(),
@@ -349,70 +363,134 @@ function processPayment(method) {
 // Redirect to Confirmation Page
 async function redirectToConfirmation(paymentData) {
     try {
+        console.log('💳 Processing payment and creating booking...');
+        
         const bookingData = JSON.parse(sessionStorage.getItem('bookingData'));
         const userData = JSON.parse(sessionStorage.getItem('userData')) || {};
 
-        if (!userData?.name || !bookingData?._id) {
-            alert('⚠️ Missing booking or user data. Cannot continue.');
+        if (!userData?.username || !bookingData?._id) {
+            alert('Missing booking or user data. Cannot continue.');
             return;
         }
 
-       // create booking if not yet existing
-        let bookingCreated = false;
+        // Validate pickup coordinates
+        if (!bookingData.pickupCoordinates || 
+            !bookingData.pickupCoordinates.lat || 
+            !bookingData.pickupCoordinates.lng) {
+            alert('Pickup coordinates missing. Cannot continue.');
+            return;
+        }
 
+        console.log('Pickup coordinates:', bookingData.pickupCoordinates);
+
+        // ========================================
+        // STEP 1: Create Booking (happens AFTER payment intent)
+        // ========================================
         const bookingPayload = {
-            passenger_username: userData.name,
-            ride_id: bookingData._id || bookingData.id
+            passenger_username: userData.username,
+            ride_id: bookingData._id || bookingData.id,
+            num_passengers: bookingData.num_passengers || 1,
+            pickup_coordinates: {
+                lat: parseFloat(bookingData.pickupCoordinates.lat),
+                lng: parseFloat(bookingData.pickupCoordinates.lng)
+            },
+            pickup_address: bookingData.pickupPoint || 'Not specified'
         };
 
-        const bookingRes = await fetch('../Server/Models/user-model.php?action=createBooking', {
+        console.log('Creating booking with payload:', bookingPayload);
+
+        const bookingRes = await fetch('../php/create-booking-after-payment.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(bookingPayload)
         });
-        const bookingResult = await bookingRes.json();
 
-        // if booking exist proceed to payment
-        if (bookingResult.success) {
-            bookingCreated = true;
-        } else if (bookingResult.message.includes('already booked')) {
-            console.log('Booking already exists — proceeding to payment.');
-        } else {
-            alert(`⚠️ Failed to create booking: ${bookingResult.message}`);
+        const bookingResult = await bookingRes.json();
+        console.log('Booking response:', bookingResult);
+
+        if (!bookingResult.success) {
+            alert(`Failed to create booking: ${bookingResult.message}`);
             return;
         }
 
+        const bookingId = bookingResult.booking_id;
+        console.log('Booking created:', bookingId);
 
-        // record payment
+        // ========================================
+        // STEP 2: Record Payment
+        // ========================================
         const paymentPayload = {
-            passenger_username: userData.name,
+            passenger_username: userData.username,
             ride_id: bookingData._id || bookingData.id,
+            booking_id: bookingId,
             payment_method: paymentData.method,
             payment_amount: paymentData.amount
         };
 
-        const paymentRes = await fetch('../Server/Models/user-model.php?action=recordPayment', {
+        console.log('Recording payment with payload:', paymentPayload);
+
+        const paymentRes = await fetch('../php/record-payment-after-booking.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(paymentPayload)
         });
 
         const paymentResult = await paymentRes.json();
+        console.log('💳 Payment response:', paymentResult);
 
-        if (paymentResult.success) {
-            alert(`✅ Payment Successful!\nBooking confirmed and marked as completed.`);
-        } else {
-            alert(`⚠️ Payment recorded but booking not updated: ${paymentResult.message}`);
+        if (!paymentResult.success) {
+            alert(`Payment recorded but with issues: ${paymentResult.message}`);
+            // Continue anyway since booking was created
         }
 
-        // short delay
+        // ========================================
+        // STEP 3: Update Ride with Pickup Point (NEW!)
+        // ========================================
+        const updateRidePayload = {
+            ride_id: bookingData._id || bookingData.id,
+            passenger_username: userData.username,
+            pickup_coordinates: {
+                lat: parseFloat(bookingData.pickupCoordinates.lat),
+                lng: parseFloat(bookingData.pickupCoordinates.lng),
+                address: bookingData.pickupPoint || 'Not specified'
+            }
+        };
+
+        console.log('Updating ride with pickup point:', updateRidePayload);
+
+        const updateRideRes = await fetch('../php/update-ride-pickup-point.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateRidePayload)
+        });
+
+        const updateRideResult = await updateRideRes.json();
+        console.log('📍 Ride update response:', updateRideResult);
+
+        if (updateRideResult.success) {
+            console.log('Pickup point added to ride document');
+        } else {
+            console.warn('Failed to update ride with pickup point:', updateRideResult.message);
+            // Don't fail the entire transaction for this
+        }
+
+        // ========================================
+        // SUCCESS!
+        // ========================================
+        alert(`Payment Successful!\n\nBooking ID: ${bookingId}\nYour ride is confirmed!`);
+
+        // Clear session data
+        sessionStorage.removeItem('bookingData');
+        sessionStorage.removeItem('paymentData');
+
+        // Redirect to bookings page
         setTimeout(() => {
             window.location.href = '../html/booking.html';
         }, 1500);
 
     } catch (error) {
-        console.error('Error processing booking/payment:', error);
-        alert('⚠️ An error occurred while processing your payment.');
+        console.error('❌ Error processing payment/booking:', error);
+        alert('An error occurred while processing your payment. Please contact support.');
     }
 }
 
@@ -425,7 +503,7 @@ async function createBookingAfterPayment() {
     console.log('userData:', userData);
 
     if (!userData?.name || !bookingData?._id) {
-        alert('⚠️ Missing booking or user data. Cannot create booking.');
+        alert('Missing booking or user data. Cannot create booking.');
         return;
     }
 
@@ -446,9 +524,9 @@ async function createBookingAfterPayment() {
     console.log('API result:', result);
 
     if (result.success) {
-        alert(`✅ Booking created!\nBooking ID: ${result.booking_id}`);
+        alert(`Booking created!\nBooking ID: ${result.booking_id}`);
     } else {
-        alert(`⚠️ Booking failed: ${result.message}`);
+        alert(`Booking failed: ${result.message}`);
     }
 }
 
