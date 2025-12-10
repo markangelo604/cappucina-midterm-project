@@ -71,42 +71,43 @@ try {
     }
     
     // ==========================================
-    // GET - Fetch driver's rides
-    // ==========================================
-    if ($method === 'GET') {
-        if (!$driverUsername) {
-            sendResponse(false, 'Driver username required');
-        }
-        
-        // Fetch all rides for this driver
-        $rides = $ridesCollection->find([
-            'driver_username' => $driverUsername
-        ])->toArray();
-        
-        $formattedRides = [];
-        foreach ($rides as $ride) {
-            $formattedRides[] = [
-                '_id' => (string)$ride['_id'],
-                'id' => (string)$ride['_id'],
-                'plate_number' => $ride['plate_number'] ?? 'N/A',
-                'pickup' => $ride['from'] ?? '',
-                'destination' => $ride['to'] ?? '',
-                'date' => $ride['date'] ?? '',
-                'time' => $ride['time'] ?? '',
-                'seats' => $ride['available_seats'] ?? 0,
-                'price' => $ride['fare'] ?? 0,
-                'notes' => $ride['notes'] ?? '',
-                'status' => $ride['ride_status'] ?? 'upcoming',
-                'passengers' => count($ride['passengers'] ?? []),
-                'created_at' => isset($ride['created_at']) ? $ride['created_at']->toDateTime()->format('Y-m-d H:i:s') : null
-            ];
-        }
-        
-        sendResponse(true, 'Rides fetched successfully', [
-            'rides' => $formattedRides,
-            'count' => count($formattedRides)
-        ]);
+// GET - Fetch driver's rides
+// ==========================================
+if ($method === 'GET') {
+    if (!$driverUsername) {
+        sendResponse(false, 'Driver username required');
     }
+    
+    // Fetch all rides for this driver
+    $rides = $ridesCollection->find([
+        'driver_username' => $driverUsername
+    ])->toArray();
+    
+    $formattedRides = [];
+    foreach ($rides as $ride) {
+        $formattedRides[] = [
+            '_id' => (string)$ride['_id'],
+            'id' => (string)$ride['_id'],
+            'plate_number' => $ride['plate_number'] ?? 'N/A',
+            'pickup' => $ride['from'] ?? '',
+            'destination' => $ride['to'] ?? '',
+            'date' => $ride['date'] ?? '',
+            'time' => $ride['time'] ?? '',
+            'seats' => $ride['available_seats'] ?? 0,
+            'price' => $ride['fare'] ?? 0,
+            'notes' => $ride['notes'] ?? '',
+            'status' => $ride['ride_status'] ?? 'upcoming',
+            'passengers' => count($ride['passengers'] ?? []),
+            'created_at' => isset($ride['created_at']) ? $ride['created_at']->toDateTime()->format('Y-m-d H:i:s') : null,
+            'pickup_points' => $ride['pickup_points'] ?? []  // ADD THIS LINE
+        ];
+    }
+    
+    sendResponse(true, 'Rides fetched successfully', [
+        'rides' => $formattedRides,
+        'count' => count($formattedRides)
+    ]);
+}
     
     // ==========================================
     // POST - Create new ride

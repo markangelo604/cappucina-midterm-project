@@ -872,18 +872,30 @@ async function displayDriverRouteOnMap(destinationId) {
             return;
         }
 
+        // Add debugging log
+        console.log('Full destination object from destinations array:', JSON.stringify(destination, null, 2));
+
         if (typeof google === 'undefined' || !google.maps) {
             console.warn('Google Maps not ready yet');
             return;
         }
 
-        const pickupLocation = destination.pickup;
-        const destinationLocation = destination.destination;
+        // Support both field names: pickup/destination OR from/to
+        const pickupLocation = destination.pickup || destination.from;
+        const destinationLocation = destination.destination || destination.to;
 
         if (!pickupLocation || !destinationLocation) {
             showError('Ride locations not fully defined');
             return;
         }
+        
+        console.log('📍 Ride data:', {
+            id: destinationId,
+            status: destination.status || destination.ride_status,
+            pickup: pickupLocation,
+            destination: destinationLocation,
+            pickupPoints: destination.pickup_points
+        });
 
         // Show the modal
         const modal = document.getElementById('mapPopupModal');
@@ -896,6 +908,10 @@ async function displayDriverRouteOnMap(destinationId) {
         let popupMap = window.popupMapDriver;
         if (!popupMap) {
             const mapContainer = document.getElementById('popupMapContainer');
+            if (!mapContainer) {
+                console.error('Map container not found');
+                return;
+            }
             popupMap = new google.maps.Map(mapContainer, {
                 center: { lat: 16.4023, lng: 120.5960 },
                 zoom: 13,
@@ -942,6 +958,12 @@ async function displayDriverRouteOnMap(destinationId) {
         if (window.popupStartMarker) window.popupStartMarker.setMap(null);
         if (window.popupDestMarker) window.popupDestMarker.setMap(null);
         if (window.popupDriverLocationMarker) window.popupDriverLocationMarker.setMap(null);
+        
+        // Clear previous passenger markers
+        if (window.popupPassengerMarkers && window.popupPassengerMarkers.length > 0) {
+            window.popupPassengerMarkers.forEach(marker => marker.setMap(null));
+        }
+        window.popupPassengerMarkers = [];
 
         // Clear previous route by setting empty directions
         if (window.popupDirectionsRendererDriver) {
@@ -985,6 +1007,93 @@ async function displayDriverRouteOnMap(destinationId) {
             );
         }
 
+        // Support both 'status' and 'ride_status' field names
+        const rideStatus = destination.status || destination.ride_status;
+        
+        // Prepare waypoints for passenger pickup points if ride is departed
+        let waypoints = [];
+        if (rideStatus === 'departed' && Array.isArray(destination.pickup_points) && destination.pickup_points.length > 0) {
+            console.log('🚗 Departed ride - showing passenger pickup points:', destination.pickup_points.length);
+            console.log('Pickup points data:', destination.pickup_points);
+            
+            // Show passenger legend
+            const passengerLegend = document.getElementById('passengerLegend');
+            if (passengerLegend) {
+                passengerLegend.style.display = 'block';
+            }
+            
+            destination.pickup_points.forEach((pickupPoint, index) => {
+                console.log(`Creating marker ${index + 1}:`, pickupPoint);
+                
+                // Ensure coordinates are valid
+                if (!pickupPoint.coordinates || typeof pickupPoint.coordinates.lat !== 'number' || typeof pickupPoint.coordinates.lng !== 'number') {
+                    console.warn(`Invalid coordinates for passenger ${index + 1}:`, pickupPoint.coordinates);
+                    return;
+                }
+                
+                const passengerMarker = new google.maps.Marker({
+                    position: {
+                        lat: pickupPoint.coordinates.lat,
+                        lng: pickupPoint.coordinates.lng
+                    },
+                    map: popupMap,  // Ensure map is set
+                    title: `Passenger: ${pickupPoint.passenger_username}`,
+                    icon: 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
+                    label: {
+                        text: `${index + 1}`,
+                        color: 'white',
+                        fontWeight: 'bold'
+                    },
+                    zIndex: 1000
+                });
+
+                // Add info window for passenger
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="padding: 8px;">
+                            <strong>🚶 Passenger ${index + 1}</strong><br>
+                            <strong>${pickupPoint.passenger_username}</strong><br>
+                            <small>${pickupPoint.address || 'Pickup location'}</small>
+                        </div>
+                    `
+                });
+
+                passengerMarker.addListener('click', () => {
+                    // Close other info windows
+                    if (window.openInfoWindow) {
+                        window.openInfoWindow.close();
+                    }
+                    infoWindow.open(popupMap, passengerMarker);
+                    window.openInfoWindow = infoWindow;
+                });
+
+                window.popupPassengerMarkers.push(passengerMarker);
+                
+                // Add to waypoints for routing
+                waypoints.push({
+                    location: new google.maps.LatLng(pickupPoint.coordinates.lat, pickupPoint.coordinates.lng),
+                    stopover: true
+                });
+                
+                console.log(`✅ Marker ${index + 1} created at:`, pickupPoint.coordinates);
+            });
+            
+            console.log('✅ All passenger markers created:', window.popupPassengerMarkers.length);
+        } else {
+            console.log('ℹ️ No passenger markers to show:', {
+                rideStatus,
+                hasPickupPoints: Array.isArray(destination.pickup_points),
+                pickupPointsLength: Array.isArray(destination.pickup_points) ? destination.pickup_points.length : 0,
+                pickupPointsType: typeof destination.pickup_points
+            });
+            
+            // Hide passenger legend if no passengers
+            const passengerLegend = document.getElementById('passengerLegend');
+            if (passengerLegend) {
+                passengerLegend.style.display = 'none';
+            }
+        }
+
         // Draw route on popup map (create once and reuse)
         if (!window.popupDirectionsRendererDriver) {
             window.popupDirectionsRendererDriver = new google.maps.DirectionsRenderer({
@@ -998,16 +1107,31 @@ async function displayDriverRouteOnMap(destinationId) {
             {
                 origin: pResult.geometry.location,
                 destination: dResult.geometry.location,
+                waypoints: waypoints,  // Include waypoints for departed rides with pickup points
                 travelMode: google.maps.TravelMode.DRIVING
             },
             (result, status) => {
                 if (status === 'OK' && result) {
                     window.popupDirectionsRendererDriver.setDirections(result);
-                    // Fit bounds to show entire route
+                    // Fit bounds to show entire route including passenger markers
                     const bounds = new google.maps.LatLngBounds();
                     bounds.extend(pResult.geometry.location);
                     bounds.extend(dResult.geometry.location);
+                    
+                    // Include passenger pickup points in bounds
+                    if (rideStatus === 'departed' && Array.isArray(destination.pickup_points)) {
+                        destination.pickup_points.forEach(point => {
+                            if (point.coordinates) {
+                                bounds.extend(new google.maps.LatLng(
+                                    point.coordinates.lat,
+                                    point.coordinates.lng
+                                ));
+                            }
+                        });
+                    }
+                    
                     popupMap.fitBounds(bounds, 100);
+                    console.log('✅ Bounds fitted, markers should be visible');
                 } else {
                     console.warn('Directions error:', status);
                 }
@@ -1368,6 +1492,9 @@ function validateDriverDistanceForRide(dest) {
         return;
     }
 
+    // Define ARRIVAL_DISTANCE
+    const ARRIVAL_DISTANCE = 200; // meters
+
     navigator.geolocation.getCurrentPosition((pos) => {
         const driverLocation = {
             lat: pos.coords.latitude,
@@ -1404,16 +1531,13 @@ function validateDriverDistanceForRide(dest) {
 
                 console.log("Leg distance (meters):", distanceMeters);
 
-                // ⭐ Adjust this threshold if needed
-                const ARRIVAL_DISTANCE_METERS = 200; // realistic driving threshold
-
-                if (distanceMeters <= ARRIVAL_DISTANCE_METERS) {
+                if (distanceMeters <= ARRIVAL_DISTANCE) {
                     btn.onclick = () => handleCompleteRide(dest.id);
                     console.log(
                         `Complete ENABLED for ${dest.id} — ${distanceMeters}m away`
                     );
                 } else {
-                    btn.onclick =  showError(`You must be within ${ARRIVAL_DISTANCE} meters of the destination to complete the ride.`);;
+                    btn.onclick = () => showError(`You must be within ${ARRIVAL_DISTANCE} meters of the destination to complete the ride.`);
                     console.log(
                         `Complete DISABLED for ${dest.id} — ${distanceMeters}m away`
                     );
@@ -1422,7 +1546,6 @@ function validateDriverDistanceForRide(dest) {
         );
     });
 }
-
 async function computeFare(origin, destination) {
     return new Promise((resolve) => {
 
