@@ -38,22 +38,31 @@
                         
                         <div class="trip-details">
                             <div class="trip-route">
+                                <!-- Pickup Point -->
                                 <div class="route-point">
                                     <div class="route-icon pickup">📍</div>
                                     <div class="route-info">
-                                        <span class="route-label">Pickup</span>
-                                        <span class="route-location" id="summary-pickup">Baiuokong</span>
-                                        <span class="route-time" id="summary-pickup-time">18:00</span>
+                                        <span class="route-label">Your Pickup Point</span>
+                                        <span class="route-location" id="summary-pickup">
+                                            Loading...
+                                        </span>
+                                        <span class="route-time" id="summary-pickup-time">24:00</span>
+                                        <div class="coordinates-hint" id="pickup-coordinates" style="display: none;">
+                                            📍 Lat: 0, Lng: 0
+                                        </div>
                                     </div>
                                 </div>
                                 
                                 <div class="route-divider"></div>
                                 
+                                <!-- Destination -->
                                 <div class="route-point">
                                     <div class="route-icon destination">🎯</div>
                                     <div class="route-info">
                                         <span class="route-label">Destination</span>
-                                        <span class="route-location" id="summary-destination">Camp 7</span>
+                                        <span class="route-location" id="summary-destination">
+                                            Loading...
+                                        </span>
                                         <span class="route-time" id="summary-arrival-time">18:25</span>
                                     </div>
                                 </div>

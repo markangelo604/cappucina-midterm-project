@@ -31,30 +31,12 @@ function getBookingData() {
     }
 
     // Default data if nothing is stored
-    return {
-        driver_name: "Josh Bautista",
-        driver_initials: "JB",
-        driver_color: "#4CAF50",
-        price: "₱200.00",
-        departure_time: "18:00",
-        departure_location: "Baiuokong",
-        arrival_time: "18:25",
-        arrival_location: "Camp 7",
-        date: "Oct 25, 2025",
-        eta: "25 min",
-        vehicle: "SUV",
-        seats: 5,
-        rating: 4.8,
-        passenger_name: "Juan Dela Cruz",
-        passenger_phone: "+63 912 345 6789",
-        passenger_email: "juan@example.com",
-        num_passengers: "2"
-    };
+    return null;
 }
 
 // Initialize booking data
 const bookingData = getBookingData();
-let baseFare = parseFloat(bookingData.price.replace('₱', '').replace(',', ''));
+let baseFare = parseFloat((bookingData?.price || bookingData?.fare || '₱0').toString().replace(/[^\d.]/g, ''));
 let serviceFee = baseFare * 0.10;
 let discountAmount = 0;
 let appliedPromoCode = null;
@@ -69,24 +51,130 @@ navItems.forEach(item => {
 
 // Populate Summary
 function populateSummary() {
-    document.getElementById("summary-pickup").textContent = bookingData.from;
-    document.getElementById("summary-pickup-time").textContent = bookingData.time;
-    document.getElementById("summary-destination").textContent = bookingData.to;
-    document.getElementById("summary-arrival-time").textContent = bookingData.arrival_time;
+    if (!bookingData) {
+        console.error('No booking data found');
+        return;
+    }
+
+    // ========================================
+    // PICKUP LOCATION - Now correctly displays user's selected pickup point
+    // ========================================
+    const pickupLocation = bookingData.pickupPoint || 
+                           bookingData.pickup || 
+                           bookingData.from || 
+                           'Not specified';
+    
+    document.getElementById("summary-pickup").textContent = pickupLocation;
+    
+    // If coordinates are available, show them as hint
+    if (bookingData.pickupCoordinates) {
+        const pickupElement = document.getElementById("summary-pickup");
+        pickupElement.title = `Coordinates: ${bookingData.pickupCoordinates.lat.toFixed(6)}, ${bookingData.pickupCoordinates.lng.toFixed(6)}`;
+    }
+
+    // ========================================
+    // DESTINATION - Driver's destination
+    // ========================================
+    const destinationLocation = bookingData.destination || 
+                                bookingData.to || 
+                                bookingData.arrival_location || 
+                                'Not specified';
+    
+    document.getElementById("summary-destination").textContent = destinationLocation;
+
+    // ========================================
+    // TIME DISPLAY
+    // ========================================
+    const pickupTime = bookingData.time || 
+                       bookingData.departure_time || 
+                       '00:00';
+    document.getElementById("summary-pickup-time").textContent = pickupTime;
+
+    const arrivalTime = bookingData.arrival_time || 
+                        calculateArrivalTime(pickupTime, bookingData.eta) || 
+                        '00:00';
+    document.getElementById("summary-arrival-time").textContent = arrivalTime;
+    
+    // ========================================
+    // DRIVER INFORMATION
+    // ========================================
+    const driverName = bookingData.driver_name || 
+                       bookingData.name || 
+                       bookingData.username || 
+                       'Unknown Driver';
     
     const driverAvatar = document.getElementById("summary-driver-avatar");
-    driverAvatar.textContent = getInitials(bookingData.name);
-    driverAvatar.style.backgroundColor = bookingData.driver_color;
+    const initials = getInitials(driverName);
+    driverAvatar.textContent = initials;
+    driverAvatar.style.backgroundColor = bookingData.driver_color || generateColor(driverName);
     
-    document.getElementById("summary-driver-name").textContent = bookingData.driver_name || bookingData.username || bookingData.name;
-    document.getElementById("summary-rating").textContent = bookingData.rating;
-    document.getElementById("summary-vehicle").textContent = `${bookingData.car_details.model} • ${bookingData.car_details.seats} Seats`;
+    document.getElementById("summary-driver-name").textContent = driverName;
+    
+    const rating = bookingData.rating || 
+                   (bookingData.ratings?.average) || 
+                   0;
+    document.getElementById("summary-rating").textContent = rating.toFixed(1);
+    
+    const vehicle = bookingData.vehicle || 
+                    bookingData.car_details?.model || 
+                    'Vehicle';
+    const seats = bookingData.seats || 
+                  bookingData.available_seats || 
+                  bookingData.car_details?.seats || 
+                  4;
+    document.getElementById("summary-vehicle").textContent = `${vehicle} • ${seats} Seats`;
    
-    document.getElementById("summary-passenger-name").textContent = bookingData.passenger_name || "-";
-    document.getElementById("summary-passenger-phone").textContent = bookingData.passenger_phone || "-";
-    document.getElementById("summary-num-passengers").textContent = bookingData.num_passengers ? `${bookingData.num_passengers} Passenger(s)` : "-";
+    // ========================================
+    // PASSENGER INFORMATION
+    // ========================================
+    document.getElementById("summary-passenger-name").textContent = 
+        bookingData.passenger_name || "-";
     
+    document.getElementById("summary-passenger-phone").textContent = 
+        bookingData.passenger_phone || "-";
+    
+    const numPassengers = bookingData.num_passengers || 1;
+    document.getElementById("summary-num-passengers").textContent = 
+        `${numPassengers} Passenger${numPassengers > 1 ? 's' : ''}`;
+    
+    // ========================================
+    // PRICE CALCULATION
+    // ========================================
     updatePriceBreakdown();
+    
+    console.log('✅ Summary populated with pickup:', pickupLocation);
+}
+
+function calculateArrivalTime(departureTime, eta) {
+    if (!departureTime || !eta) return null;
+    
+    try {
+        const [hours, minutes] = departureTime.split(':').map(Number);
+        const etaMinutes = parseInt(eta) || 0;
+        
+        const date = new Date();
+        date.setHours(hours);
+        date.setMinutes(minutes + etaMinutes);
+        
+        return date.toTimeString().slice(0, 5);
+    } catch (e) {
+        return null;
+    }
+}
+
+function getInitials(name) {
+    return name
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+}
+
+function generateColor(str) {
+    const colors = ['#4CAF50', '#2196F3', '#FF9800', '#E91E63', '#9C27B0', '#00BCD4'];
+    const hash = str.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
 }
 
 // Update Price Breakdown
@@ -434,3 +522,17 @@ function clearPaymentSession() {
     sessionStorage.removeItem('bookingData');
     sessionStorage.removeItem('paymentData');
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 Payment page loaded');
+    console.log('📦 Booking data:', bookingData);
+    
+    if (!bookingData) {
+        console.error('❌ No booking data found!');
+        alert('No booking information found. Please start from the booking page.');
+        window.location.href = '../html/passenger-dashboard.html';
+        return;
+    }
+    
+    populateSummary();
+});
