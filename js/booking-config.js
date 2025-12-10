@@ -27,33 +27,51 @@ navMenu.innerHTML = navItems.map(item => `
 // --- Fetch Bookings from Database ---
 async function fetchBookings() {
     try {
-     const urlParams = new URLSearchParams(window.location.search);
         const storedUser = JSON.parse(sessionStorage.getItem('userData') || '{}');
+        
+        // Debug: log what we have in sessionStorage
+        console.log('Stored user data:', storedUser);
 
-        const name =
-            urlParams.get('name') ||
+        // Get username - try multiple possible field names
+        const username = 
+            storedUser.username ||
             storedUser.name ||
             storedUser.displayName || 
-            'guest';
+            storedUser.email ||
+            null;
+
+        if (!username) {
+            showError('User not authenticated. Please log in again.');
+            return;
+        }
+
+        console.log('Fetching bookings for username:', username);
 
         const response = await fetch(
-            `../php/get-bookings.php?username=${(name)}`,
+            `../php/get-bookings.php?username=${encodeURIComponent(username)}`,
             { credentials: 'include' }
         );
 
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
+        console.log('Bookings data received:', data);
 
         if (data.success) {
             bookings = data.bookings;
             displayBookings(bookings);
         } else {
-            showError(data.message);
+            showError(data.message || 'Failed to load bookings');
         }
     } catch (error) {
         console.error('Error fetching bookings:', error);
         showError('Failed to load bookings. Please try again later.');
     }
 }
+
 
 // --- Display Bookings ---
 function displayBookings(bookingsToShow) {
