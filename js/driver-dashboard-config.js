@@ -16,6 +16,7 @@ let userMarkerDriver = null;
 // Get driver username from session
 let driverUsername = null;
 let destinations = [];
+let maxAvailableSeats = 4; // Default value, will be updated from user data
 
 // DOM Elements
 const addDestinationForm = document.getElementById('addDestinationForm');
@@ -322,6 +323,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         displayName: userData.name || userData.displayName,
         role: userData.role
     });
+    
+    // Get max available seats from vehicle data
+    if (userData.vehicle && userData.vehicle.length > 0) {
+        maxAvailableSeats = userData.vehicle[0].available_seats || 4;
+        console.log('✅ Max available seats set to:', maxAvailableSeats);
+    }
     
     // Load existing destinations from database
     await loadDestinations();
@@ -689,6 +696,12 @@ async function handleAddDestination(e) {
     if (isNaN(formData.seats) || formData.seats < 1) {
         console.error('❌ Validation failed: Invalid seats');
         showError('Please enter valid number of seats');
+        return;
+    }
+    
+    if (formData.seats > maxAvailableSeats) {
+        console.error('❌ Validation failed: Seats exceed vehicle capacity');
+        showError(`Available seats cannot exceed ${maxAvailableSeats} (your vehicle's capacity)`);
         return;
     }
     
