@@ -10,11 +10,10 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Dotenv\Dotenv;
 use MongoDB\Client;
 
 // Load environment variables
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
 $dotenv->load();
 
 // Retrieve environment variables
