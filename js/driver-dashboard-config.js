@@ -16,7 +16,6 @@ let userMarkerDriver = null;
 // Get driver username from session
 let driverUsername = null;
 let destinations = [];
-let maxAvailableSeats = 4; // Default value, will be updated from user data
 
 // DOM Elements
 const addDestinationForm = document.getElementById('addDestinationForm');
@@ -324,22 +323,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         role: userData.role
     });
     
-    // Get max available seats from vehicle data
-    if (userData.vehicle && userData.vehicle.length > 0) {
-        maxAvailableSeats = userData.vehicle[0].available_seats || 4;
-        console.log('✅ Max available seats set to:', maxAvailableSeats);
-    }
-    
     // Load existing destinations from database
     await loadDestinations();
 
     // Check for overdue rides initially and set up periodic check
     await checkAndCancelOverdueRides();
     setInterval(checkAndCancelOverdueRides, 60000); // Check every minute
-
-    // Update depart button states periodically
-    updateDepartButtonStates();
-    setInterval(updateDepartButtonStates, 30000); // Update every 30 seconds
 
     // Add form submit handler
     addDestinationForm.addEventListener('submit', handleAddDestination);
@@ -699,12 +688,6 @@ async function handleAddDestination(e) {
         return;
     }
     
-    if (formData.seats > maxAvailableSeats) {
-        console.error('❌ Validation failed: Seats exceed vehicle capacity');
-        showError(`Available seats cannot exceed ${maxAvailableSeats} (your vehicle's capacity)`);
-        return;
-    }
-    
     if (isNaN(formData.price) || formData.price < 0) {
         console.error('❌ Validation failed: Invalid price');
         showError('Please enter valid price');
@@ -840,9 +823,9 @@ function renderDestinations() {
             
             <div class="destination-actions">
                 ${dest.status === 'upcoming' ? `
-                    <button class="btn-depart" id="depart-btn-${dest.id}" onclick="handleDepartRide('${dest.id}')" ${!isRideTimeNow(dest.date, dest.time) ? 'disabled' : ''}>
+                    <button class="btn-depart" id="depart-btn-${dest.id}" onclick="handleDepartRide('${dest.id}')" ${!isRideTimeNow(dest.date, dest.time)}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M3 1L1.66667 5H0V8H1V15H3V13H13V15H15V8H16V5H14.3333L13 1H3ZM4 9C3.44772 9 3 9.44772 3 10C3 10.5523 3.44772 11 4 11C4.55228 11 5 10.5523 5 10C5 9.44772 4.55228 9 4 9ZM11.5585 3H4.44152L3.10819 7H12.8918L11.5585 3ZM12 9C11.4477 9 11 9.44772 11 10C11 10.5523 11.4477 11 12 11C12.5523 11 13 10.5523 13 10C13 9.44772 12.5523 9 12 9Z"/>
+                            <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L10.293 7.5H4.5z"/>
                         </svg>
                         Depart
                     </button>
@@ -1050,6 +1033,13 @@ function closeMapPopup() {
  * Depart ride - mark as departed
  */
 async function handleDepartRide(destinationId) {
+     const destination = destinations.find(d => d.id === destinationId);
+
+    // Prevent depart when not allowed
+    if (!isRideTimeNow(destination.date, destination.time)) {
+        showError("You cannot depart yet. The scheduled time has not arrived.");
+        return;
+    }
     try {
         console.log('🚗 Departing ride:', destinationId);
         showLoading('Marking ride as departed...');
@@ -1373,9 +1363,6 @@ function validateDriverDistanceForRide(dest) {
     const btn = document.getElementById(`complete-btn-${dest.id}`);
     if (!btn) return;
 
-    // Always start disabled
-    btn.disabled = true;
-
     if (!navigator.geolocation) {
         console.warn("Geolocation not supported");
         return;
@@ -1421,14 +1408,12 @@ function validateDriverDistanceForRide(dest) {
                 const ARRIVAL_DISTANCE_METERS = 200; // realistic driving threshold
 
                 if (distanceMeters <= ARRIVAL_DISTANCE_METERS) {
-                    btn.disabled = false;
                     btn.onclick = () => handleCompleteRide(dest.id);
                     console.log(
                         `Complete ENABLED for ${dest.id} — ${distanceMeters}m away`
                     );
                 } else {
-                    btn.disabled = true;
-                    btn.onclick = null;
+                    btn.onclick =  showError(`You must be within ${ARRIVAL_DISTANCE} meters of the destination to complete the ride.`);;
                     console.log(
                         `Complete DISABLED for ${dest.id} — ${distanceMeters}m away`
                     );
@@ -1469,31 +1454,16 @@ async function computeFare(origin, destination) {
 
                 const leg = result.routes[0].legs[0];
                 const distanceKm = leg.distance.value / 1000;
-                const durationSeconds = leg.duration.value;
-                const durationMinutes = Math.ceil(durationSeconds / 60);
 
-                // Fare calculation factors
                 const baseFare = 30;
-                const ratePerKm = 10;
-                const ratePerMinute = 3;
-                const minuteInterval = 1; // Rate is applied every X minutes (e.g., 1 = every 1 minute, 5 = every 5 minutes)
-                
-                // Calculate distance-based fare and time-based fare
-                const distanceFare = distanceKm * ratePerKm;
-                const chargeableMinutes = Math.ceil(durationMinutes / minuteInterval) * minuteInterval;
-                const timeFare = (chargeableMinutes / minuteInterval) * ratePerMinute;
-                
-                // Total fare is base + distance + time
-                const fare = baseFare + distanceFare + timeFare;
+                const ratePerKm = 8;
+                const fare = baseFare + distanceKm * ratePerKm;
 
                 resolve({
                     origin,
                     destination,
                     distanceKm,
-                    durationMinutes,
                     duration: leg.duration.text,
-                    distanceFare,
-                    timeFare,
                     fare: Math.round(fare)
                 });
             }
@@ -1522,11 +1492,8 @@ async function computeAndSetFare() {
         priceInput.value = pricePerSeat.toFixed(2);
 
         console.log(`Route: ${fareData.origin.formatted_address} → ${fareData.destination.formatted_address}`);
-        console.log(`Distance: ${fareData.distanceKm.toFixed(2)} km`);
-        console.log(`Duration: ${fareData.duration} (${fareData.durationMinutes} minutes)`);
-        console.log(`Distance Fare: ₱${fareData.distanceFare.toFixed(2)} (${fareData.distanceKm.toFixed(2)} km × ₱8/km)`);
-        console.log(`Time Fare: ₱${fareData.timeFare.toFixed(2)} (${fareData.durationMinutes} minutes × ₱2/min)`);
-        console.log(`Base Fare: ₱30.00`);
+        console.log(`Distance: ${fareData.distanceKm} km`);
+        console.log(`Duration: ${fareData.duration}`);
         console.log(`Total Fare: ₱${fareData.fare.toFixed(2)}`);
         console.log(`Seats: ${seats}`);
         console.log(`Price per Seat: ₱${pricePerSeat.toFixed(2)}`);
@@ -1572,14 +1539,6 @@ function updateDestinationCount() {
 /**
  * Update depart button states based on current time
  */
-function updateDepartButtonStates() {
-    destinations.forEach(dest => {
-        const btn = document.getElementById(`depart-btn-${dest.id}`);
-        if (btn && dest.status === 'upcoming') {
-            btn.disabled = !isRideTimeNow(dest.date, dest.time);
-        }
-    });
-}
 
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
