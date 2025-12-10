@@ -7,8 +7,8 @@ const successMsg = document.getElementById('successMsg');
 // Dashboard redirect mapping
 const dashboardRedirect = {
     'admin': 'http://localhost:4000/admin/dashboard',
-    'driver': '../html/driver-dashboard.html',
-    'car_owner': '../html/driver-dashboard.html',
+    'driver': '../html/passenger-dashboard.html',
+    'car_owner': '../html/passenger-dashboard.html',
     'passenger': '../html/passenger-dashboard.html'
 };
 
