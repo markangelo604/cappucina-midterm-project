@@ -325,7 +325,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Load existing destinations from database
     await loadDestinations();
-    
+
+    // Check for overdue rides initially and set up periodic check
+    await checkAndCancelOverdueRides();
+    setInterval(checkAndCancelOverdueRides, 60000); // Check every minute
+
+    // Update depart button states periodically
+    updateDepartButtonStates();
+    setInterval(updateDepartButtonStates, 30000); // Update every 30 seconds
+
     // Add form submit handler
     addDestinationForm.addEventListener('submit', handleAddDestination);
 });
@@ -515,15 +523,15 @@ async function completeRide(rideId) {
     try {
         console.log('✅ Completing ride:', rideId);
         showLoading('Completing ride...');
-        
+
         const payload = {
             driver_username: driverUsername,
             ride_id: rideId,
             status: 'completed'
         };
-        
+
         console.log('PUT request payload:', payload);
-        
+
         const response = await fetch('../php/manage-driver-rides.php', {
             method: 'PUT',
             headers: {
@@ -531,10 +539,10 @@ async function completeRide(rideId) {
             },
             body: JSON.stringify(payload)
         });
-        
+
         const data = await response.json();
         console.log('Complete ride response:', data);
-        
+
         if (data.success) {
             console.log('✅ Ride completed successfully');
             hideLoading();
@@ -547,6 +555,53 @@ async function completeRide(rideId) {
         }
     } catch (error) {
         console.error('❌ Error completing ride:', error);
+        hideLoading();
+        showError('Failed to connect to server: ' + error.message);
+        return false;
+    }
+}
+
+/**
+ * Cancel ride - mark as cancelled
+ */
+async function cancelRide(rideId) {
+    try {
+        console.log('❌ Cancelling ride:', rideId);
+        showLoading('Cancelling ride...');
+
+        const payload = {
+            driver_username: driverUsername,
+            ride_id: rideId,
+            status: 'cancelled'
+        };
+
+        console.log('PUT request payload:', payload);
+
+        const response = await fetch('../php/manage-driver-rides.php', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        console.log('Cancel ride response:', data);
+
+        if (data.success) {
+            console.log('✅ Ride cancelled successfully');
+            hideLoading();
+            await loadDestinations(); // Reload to update UI
+            showSuccessMessage('Ride cancelled due to timeout!');
+            return true;
+        } else {
+            console.error('❌ Failed to cancel ride:', data.message);
+            hideLoading();
+            showError(data.message || 'Failed to cancel ride');
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Error cancelling ride:', error);
         hideLoading();
         showError('Failed to connect to server: ' + error.message);
         return false;
@@ -674,10 +729,10 @@ async function handleAddDestination(e) {
 
 function renderDestinations() {
     console.log('🎨 Rendering', destinations.length, 'destinations');
-    
+
     // Update count
     updateDestinationCount();
-    
+
     // Check if there are destinations
     if (destinations.length === 0) {
         destinationsList.innerHTML = '';
@@ -685,7 +740,7 @@ function renderDestinations() {
         console.log('📭 No destinations to display');
         return;
     }
-    
+
     emptyState.classList.remove('show');
     
     // Render destination cards
@@ -772,20 +827,27 @@ function renderDestinations() {
             
             <div class="destination-actions">
                 ${dest.status === 'upcoming' ? `
-                    <button class="btn-complete" id="complete-btn-${dest.id}" disabled>
+                    <button class="btn-depart" id="depart-btn-${dest.id}" onclick="handleDepartRide('${dest.id}')" ${!isRideTimeNow(dest.date, dest.time) ? 'disabled' : ''}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L10.293 7.5H4.5z"/>
+                        </svg>
+                        Depart
+                    </button>
+                ` : dest.status === 'departed' ? `
+                    <button class="btn-complete" id="complete-btn-${dest.id}" onclick="handleCompleteRide('${dest.id}')">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                             <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
                         </svg>
                         Complete
                     </button>
                 ` : ''}
-                <button class="btn-edit" onclick="editDestination('${dest.id}')" ${dest.passengers > 0 || dest.status === 'completed' ? 'disabled title="Cannot edit ride with bookings or completed rides"' : ''}>
+                <button class="btn-edit" onclick="editDestination('${dest.id}')" ${dest.passengers > 0 || dest.status === 'completed' || dest.status === 'departed' ? 'disabled title="Cannot edit ride with bookings or completed/departed rides"' : ''}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                         <path d="M12.854 1.146a.5.5 0 0 0-.708 0L11 2.293 13.707 5l1.147-1.146a.5.5 0 0 0 0-.708l-2-2zM10.5 2.793 2.793 10.5l-.793 3.793 3.793-.793 7.707-7.707L10.5 2.793z"/>
                     </svg>
                     Edit
                 </button>
-                <button class="btn-delete" onclick="deleteDestination('${dest.id}')" ${dest.status === 'completed' || dest.status === 'cancelled' ? 'disabled title="Cannot delete completed or cancelled rides"' : ''}>
+                <button class="btn-delete" onclick="deleteDestination('${dest.id}')" ${dest.status === 'completed' || dest.status === 'cancelled' || dest.status === 'departed' ? 'disabled title="Cannot delete completed/cancelled/departed rides"' : ''}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                         <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
                         <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
@@ -968,6 +1030,53 @@ function closeMapPopup() {
     if (modal) {
         modal.style.display = 'none';
         modal.classList.remove('show');
+    }
+}
+
+/**
+ * Depart ride - mark as departed
+ */
+async function handleDepartRide(destinationId) {
+    try {
+        console.log('🚗 Departing ride:', destinationId);
+        showLoading('Marking ride as departed...');
+
+        const payload = {
+            driver_username: driverUsername,
+            ride_id: destinationId,
+            status: 'departed'
+        };
+
+        console.log('PUT request payload:', payload);
+
+        const response = await fetch('../php/manage-driver-rides.php', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        console.log('Depart ride response:', data);
+
+        if (data.success) {
+            console.log('✅ Ride departed successfully');
+            hideLoading();
+            await loadDestinations();
+            showSuccessMessage('Ride marked as departed!');
+            return true;
+        } else {
+            console.error('❌ Failed to depart ride:', data.message);
+            hideLoading();
+            showError(data.message || 'Failed to depart ride');
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Error departing ride:', error);
+        hideLoading();
+        showError('Failed to connect to server: ' + error.message);
+        return false;
     }
 }
 
@@ -1180,6 +1289,73 @@ function cancelEdit() {
 // ========================================
 // HELPER FUNCTIONS
 // ========================================
+
+/**
+ * Check if current time is at or after ride departure time (within 15 minutes window after scheduled time)
+ */
+function isRideTimeNow(rideDate, rideTime) {
+    if (!rideDate || !rideTime) return false;
+
+    const now = new Date();
+    const rideDateTime = new Date(`${rideDate}T${rideTime}`);
+
+    // Check if ride is for today
+    const today = now.toISOString().split('T')[0];
+    if (rideDate !== today) return false;
+
+    // Check if current time is at or after ride time, and within 15 minutes after
+    const timeDiff = now - rideDateTime;
+    const fifteenMinutes = 15 * 60 * 1000;
+
+    return timeDiff >= 0 && timeDiff <= fifteenMinutes;
+}
+
+/**
+ * Check if ride is overdue (more than 15 minutes past scheduled time)
+ */
+function isRideOverdue(rideDate, rideTime) {
+    if (!rideDate || !rideTime) return false;
+
+    const now = new Date();
+    const rideDateTime = new Date(`${rideDate}T${rideTime}`);
+
+    // Check if ride is for today
+    const today = now.toISOString().split('T')[0];
+    if (rideDate !== today) return false;
+
+    // Check if more than 15 minutes have passed
+    const timeDiff = now - rideDateTime;
+    const fifteenMinutes = 15 * 60 * 1000;
+
+    return timeDiff > fifteenMinutes;
+}
+
+/**
+ * Check for overdue rides and cancel them
+ */
+async function checkAndCancelOverdueRides() {
+    console.log('🔍 Checking for overdue rides...');
+
+    const overdueRides = destinations.filter(dest =>
+        dest.status === 'upcoming' && isRideOverdue(dest.date, dest.time)
+    );
+
+    if (overdueRides.length === 0) {
+        console.log('✅ No overdue rides found');
+        return;
+    }
+
+    console.log(`🚨 Found ${overdueRides.length} overdue ride(s), cancelling...`);
+
+    for (const ride of overdueRides) {
+        console.log(`❌ Cancelling overdue ride: ${ride.id}`);
+        await cancelRide(ride.id);
+    }
+
+    // Reload destinations to update UI
+    await loadDestinations();
+}
+
 function validateDriverDistanceForRide(dest) {
     const btn = document.getElementById(`complete-btn-${dest.id}`);
     if (!btn) return;
@@ -1360,6 +1536,18 @@ async function waitForGoogleMaps() {
 function updateDestinationCount() {
     const count = destinations.length;
     destinationCount.textContent = `${count} ${count === 1 ? 'destination' : 'destinations'}`;
+}
+
+/**
+ * Update depart button states based on current time
+ */
+function updateDepartButtonStates() {
+    destinations.forEach(dest => {
+        const btn = document.getElementById(`depart-btn-${dest.id}`);
+        if (btn && dest.status === 'upcoming') {
+            btn.disabled = !isRideTimeNow(dest.date, dest.time);
+        }
+    });
 }
 
 function formatDate(dateString) {

@@ -224,7 +224,7 @@ try {
                     'completed_at' => new MongoDB\BSON\UTCDateTime()
                 ]]
             );
-            
+
             if ($result->getModifiedCount() > 0 || $result->getMatchedCount() > 0) {
                 // ALSO UPDATE ALL BOOKINGS FOR THIS RIDE TO COMPLETED STATUS
                 $bookingsCollection = $db->bookings;
@@ -238,7 +238,7 @@ try {
                         'completed_at' => new MongoDB\BSON\UTCDateTime()
                     ]]
                 );
-                
+
                 sendResponse(true, 'Ride marked as completed', [
                     'modified' => $result->getModifiedCount(),
                     'bookings_updated' => $bookingsResult->getModifiedCount()
@@ -247,10 +247,44 @@ try {
                 sendResponse(false, 'Failed to complete ride');
             }
         }
-        
+
+        // CHECK IF THIS IS A DEPART REQUEST
+        if (isset($input['status']) && $input['status'] === 'departed') {
+            // Mark ride as departed - allow even with passengers
+            $result = $ridesCollection->updateOne(
+                ['_id' => $rideId],
+                ['$set' => [
+                    'ride_status' => 'departed',
+                    'departed_at' => new MongoDB\BSON\UTCDateTime()
+                ]]
+            );
+
+            if ($result->getModifiedCount() > 0 || $result->getMatchedCount() > 0) {
+                // ALSO UPDATE ALL BOOKINGS FOR THIS RIDE TO ONGOING STATUS
+                $bookingsCollection = $db->bookings;
+                $bookingsResult = $bookingsCollection->updateMany(
+                    [
+                        'ride_id' => $rideId,
+                        'status' => ['$in' => ['pending', 'confirmed']]
+                    ],
+                    ['$set' => [
+                        'status' => 'ongoing',
+                        'departed_at' => new MongoDB\BSON\UTCDateTime()
+                    ]]
+                );
+
+                sendResponse(true, 'Ride marked as departed', [
+                    'modified' => $result->getModifiedCount(),
+                    'bookings_updated' => $bookingsResult->getModifiedCount()
+                ]);
+            } else {
+                sendResponse(false, 'Failed to depart ride');
+            }
+        }
+
         // OTHERWISE, THIS IS A REGULAR UPDATE
-        
-        // Check if ride has passengers
+
+        // Check if ride has passengers - only block actual edits, not status changes
         if (isset($ride['passengers']) && count($ride['passengers']) > 0) {
             sendResponse(false, 'Cannot edit ride with existing bookings. Please cancel the ride instead.');
         }
