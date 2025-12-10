@@ -377,7 +377,8 @@ body {
 }
 
 .btn-edit,
-.btn-delete {
+.btn-delete,
+.btn-depart {
     flex: 1;
     padding: 10px;
     border: none;
@@ -408,6 +409,15 @@ body {
 
 .btn-delete:hover {
     background: #c82333;
+}
+
+.btn-depart {
+    background: var(--accent-gold);
+    color: var(--text-dark);
+}
+
+.btn-depart:hover {
+    background: #e5b307;
 }
 
 /* Add these styles to your driver-dashboard.css */
