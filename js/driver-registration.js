@@ -458,12 +458,15 @@ async function handleFormSubmit(e) {
         return;
     }
     
-    showLoading(isUpgrade ? 'Upgrading your account...' : 'Submitting your application...');
+    showLoading(isUpgrade ? 'Uploading documents and upgrading account...' : 'Uploading documents and submitting application...');
     
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     
     try {
+        // Convert uploaded files to base64
+        const documentsBase64 = await convertFilesToBase64();
+        
         let endpoint, payload, successMessage, redirectUrl;
         
         if (isUpgrade && existingUserData) {
@@ -483,7 +486,8 @@ async function handleFormSubmit(e) {
                     model: formData.vehicle.model,
                     year: formData.vehicle.year,
                     color: formData.vehicle.color,
-                    available_seats: formData.vehicle.availableSeats
+                    available_seats: formData.vehicle.availableSeats,
+                    document: documentsBase64 // Add documents
                 }]
             };
             successMessage = '🎉 Successfully upgraded to driver! Your application is pending approval.';
@@ -512,11 +516,7 @@ async function handleFormSubmit(e) {
                     color: formData.vehicle.color,
                     available_seats: formData.vehicle.availableSeats,
                     verified: false,
-                    document: {
-                        license: 'PENDING_UPLOAD',
-                        registration: 'PENDING_UPLOAD',
-                        photo: 'PENDING_UPLOAD'
-                    }
+                    document: documentsBase64 // Add documents
                 }],
                 account_status: 'pending'
             };
@@ -525,7 +525,10 @@ async function handleFormSubmit(e) {
         }
         
         console.log('Submitting to:', endpoint);
-        console.log('Payload:', JSON.stringify(payload, null, 2));
+        console.log('Payload (without files):', {
+            ...payload,
+            vehicle: payload.vehicle.map(v => ({...v, document: '[BASE64_DATA]'}))
+        });
         
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -570,6 +573,50 @@ async function handleFormSubmit(e) {
         showError('An error occurred. Please try again.');
         submitBtn.disabled = false;
     }
+}
+
+// ========================================
+// CONVERT FILES TO BASE64
+// ========================================
+
+async function convertFilesToBase64() {
+    console.log('📸 Converting uploaded files to base64...');
+    
+    const documents = {
+        license: null,
+        registration: null,
+        photo: null
+    };
+    
+    // Convert driver's license
+    if (uploadedFiles.driversLicense) {
+        documents.license = await fileToBase64(uploadedFiles.driversLicense);
+        console.log('✅ License converted:', documents.license.substring(0, 50) + '...');
+    }
+    
+    // Convert vehicle registration
+    if (uploadedFiles.vehicleRegistration) {
+        documents.registration = await fileToBase64(uploadedFiles.vehicleRegistration);
+        console.log('✅ Registration converted:', documents.registration.substring(0, 50) + '...');
+    }
+    
+    // Convert vehicle photo
+    if (uploadedFiles.vehiclePhoto) {
+        documents.photo = await fileToBase64(uploadedFiles.vehiclePhoto);
+        console.log('✅ Photo converted:', documents.photo.substring(0, 50) + '...');
+    }
+    
+    return documents;
+}
+
+// Helper function to convert file to base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
 }
 
 // ========================================

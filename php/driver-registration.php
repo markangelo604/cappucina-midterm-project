@@ -1,16 +1,14 @@
 <?php
 /**
  * Driver Registration Endpoint
- * Handles driver/car owner registration with vehicle information
+ * Handles driver/car owner registration with vehicle information and documents
  */
 
-// Error reporting for development (can be removed later)
 error_reporting(0);
 ini_set('display_errors', 0);
 
 session_start();
 
-// Set response header
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../Server/server.php';
@@ -18,13 +16,10 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use MongoDB\BSON\UTCDateTime;
 
-// Handle incoming POST request
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Get JSON input
     $input = file_get_contents('php://input');
     $data = json_decode($input, true);
 
-    // Validate that data was received
     if (!$data) {
         echo json_encode([
             "success" => false,
@@ -77,10 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Hash password
         $hashedPassword = password_hash($data['password'], PASSWORD_BCRYPT);
 
-        // Prepare vehicle data
+        // Prepare vehicle data with documents
         $vehicles = [];
         foreach ($data['vehicle'] as $vehicle) {
-            $vehicles[] = [
+            $vehicleDoc = [
                 'plate_number' => $vehicle['plate_number'] ?? '',
                 'brand' => $vehicle['brand'] ?? '',
                 'model' => $vehicle['model'] ?? '',
@@ -88,12 +83,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'color' => $vehicle['color'] ?? '',
                 'available_seats' => intval($vehicle['available_seats'] ?? 4),
                 'verified' => $vehicle['verified'] ?? false,
-                'document' => [
-                    'license' => $vehicle['document']['license'] ?? 'PENDING_UPLOAD',
-                    'registration' => $vehicle['document']['registration'] ?? 'PENDING_UPLOAD',
-                    'photo' => $vehicle['document']['photo'] ?? 'PENDING_UPLOAD'
-                ]
+                'document' => []
             ];
+            
+            // Store uploaded documents as base64
+            if (isset($vehicle['document'])) {
+                $docs = $vehicle['document'];
+                
+                // Store driver's license
+                if (!empty($docs['license'])) {
+                    $vehicleDoc['document']['license'] = $docs['license'];
+                    $vehicleDoc['document']['license_uploaded_at'] = new UTCDateTime();
+                } else {
+                    $vehicleDoc['document']['license'] = 'PENDING_UPLOAD';
+                }
+                
+                // Store vehicle registration
+                if (!empty($docs['registration'])) {
+                    $vehicleDoc['document']['registration'] = $docs['registration'];
+                    $vehicleDoc['document']['registration_uploaded_at'] = new UTCDateTime();
+                } else {
+                    $vehicleDoc['document']['registration'] = 'PENDING_UPLOAD';
+                }
+                
+                // Store vehicle photo
+                if (!empty($docs['photo'])) {
+                    $vehicleDoc['document']['photo'] = $docs['photo'];
+                    $vehicleDoc['document']['photo_uploaded_at'] = new UTCDateTime();
+                } else {
+                    $vehicleDoc['document']['photo'] = 'PENDING_UPLOAD';
+                }
+            } else {
+                $vehicleDoc['document'] = [
+                    'license' => 'PENDING_UPLOAD',
+                    'registration' => 'PENDING_UPLOAD',
+                    'photo' => 'PENDING_UPLOAD'
+                ];
+            }
+            
+            $vehicles[] = $vehicleDoc;
         }
 
         // Create new driver/car_owner document
@@ -108,8 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 "address" => $data['profile']['address'] ?? null,
                 "gender" => $data['profile']['gender'] ?? null
             ],
-            "vehicles" => $vehicles,
-            "account_status" => $data['account_status'] ?? 'pending', // Pending approval by admin
+            "vehicle" => $vehicles,
+            "account_status" => $data['account_status'] ?? 'pending',
             "created_at" => new UTCDateTime()
         ];
 
@@ -124,10 +152,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             mkdir($logDir, 0777, true);
         }
 
-        $logMessage = "[" . date('Y-m-d H:i:s') . "] Driver registered: " . $data['username'] . PHP_EOL;
+        $logMessage = "[" . date('Y-m-d H:i:s') . "] Driver registered: " . $data['username'] . " (with documents)" . PHP_EOL;
         file_put_contents($logFile, $logMessage, FILE_APPEND);
 
-        // Return success response
         echo json_encode([
             "success" => true,
             "message" => "Driver registration successful. Your account is pending approval.",
@@ -135,7 +162,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         ]);
 
     } catch (Exception $e) {
-        // Log error
         $logDir = __DIR__ . "/../Server/Server-Logs";
         $logFile = $logDir . "/driver-registration.log";
 
@@ -153,7 +179,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
 } else {
-    // Method not allowed
     echo json_encode([
         "success" => false,
         "message" => "Invalid request method."

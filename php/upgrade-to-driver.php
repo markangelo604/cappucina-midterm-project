@@ -3,6 +3,7 @@
  * Upgrade to Driver Endpoint
  * Upgrades existing passenger account to driver/car_owner
  * Allows users to become drivers without creating a new account
+ * NOW WITH DOCUMENT UPLOAD SUPPORT
  */
 
 error_reporting(0);
@@ -42,7 +43,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $input = file_get_contents('php://input');
     $data = json_decode($input, true);
 
-    logUpgrade("Upgrade request received: " . json_encode($data));
+    logUpgrade("Upgrade request received: " . json_encode([
+    'username' => $data['username'] ?? 'N/A',
+    'has_vehicle' => isset($data['vehicle']),
+    'has_documents' => isset($data['vehicle'][0]['document']) 
+]));
 
     if (!$data) {
         echo json_encode([
@@ -104,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             exit;
         }
 
-        // Prepare vehicle data
+        // Prepare vehicle data with documents
         $vehicles = [];
         foreach ($data['vehicle'] as $vehicle) {
             // Validate vehicle fields
@@ -118,7 +123,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 exit;
             }
 
-            $vehicles[] = [
+            // Prepare base vehicle data
+            $vehicleDoc = [
                 'plate_number' => strtoupper(trim($vehicle['plate_number'])),
                 'brand' => trim($vehicle['brand']),
                 'model' => trim($vehicle['model']),
@@ -126,13 +132,61 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'color' => trim($vehicle['color'] ?? ''),
                 'available_seats' => intval($vehicle['available_seats'] ?? 4),
                 'verified' => false, // Will be verified by admin
-                'document' => [
+                'document' => []
+            ];
+
+            // Store uploaded documents as base64
+            if (isset($vehicle['document']) && is_array($vehicle['document'])) {
+                $docs = $vehicle['document'];
+                
+                // Store driver's license
+                if (!empty($docs['license']) && $docs['license'] !== 'PENDING_UPLOAD') {
+                    $vehicleDoc['document']['license'] = $docs['license'];
+                    $vehicleDoc['document']['license_uploaded_at'] = new UTCDateTime();
+                    logUpgrade("✅ License document uploaded for " . $vehicle['plate_number']);
+                } else {
+                    $vehicleDoc['document']['license'] = 'PENDING_UPLOAD';
+                }
+                
+                // Store vehicle registration
+                if (!empty($docs['registration']) && $docs['registration'] !== 'PENDING_UPLOAD') {
+                    $vehicleDoc['document']['registration'] = $docs['registration'];
+                    $vehicleDoc['document']['registration_uploaded_at'] = new UTCDateTime();
+                    logUpgrade("✅ Registration document uploaded for " . $vehicle['plate_number']);
+                } else {
+                    $vehicleDoc['document']['registration'] = 'PENDING_UPLOAD';
+                }
+                
+                // Store vehicle photo
+                if (!empty($docs['photo']) && $docs['photo'] !== 'PENDING_UPLOAD') {
+                    $vehicleDoc['document']['photo'] = $docs['photo'];
+                    $vehicleDoc['document']['photo_uploaded_at'] = new UTCDateTime();
+                    logUpgrade("✅ Vehicle photo uploaded for " . $vehicle['plate_number']);
+                } else {
+                    $vehicleDoc['document']['photo'] = 'PENDING_UPLOAD';
+                }
+            } else {
+                // No documents provided
+                $vehicleDoc['document'] = [
                     'license' => 'PENDING_UPLOAD',
                     'registration' => 'PENDING_UPLOAD',
                     'photo' => 'PENDING_UPLOAD'
-                ]
-            ];
+                ];
+                logUpgrade("⚠️ No documents uploaded for " . $vehicle['plate_number']);
+            }
+            
+            $vehicles[] = $vehicleDoc;
         }
+
+        // Count uploaded documents
+        $uploadedDocs = 0;
+        if (isset($vehicles[0]['document'])) {
+            if ($vehicles[0]['document']['license'] !== 'PENDING_UPLOAD') $uploadedDocs++;
+            if ($vehicles[0]['document']['registration'] !== 'PENDING_UPLOAD') $uploadedDocs++;
+            if ($vehicles[0]['document']['photo'] !== 'PENDING_UPLOAD') $uploadedDocs++;
+        }
+        
+        logUpgrade("📊 Documents uploaded: $uploadedDocs/3");
 
         // Prepare update data
         $updateData = [
@@ -140,7 +194,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'vehicle' => $vehicles,
             'driver_status' => 'pending',
             'account_status' => 'active', // Keep account active
-            'upgraded_to_driver_at' => new UTCDateTime()
+            'upgraded_to_driver_at' => new UTCDateTime(),
+            'documents_uploaded' => $uploadedDocs,
+            'documents_verified' => false
         ];
 
         // Update profile information if provided
@@ -153,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
 
-        logUpgrade("Updating user: " . $data['username'] . " with data: " . json_encode($updateData));
+        logUpgrade("Updating user: " . $data['username'] . " with " . $uploadedDocs . " documents");
 
         // Perform the update
         $result = $users->updateOne(
@@ -167,17 +223,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Get updated user data
             $updatedUser = $users->findOne(['username' => $data['username']]);
             
+            $message = "Successfully upgraded to driver!";
+            if ($uploadedDocs === 3) {
+                $message .= " All documents uploaded. Your account is pending approval.";
+            } else {
+                $message .= " Please note: Some documents are still pending. Upload remaining documents for faster approval.";
+            }
+            
             echo json_encode([
                 "success" => true,
-                "message" => "Successfully upgraded to driver! Your account is pending approval.",
+                "message" => $message,
                 "user_id" => (string)$existingUser['_id'],
+                "documents_uploaded" => $uploadedDocs,
+                "documents_required" => 3,
                 "user_data" => [
                     "username" => $updatedUser['username'],
                     "name" => $updatedUser['profile']['name'] ?? '',
                     "email" => $updatedUser['email'] ?? '',
                     "phone" => $updatedUser['profile']['phone'] ?? '',
                     "role" => $updatedUser['role'],
-                    "driver_status" => $updatedUser['driver_status'] ?? 'pending'
+                    "driver_status" => $updatedUser['driver_status'] ?? 'pending',
+                    "documents_uploaded" => $uploadedDocs
                 ]
             ]);
         } else {
