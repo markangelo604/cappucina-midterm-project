@@ -7,6 +7,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../css/admin-dashboard.css">
+    <style>
+        /* Status Tabs Styling */
+    
+    </style>
 </head>
 <body>
     <!-- Sidebar -->
@@ -70,39 +74,31 @@
         <!-- Drivers Page -->
         <div class="content-area">
             <div class="page-header-admin">
-                <h1>DRIVERS</h1>
+                <h1>DRIVER MANAGEMENT</h1>
+                <p class="text-muted">Review and manage driver applications</p>
+            </div>
+
+            <!-- Status Tabs -->
+            <div class="status-tabs">
+                <button class="tab-btn active" data-status="pending" onclick="switchTab('pending')">
+                    <span>Pending Review</span>
+                    <span class="count-badge" id="pendingCount">0</span>
+                </button>
+                <button class="tab-btn" data-status="verified" onclick="switchTab('verified')">
+                    <span>Verified</span>
+                    <span class="count-badge" id="verifiedCount">0</span>
+                </button>
+                <button class="tab-btn" data-status="rejected" onclick="switchTab('rejected')">
+                    <span>Rejected</span>
+                    <span class="count-badge" id="rejectedCount">0</span>
+                </button>
             </div>
 
             <!-- Search and Filters -->
             <div class="search-filter-bar">
                 <div class="filter-group">
                     <label>SEARCH:</label>
-                    <select class="filter-select" id="searchType">
-                        <option>All</option>
-                        <option>Name</option>
-                        <option>Email</option>
-                        <option>License</option>
-                    </select>
-                    <input type="text" class="filter-input" id="searchInput" placeholder="🔍">
-                </div>
-                
-                <div class="filter-group">
-                    <select class="filter-select" id="statusFilter">
-                        <option value="">Select Status</option>
-                        <option value="active">Active</option>
-                        <option value="on-duty">On Duty</option>
-                        <option value="off-duty">Off Duty</option>
-                        <option value="suspended">Suspended</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <select class="filter-select" id="verificationFilter">
-                        <option value="">Select Verification</option>
-                        <option value="verified">Verified</option>
-                        <option value="pending">Pending</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
+                    <input type="text" class="filter-input" id="searchInput" placeholder="🔍 Search by name, email, or plate">
                 </div>
                 
                 <button class="btn-search" id="searchBtn">Search</button>
@@ -118,8 +114,10 @@
                             <th>USERNAME</th>
                             <th>NAME</th>
                             <th>EMAIL</th>
-                            <th>LICENSE NO.</th>
+                            <th>PHONE</th>
                             <th>VEHICLE</th>
+                            <th>PLATE NUMBER</th>
+                            <th>DOCUMENTS</th>
                             <th>STATUS</th>
                             <th>ACTION</th>
                         </tr>
@@ -132,80 +130,172 @@
         </div>
     </div>
 
-    <!-- Add Driver Modal - FIXED VERSION -->
-    <div class="modal fade" id="addDriverModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Add Driver Modal -->
+    <div class="modal fade" id="addDriverModal" tabindex="-1" aria-labelledby="addDriverModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add New Driver</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="addDriverModalLabel">
+                        <i class="bi bi-person-plus"></i> Add New Driver
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addDriverForm">
-                        <div class="mb-3">
-                            <label class="form-label">Username</label>
-                            <input type="text" class="form-control" name="username" required>
+                        <!-- Driver Information -->
+                        <h6 class="mb-3"><i class="bi bi-person"></i> Driver Information</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Username *</label>
+                                <input type="text" class="form-control" name="username" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" name="name" required>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Full Name</label>
-                            <input type="text" class="form-control" name="name" required>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email *</label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phone *</label>
+                                <input type="tel" class="form-control" name="phone" required>
+                            </div>
                         </div>
+
                         <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" name="email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Phone</label>
-                            <input type="tel" class="form-control" name="phone" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Password</label>
+                            <label class="form-label">Password *</label>
                             <input type="password" class="form-control" name="password" required minlength="6">
+                            <small class="text-muted">Minimum 6 characters</small>
                         </div>
                         
                         <hr class="my-4">
-                        <h6 class="mb-3">Vehicle Information</h6>
+                        <h6 class="mb-3"><i class="bi bi-car-front"></i> Vehicle Information</h6>
                         
-                        <div class="mb-3">
-                            <label class="form-label">Vehicle Brand</label>
-                            <input type="text" class="form-control" name="brand" placeholder="e.g., Toyota" required>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Vehicle Brand *</label>
+                                <input type="text" class="form-control" name="brand" placeholder="e.g., Toyota" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Vehicle Model *</label>
+                                <input type="text" class="form-control" name="model" placeholder="e.g., Vios" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Year *</label>
+                                <input type="number" class="form-control" name="year" min="1900" max="2099" placeholder="e.g., 2022" required>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Vehicle Model</label>
-                            <input type="text" class="form-control" name="model" placeholder="e.g., Vios" required>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Plate Number *</label>
+                                <input type="text" class="form-control" name="plate_number" placeholder="e.g., ABC-1234" required style="text-transform: uppercase;">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Available Seats *</label>
+                                <input type="number" class="form-control" name="available_seats" min="1" max="10" value="4" required>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Year</label>
-                            <input type="number" class="form-control" name="year" min="1900" max="2099" placeholder="e.g., 2022" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Plate Number</label>
-                            <input type="text" class="form-control" name="plate_number" placeholder="e.g., ABC-1234" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Available Seats</label>
-                            <input type="number" class="form-control" name="available_seats" min="1" max="10" value="4" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Verification Status</label>
-                            <select class="form-select" name="verification" required>
-                                <option value="false">Pending</option>
-                                <option value="true">Verified</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Account Status</label>
-                            <select class="form-select" name="account_status" required>
-                                <option value="active">Active</option>
-                                <option value="off-duty">Off Duty</option>
-                                <option value="suspended">Suspended</option>
-                            </select>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Verification Status *</label>
+                                <select class="form-select" name="verification" required>
+                                    <option value="false">Pending</option>
+                                    <option value="true">Verified</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Account Status *</label>
+                                <select class="form-select" name="account_status" required>
+                                    <option value="active">Active</option>
+                                    <option value="off-duty">Off Duty</option>
+                                    <option value="suspended">Suspended</option>
+                                </select>
+                            </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="addDriverBtn">Add Driver</button>
+                    <button type="button" class="btn btn-primary" id="addDriverBtn">
+                        <i class="bi bi-plus-circle"></i> Add Driver
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Driver Modal -->
+    <div class="modal fade" id="reviewDriverModal" tabindex="-1" aria-labelledby="reviewDriverModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reviewDriverModalLabel">
+                        <i class="bi bi-file-text"></i> Review Driver Application
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Left Column: Driver Info -->
+                        <div class="col-md-4">
+                            <h6 class="mb-3"><i class="bi bi-person"></i> Driver Information</h6>
+                            <div class="mb-2">
+                                <strong>Username:</strong>
+                                <p id="reviewUsername" class="mb-1">-</p>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Name:</strong>
+                                <p id="reviewName" class="mb-1">-</p>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Email:</strong>
+                                <p id="reviewEmail" class="mb-1">-</p>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Phone:</strong>
+                                <p id="reviewPhone" class="mb-1">-</p>
+                            </div>
+                            
+                            <h6 class="mb-3 mt-4"><i class="bi bi-car-front"></i> Vehicle Information</h6>
+                            <div class="mb-2">
+                                <strong>Vehicle:</strong>
+                                <p id="reviewVehicle" class="mb-1">-</p>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Plate Number:</strong>
+                                <p id="reviewPlate" class="mb-1">-</p>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Documents -->
+                        <div class="col-md-8">
+                            <h6 class="mb-3"><i class="bi bi-file-earmark-check"></i> Uploaded Documents</h6>
+                            <div id="documentsContainer">
+                                <!-- Documents will be loaded here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rejection Reason Section (Hidden by default) -->
+                    <div id="rejectionReasonSection" style="display: none;">
+                        <label for="rejectionReason" class="form-label"><strong>Reason for Rejection:</strong></label>
+                        <textarea class="form-control" id="rejectionReason" rows="3" placeholder="Please provide a reason for rejecting this application..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" id="btnRejectDriver">
+                        <i class="bi bi-x-circle"></i> Reject
+                    </button>
+                    <button type="button" class="btn btn-success" id="btnApproveDriver">
+                        <i class="bi bi-check-circle"></i> Approve & Verify
+                    </button>
                 </div>
             </div>
         </div>
@@ -213,7 +303,7 @@
 
     <!-- Edit Driver Modal -->
     <div class="modal fade" id="editDriverModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Edit Driver</h5>
@@ -224,77 +314,81 @@
                         <input type="hidden" id="editDriverId">
                         
                         <!-- Driver Information -->
-                        <div class="mb-3">
-                            <label class="form-label">Username</label>
-                            <input type="text" class="form-control" id="editDriverUsername" name="username" required>
+                        <h6 class="mb-3">Driver Information</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" class="form-control" id="editDriverUsername" name="username" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="editDriverName" name="name" required>
+                            </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="editDriverName" name="name" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" id="editDriverEmail" name="email" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Phone</label>
-                            <input type="tel" class="form-control" id="editDriverPhone" name="phone" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">
-                                Password <small class="text-muted">(leave blank to keep current)</small>
-                            </label>
-                            <input type="password" class="form-control" id="editDriverPassword" name="password">
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="editDriverEmail" name="email" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phone</label>
+                                <input type="tel" class="form-control" id="editDriverPhone" name="phone" required>
+                            </div>
                         </div>
                         
                         <hr class="my-4">
                         <h6 class="mb-3">Vehicle Information</h6>
                         
-                        <div class="mb-3">
-                            <label class="form-label">Vehicle Brand</label>
-                            <input type="text" class="form-control" id="editDriverBrand" name="brand" required>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Vehicle Brand</label>
+                                <input type="text" class="form-control" id="editDriverBrand" name="brand" required>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Vehicle Model</label>
+                                <input type="text" class="form-control" id="editDriverModel" name="model" required>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Year</label>
+                                <input type="number" class="form-control" id="editDriverYear" name="year" min="1900" max="2099" required>
+                            </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Vehicle Model</label>
-                            <input type="text" class="form-control" id="editDriverModel" name="model" required>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Plate Number</label>
+                                <input type="text" class="form-control" id="editDriverPlate" name="plate_number" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Available Seats</label>
+                                <input type="number" class="form-control" id="editDriverSeats" name="available_seats" min="1" max="10" required>
+                            </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Year</label>
-                            <input type="number" class="form-control" id="editDriverYear" name="year" min="1900" max="2099" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Plate Number</label>
-                            <input type="text" class="form-control" id="editDriverPlate" name="plate_number" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Available Seats</label>
-                            <input type="number" class="form-control" id="editDriverSeats" name="available_seats" min="1" max="10" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Verification Status</label>
-                            <select class="form-select" id="editDriverVerification" name="verification" required>
-                                <option value="false">Pending</option>
-                                <option value="true">Verified</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Account Status</label>
-                            <select class="form-select" id="editDriverStatus" name="account_status" required>
-                                <option value="active">Active</option>
-                                <option value="off-duty">Off Duty</option>
-                                <option value="inactive">Inactive</option>
-                                <option value="suspended">Suspended</option>
-                            </select>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Verification Status</label>
+                                <select class="form-select" id="editDriverVerification" name="verification" required>
+                                    <option value="false">Pending</option>
+                                    <option value="true">Verified</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Account Status</label>
+                                <select class="form-select" id="editDriverStatus" name="account_status" required>
+                                    <option value="active">Active</option>
+                                    <option value="off-duty">Off Duty</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="suspended">Suspended</option>
+                                </select>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -305,9 +399,6 @@
             </div>
         </div>
     </div>
-
-
-
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <script src="../js/admin-drivers.js"></script>

@@ -712,3 +712,166 @@ body {
 .sidebar::-webkit-scrollbar-thumb:hover {
     background: #aaa;
 }
+
+.status-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .tab-btn:hover {
+            border-color: #073066;
+            background: #f8f9fa;
+        }
+
+        .tab-btn.active {
+            border-color: #073066;
+            background: #073066;
+            color: white;
+        }
+
+        .count-badge {
+            background: #e0e0e0;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .tab-btn.active .count-badge {
+            background: white;
+            color: #073066;
+        }
+
+        /* Document Badge Styling */
+        .doc-badge {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .doc-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .doc-badge.none {
+            background: #f44336;
+            color: white;
+        }
+
+        .doc-badge.incomplete {
+            background: #ff9800;
+            color: white;
+        }
+
+        .doc-badge.complete {
+            background: #4CAF50;
+            color: white;
+        }
+
+        /* Status Badge Styling */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.verified {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Review Modal Styling */
+        .document-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .document-item h6 {
+            margin-bottom: 10px;
+            color: #073066;
+            font-weight: 600;
+        }
+
+        .document-placeholder {
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 8px;
+            color: #666;
+        }
+
+        .document-item img,
+        .document-item embed {
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        #rejectionReasonSection {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 8px;
+            border: 1px solid #ffc107;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-review {
+            background: #073066;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+        }
+
+        .btn-review:hover {
+            background: #052147;
+        }
+
+        .page-header-admin p {
+            margin-top: 5px;
+            color: #666;
+        }
