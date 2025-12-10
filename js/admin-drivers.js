@@ -325,7 +325,6 @@ async function rejectDriver() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 driver_status: 'rejected',
-                account_status: 'rejected',
                 rejection_reason: reason,
                 rejected_at: new Date().toISOString(),
                 rejected_by: 'admin'
