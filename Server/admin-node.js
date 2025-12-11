@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
+const nodemailer = require("nodemailer");
 const { spawn } = require("child_process");
 const { connectDB, getCollections } = require("./Config/database.js");
 const path = require("path");
@@ -12,6 +13,102 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "..")));
+
+// Email transporter setup
+const transporter = nodemailer.createTransport({
+  service: process.env.EMAIL_SERVICE || "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
+
+// Test email connection
+transporter.verify((error, success) => {
+  if (error) {
+    console.warn("⚠️ Email service not fully configured:", error.message);
+    console.warn("📧 To enable email notifications, configure EMAIL_USER and EMAIL_PASSWORD in .env");
+  } else {
+    console.log("✅ Email service ready");
+  }
+});
+
+// Email sending function
+async function sendDriverEmail(recipientEmail, recipientName, status, additionalInfo = {}) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+    console.warn("⚠️ Email not sent: EMAIL_USER or EMAIL_PASSWORD not configured");
+    return false;
+  }
+
+  let subject = "";
+  let htmlContent = "";
+
+  if (status === "approved") {
+    subject = "🎉 Your Driver Application Has Been Approved!";
+    htmlContent = `
+      <h2>Welcome to Cappucina, ${recipientName}!</h2>
+      <p>Great news! Your driver application has been approved and verified.</p>
+      <p><strong>Your account is now active and you can start accepting rides.</strong></p>
+      <h3>Next Steps:</h3>
+      <ul>
+        <li>Log in to your driver dashboard</li>
+        <li>Complete your profile if needed</li>
+        <li>Review your vehicle details</li>
+        <li>Start accepting rides!</li>
+      </ul>
+      <p>If you have any questions, please contact our support team.</p>
+      <p>Best regards,<br><strong>Cappucina Team</strong></p>
+    `;
+  } else if (status === "rejected") {
+    subject = "Application Status - Please Review";
+    const reason = additionalInfo.reason || "The review process determined your application does not meet current requirements.";
+    htmlContent = `
+      <h2>Application Review - ${recipientName}</h2>
+      <p>Thank you for your interest in becoming a Cappucina driver.</p>
+      <p><strong>Status: Application Under Review / Pending Clarification</strong></p>
+      <h3>Reason:</h3>
+      <p>${reason}</p>
+      <h3>What to do next:</h3>
+      <ul>
+        <li>Review the feedback provided above</li>
+        <li>Address any issues mentioned</li>
+        <li>You can resubmit your application or contact support for more information</li>
+      </ul>
+      <p>Contact us if you need further assistance.</p>
+      <p>Best regards,<br><strong>Cappucina Team</strong></p>
+    `;
+  } else if (status === "pending") {
+    subject = "📋 Your Driver Application is Under Review";
+    htmlContent = `
+      <h2>Application Received, ${recipientName}!</h2>
+      <p>Thank you for submitting your driver application to Cappucina.</p>
+      <p><strong>Your application status: Under Review</strong></p>
+      <h3>What happens next:</h3>
+      <ul>
+        <li>Our team will review your documents and information</li>
+        <li>We may request additional information if needed</li>
+        <li>You will receive an email once your application is approved or if we need clarification</li>
+        <li>Review process typically takes 1-3 business days</li>
+      </ul>
+      <p>Thank you for your patience!</p>
+      <p>Best regards,<br><strong>Cappucina Team</strong></p>
+    `;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || `Cappucina <${process.env.EMAIL_USER}>`,
+      to: recipientEmail,
+      subject: subject,
+      html: htmlContent,
+    });
+    console.log(`✅ Email sent to ${recipientEmail} (${status})`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Error sending email to ${recipientEmail}:`, error.message);
+    return false;
+  }
+}
 
 // function startPHPServer() {
 //   const phpPath = "php";
@@ -345,7 +442,11 @@ async function startServer() {
           const { users } = getCollections();
 
           const data = await users
-            .find({ role: "car_owner" || "passenger", account_status: "pending" })
+            .find({ 
+              role: "car_owner",
+              driver_status: "pending",
+              "vehicle.0.verified": false
+            })
             .project({ password: 0 })
             .toArray();
 
@@ -361,7 +462,7 @@ async function startServer() {
           const { users } = getCollections();
 
           const data = await users
-            .find({ role: "car_owner" || "passenger", account_status: "active" })
+            .find({ role: "car_owner" || "passenger", driver_status: "active" })
             .project({ password: 0 })
             .toArray();
 
@@ -414,6 +515,12 @@ async function startServer() {
           email: driverData.email,
           password: hashedPassword,
           role: "car_owner",
+          // Ensure admin-created drivers have a driver_status field: pending if not verified
+          driver_status:
+            driverData.driver_status ||
+            ((driverData.vehicle && Array.isArray(driverData.vehicle) && driverData.vehicle[0] && driverData.vehicle[0].verified === true)
+              ? "active"
+              : "pending"),
           profile: {
             name: driverData.profile.name,
             phone: driverData.profile.phone,
@@ -434,6 +541,14 @@ async function startServer() {
         };
 
         const result = await users.insertOne(newDriver);
+        
+        // Send pending review email
+        await sendDriverEmail(
+          driverData.email,
+          driverData.profile.name,
+          "pending"
+        );
+        
         res.status(201).json({
           success: true,
           message: "Driver created successfully",
@@ -487,18 +602,53 @@ async function startServer() {
                 parseInt(updateData.vehicle[0].available_seats) || 4,
             },
           ];
+
+          // If vehicle verification is passed in full object, update status accordingly
+          if (typeof updateData.vehicle[0].verified === "boolean" && !updateData.driver_status) {
+            updateData.driver_status = updateData.vehicle[0].verified ? "active" : "pending";
+          }
+        }
+
+        // If using dot-notation ("vehicle.0.verified"), infer driver_status when not explicitly provided
+        if (Object.prototype.hasOwnProperty.call(updateData, "vehicle.0.verified") && !updateData.driver_status) {
+          updateData.driver_status = updateData["vehicle.0.verified"] === true ? "active" : "pending";
         }
 
         const result = await users.updateOne(
           {
             _id: new ObjectId(driverId),
-            driver_status: { $exists: true },
+            role: "car_owner",
           },
           { $set: updateData }
         );
 
         if (result.matchedCount === 0) {
-          return res.status(404).json({ error: "Driver not found" });
+          return res.status(404).json({ 
+            success: false,
+            error: "Driver not found" 
+          });
+        }
+
+        // Send approval or rejection email based on driver_status or rejection_reason
+        const updatedDriver = await users.findOne({ _id: new ObjectId(driverId) });
+        
+        if (updatedDriver) {
+          if (updatedDriver.driver_status === "active" && updateData.driver_status === "active") {
+            // Driver was approved
+            await sendDriverEmail(
+              updatedDriver.email,
+              updatedDriver.profile?.name,
+              "approved"
+            );
+          } else if (updatedDriver.driver_status === "rejected") {
+            // Driver was rejected
+            await sendDriverEmail(
+              updatedDriver.email,
+              updatedDriver.profile?.name,
+              "rejected",
+              { reason: updatedDriver.rejection_reason }
+            );
+          }
         }
 
         res.json({
