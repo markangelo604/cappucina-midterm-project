@@ -307,7 +307,14 @@ async function startServer() {
     app.get("/api/drivers", async (req, res) => {
       try {
         const { users } = getCollections();
-        const data = await users.find({ driver_status: { $exists: true } }).toArray();
+        // Fetch ONLY drivers
+        const data = await users
+          .find({ role: "car_owner" })
+          .project({
+            password: 0 // hide password for security
+          })
+          .toArray();
+
         res.json(data);
       } catch (err) {
         console.error("Error fetching drivers:", err);
@@ -321,7 +328,7 @@ async function startServer() {
         const { users } = getCollections();
         const driver = await users.findOne({
           _id: new ObjectId(req.params.id),
-          driver_status: { $exists: true },
+          role: "car_owner", 
         });
         if (!driver) {
           return res.status(404).json({ error: "Driver not found" });
@@ -332,7 +339,38 @@ async function startServer() {
         res.status(500).json({ error: err.message });
       }
     });
+    // GET pending drivers
+      app.get("/api/drivers/pending", async (req, res) => {
+        try {
+          const { users } = getCollections();
 
+          const data = await users
+            .find({ role: "car_owner" || "passenger", account_status: "pending" })
+            .project({ password: 0 })
+            .toArray();
+
+          res.json(data);
+        } catch (err) {
+          console.error("Error fetching pending drivers:", err);
+          res.status(500).json({ error: err.message });
+        }
+      });
+      // GET active drivers
+      app.get("/api/drivers/active", async (req, res) => {
+        try {
+          const { users } = getCollections();
+
+          const data = await users
+            .find({ role: "car_owner" || "passenger", account_status: "active" })
+            .project({ password: 0 })
+            .toArray();
+
+          res.json(data);
+        } catch (err) {
+          console.error("Error fetching active drivers:", err);
+          res.status(500).json({ error: err.message });
+        }
+      });
     // POST create new driver
     app.post("/api/drivers", async (req, res) => {
       try {
