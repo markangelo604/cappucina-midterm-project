@@ -14,6 +14,17 @@ function initGoogleMap() {
     map = new google.maps.Map(document.getElementById("map"), {
         center: baguioCity,
         zoom: 15,
+        minZoom: 13,
+        maxZoom: 18,
+           restriction: {
+               latLngBounds: {
+                   north: 16.85,
+                   south: 16.05,
+                   west: 120.40,
+                   east: 120.85
+               },
+               strictBounds: false
+           },
         streetView: null,         
         streetViewControl: false,
     });
@@ -1139,7 +1150,18 @@ async function initializeModalMapWithRoute(origin, destination) {
         console.log('🎨 Creating Google Map...');
         modalMap = new google.maps.Map(mapContainer, {
             center: { lat: 16.4023, lng: 120.5960 },
-            zoom: 13,
+            zoom: 15,
+            minZoom: 13,
+            maxZoom: 18,
+               restriction: {
+                   latLngBounds: {
+                       north: 16.85,
+                       south: 16.05,
+                       west: 120.40,
+                       east: 120.85
+                   },
+                   strictBounds: false
+               },
             streetViewControl: false,
             mapTypeControl: true,
             zoomControl: true
@@ -1288,7 +1310,18 @@ async function initializeModalMap(pickupLocation, destinationLocation) {
         console.log('🎨 Creating map instance...');
         modalMap = new google.maps.Map(mapContainer, {
             center: { lat: 16.4023, lng: 120.5960 },
-            zoom: 13,
+            zoom: 15,
+            minZoom: 13,
+            maxZoom: 18,
+               restriction: {
+                   latLngBounds: {
+                       north: 16.85,
+                       south: 16.05,
+                       west: 120.40,
+                       east: 120.85
+                   },
+                   strictBounds: false
+               },
             streetViewControl: false,
             mapTypeControl: true
         });
@@ -1459,7 +1492,18 @@ async function displayRidePathOnMap(ride) {
             const mapContainer = document.getElementById('popupMapContainer');
             popupMap = new google.maps.Map(mapContainer, {
                 center: { lat: 16.4023, lng: 120.5960 },
-                zoom: 13,
+                zoom: 15,
+                minZoom: 13,
+                maxZoom: 18,
+                   restriction: {
+                       latLngBounds: {
+                           north: 16.85,
+                           south: 16.05,
+                           west: 120.40,
+                           east: 120.85
+                       },
+                       strictBounds: false
+                   },
                 streetViewControl: false
             });
             window.popupMap = popupMap;

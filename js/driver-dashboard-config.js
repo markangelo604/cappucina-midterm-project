@@ -55,7 +55,18 @@ function initGoogleMap() {
     const baguioCity = { lat: 16.4023, lng: 120.5960 };
     map = new google.maps.Map(document.getElementById("map") || document.createElement('div'), {
         center: baguioCity,
-        zoom: 13,
+        zoom: 15,
+        minZoom: 13,
+        maxZoom: 18,
+        restriction: {
+            latLngBounds: {
+                north: 16.85,
+                south: 16.05,
+                west: 120.40,
+                east: 120.85
+            },
+            strictBounds: false
+        },
         streetView: null,       
         streetViewControl: false,
     });
@@ -917,7 +928,18 @@ async function displayDriverRouteOnMap(destinationId) {
             }
             popupMap = new google.maps.Map(mapContainer, {
                 center: { lat: 16.4023, lng: 120.5960 },
-                zoom: 13,
+                zoom: 15,
+                minZoom: 13,
+                maxZoom: 18,
+                   restriction: {
+                       latLngBounds: {
+                           north: 16.85,
+                           south: 16.05,
+                           west: 120.40,
+                           east: 120.85
+                       },
+                       strictBounds: false
+                   },
                 streetViewControl: false
             });
             window.popupMapDriver = popupMap;
