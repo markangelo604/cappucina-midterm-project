@@ -12,7 +12,6 @@ let directionsRendererDriver;
 let startPlaceDriver = null;
 let destPlaceDriver = null;
 let userMarkerDriver = null;
-
 // Get driver username from session
 let driverUsername = null;
 let destinations = [];
@@ -393,6 +392,10 @@ async function loadDestinations() {
         if (data.success) {
             destinations = data.data.rides || [];
             console.log('✅ Loaded', destinations.length, 'destinations');
+            const activeRide = destinations.find(d => d.status === 'departed');
+            if (activeRide) {
+                DriverTracker.start(activeRide.id);
+            }
             renderDestinations();
             hideLoading();
         } else {
@@ -1192,6 +1195,7 @@ async function handleDepartRide(destinationId) {
             hideLoading();
             await loadDestinations();
             showSuccessMessage('Ride marked as departed!');
+            DriverTracker.start(destinationId);
             return true;
         } else {
             console.error('❌ Failed to depart ride:', data.message);
