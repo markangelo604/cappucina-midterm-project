@@ -36,29 +36,37 @@ function showLoading(show) {
 }
 
 function filterByStatus(status) {
-    return driversData.filter(driver => {
-        const driverStatus = driver.driver_status || 'pending';
+     return driversData.filter(driver => {
+        const driverStatus = driver.driver_status || "pending";
         const vehicleVerified = driver.vehicle?.[0]?.verified || false;
-        
-        if (status === 'pending') {
-            return driverStatus === 'pending' && !vehicleVerified;
-        } else if (status === 'verified') {
-            return vehicleVerified === true || driverStatus === 'active';
-        } else if (status === 'rejected') {
-            return driverStatus === 'rejected' || driver.account_status === 'rejected';
+
+        if (status === "pending") {
+            // Pending review: driver_status pending and vehicle not verified
+            return driverStatus === "pending" && !vehicleVerified;
         }
+
+        if (status === "verified") {
+            // Approved Drivers (driver_status active and verified)
+            return driverStatus === "active" && vehicleVerified;
+        }
+
+        if (status === "rejected") {
+            // Rejected Drivers (account_status rejected)
+            return driverStatus === "rejected" && !vehicleVerified;
+        }
+
         return false;
     });
 }
 
 function updateCounts() {
-    const pending = filterByStatus('pending').length;
-    const verified = filterByStatus('verified').length;
-    const rejected = filterByStatus('rejected').length;
-    
-    document.getElementById('pendingCount').textContent = pending;
-    document.getElementById('verifiedCount').textContent = verified;
-    document.getElementById('rejectedCount').textContent = rejected;
+    const pending = driversData.filter(d => (d.driver_status || "pending") === "pending" && !(d.vehicle?.[0]?.verified || false)).length;
+    const verified = driversData.filter(d => (d.driver_status || "pending") === "active" && (d.vehicle?.[0]?.verified || false)).length;
+    const rejected = driversData.filter(d => (d.driver_status || "pending") === "rejected").length;
+
+    document.getElementById("pendingCount").textContent = pending;
+    document.getElementById("verifiedCount").textContent = verified;
+    document.getElementById("rejectedCount").textContent = rejected;
 }
 
 function switchTab(status) {
@@ -84,7 +92,7 @@ function renderDriversTable(data) {
     }
 
     tableBody.innerHTML = data.map(driver => {
-        const vehicle = driver.vehicle?.[0] || {};
+        const vehicle = driver.vehicle?.[0]|| {};
         const documents = vehicle.document || {};
         const hasLicense = documents.license && documents.license !== 'PENDING_UPLOAD';
         const hasRegistration = documents.registration && documents.registration !== 'PENDING_UPLOAD';
@@ -101,16 +109,21 @@ function renderDriversTable(data) {
             docBadgeText = `${docsUploaded}/3 Docs`;
         }
 
-        const driverStatus = driver.driver_status || (vehicle.verified ? 'verified' : 'pending');
-        let statusBadgeClass = 'pending';
-        let statusText = 'Pending';
-        
-        if (vehicle.verified || driverStatus === 'active') {
-            statusBadgeClass = 'verified';
-            statusText = 'Verified';
-        } else if (driverStatus === 'rejected' || driver.account_status === 'rejected') {
-            statusBadgeClass = 'rejected';
-            statusText = 'Rejected';
+        let acc = driver.driver_status || "pending";
+        let statusBadgeClass = "";
+        let statusText = "";
+
+        if (acc === "pending") {
+            statusBadgeClass = "pending";
+            statusText = "Pending Approval";
+        }
+        else if (acc === "active") {
+            statusBadgeClass = "verified";
+            statusText = "Verified";
+        }
+        else if (acc === "rejected") {
+            statusBadgeClass = "rejected";
+            statusText = "Rejected";
         }
 
         return `
@@ -158,7 +171,7 @@ async function reviewDriver(id) {
         const driver = await response.json();
         currentDriver = driver;
         
-        const vehicle = driver.vehicle?.[0] || {};
+        const vehicle = driver.vehicle?.[0]  || {};
         const documents = vehicle.document || {};
         
         // Populate driver information
@@ -286,14 +299,17 @@ async function approveDriver() {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                driver_status: 'active',
-                account_status: 'active',
-                role: 'car_owner',
-                'vehicle.0.verified': true,
+                account_status: "active",
+                "vehicle.0.verified": true,
+                driver_status: "active",
                 verified_at: new Date().toISOString(),
-                verified_by: 'admin'
+                verified_by: "admin"
             })
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         
         const result = await response.json();
         
@@ -325,13 +341,16 @@ async function rejectDriver() {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                driver_status: 'rejected',
-                role: 'passenger',
+                driver_status: "rejected",
                 rejection_reason: reason,
                 rejected_at: new Date().toISOString(),
-                rejected_by: 'admin'
+                rejected_by: "admin"
             })
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         
         const result = await response.json();
         
@@ -380,6 +399,8 @@ async function addNewDriver() {
     }
 
     const formData = new FormData(form);
+    const isVerified = formData.get('verification') === 'true';
+    
     const driverData = {
         username: formData.get('username'),
         profile: {
@@ -389,13 +410,14 @@ async function addNewDriver() {
         email: formData.get('email'),
         password: formData.get('password'),
         role: 'car_owner',
+        driver_status: isVerified ? 'active' : 'pending',
         account_status: formData.get('account_status'),
         vehicle: [{
             plate_number: formData.get('plate_number').toUpperCase(),
             brand: formData.get('brand'),
             model: formData.get('model'),
             year: parseInt(formData.get('year')) || 0,
-            verified: formData.get('verification') === 'true',
+            verified: isVerified,
             available_seats: parseInt(formData.get('available_seats')) || 4,
             document: {
                 license: 'PENDING_UPLOAD',

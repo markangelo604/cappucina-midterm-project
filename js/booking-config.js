@@ -151,11 +151,6 @@ function displayBookings(bookingsToShow) {
                         </div>
                         <div class="driver-details">
                             <h4>${booking.driver_name}</h4>
-                            <div class="driver-rating">
-                                <span class="star-icon">★</span>
-                                <span>${booking.rating}</span>
-                                <span class="rating-count">${booking.total_ratings}</span>
-                            </div>
                         </div>
                     </div>
 

@@ -582,4 +582,395 @@ body {
     color: #b3c5d7;
 }
 
+.mobile-menu-toggle {
+    display: none;
+}
 
+/* Tablets and below (992px) */
+@media (max-width: 992px) {
+    .container {
+        padding: 0 15px;
+    }
+
+    /* Navigation */
+    .nav-menu {
+        gap: 25px;
+    }
+
+    .nav-menu a {
+        font-size: 14px;
+    }
+
+    /* Hero Section */
+    .hero-content {
+        flex-direction: column;
+        padding: 40px 30px;
+        gap: 40px;
+    }
+
+    .hero-title {
+        font-size: 36px;
+    }
+
+    .hero-image {
+        max-width: 100%;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    /* Features Grid */
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+    }
+
+    /* Steps Grid */
+    .steps-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    /* Footer */
+    .footer-content {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+}
+
+/* Mobile devices (768px and below) */
+@media (max-width: 768px) {
+    /* Position navbar relative for absolute dropdown */
+    .navbar {
+        position: relative;
+    }
+
+    .nav-content {
+        position: relative;
+    }
+
+    /* HIDE desktop navigation and buttons */
+    .nav-menu,
+    .nav-buttons {
+        display: none;
+    }
+
+    /* SHOW hamburger icon */
+    .mobile-menu-toggle {
+        display: block;
+        background: none;
+        border: none;
+        font-size: 26px;
+        cursor: pointer;
+        color: var(--text-dark);
+        padding: 5px 10px;
+    }
+
+    /* MOBILE DROPDOWN MENU - hidden by default */
+    .nav-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #fff;
+        flex-direction: column;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        gap: 15px;
+        z-index: 999;
+    }
+
+    /* Show menu when active */
+    .nav-menu.active {
+        display: flex !important;
+    }
+
+    /* Style the nav links in mobile */
+    .nav-menu li {
+        width: 100%;
+        text-align: center;
+        list-style: none;
+    }
+
+    .nav-menu a {
+        display: block;
+        padding: 10px 0;
+        font-size: 16px;
+        color: #666;
+        text-decoration: none;
+    }
+
+    .nav-menu a:hover,
+    .nav-menu a.active {
+        color: var(--accent-gold);
+    }
+
+    /* Container for buttons inside mobile menu */
+    .nav-menu .mobile-nav-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 10px;
+        padding-top: 15px;
+        border-top: 1px solid #e0e0e0;
+        width: 100%;
+    }
+
+    /* Style buttons in mobile menu */
+    .nav-menu .mobile-nav-buttons .btn-Outline,
+    .nav-menu .mobile-nav-buttons .btn-primary {
+        width: 100%;
+        text-align: center;
+        padding: 12px 20px;
+        font-size: 15px;
+        display: block;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .nav-menu .mobile-nav-buttons .btn-Outline {
+        border: 2px solid var(--text-dark);
+        background: transparent;
+        color: var(--text-dark);
+    }
+
+    .nav-menu .mobile-nav-buttons .btn-Outline:hover {
+        background-color: var(--primary-color);
+        color: #fff;
+        border-color: var(--primary-color);
+    }
+
+    .nav-menu .mobile-nav-buttons .btn-primary {
+        border: none;
+        background: var(--accent-gold);
+        color: var(--text-dark);
+    }
+
+    .nav-menu .mobile-nav-buttons .btn-primary:hover {
+        background: #e5b307;
+    }
+
+
+    /* Hero Section */
+    .hero {
+        padding: 40px 0 30px;
+    }
+
+    .hero-content {
+        padding: 30px 20px;
+        gap: 30px;
+    }
+
+    .hero-title {
+        font-size: 28px;
+        margin-bottom: 30px;
+    }
+
+    .feature-item {
+        gap: 12px;
+    }
+
+    .feature-icon {
+        width: 35px;
+        height: 35px;
+    }
+
+    .feature-text h3 {
+        font-size: 15px;
+    }
+
+    .feature-text p {
+        font-size: 13px;
+    }
+
+    /* Search Section */
+    .search-card {
+        padding: 30px 20px;
+        border-radius: 12px;
+    }
+
+    .search-title {
+        font-size: 24px;
+        margin-bottom: 8px;
+    }
+
+    .search-subtitle {
+        font-size: 14px;
+        margin-bottom: 25px;
+    }
+
+    .search-form {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .form-group {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    .btn-search {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 30px;
+    }
+
+    /* Stats Section */
+    .stats-section {
+        padding: 40px 0 50px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .stat-card {
+        padding: 30px 20px;
+    }
+
+    .stat-number {
+        font-size: 32px;
+    }
+
+    /* Why Choose Section */
+    .why-choose-section {
+        padding: 40px 0;
+    }
+
+    .section-header {
+        margin-bottom: 35px;
+    }
+
+    .section-title {
+        font-size: 28px;
+        margin-bottom: 12px;
+    }
+
+    .section-subtitle {
+        font-size: 14px;
+        padding: 0 10px;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .feature-card {
+        padding: 30px 25px;
+    }
+
+    .feature-card h3 {
+        font-size: 17px;
+    }
+
+    .feature-card p {
+        font-size: 13px;
+    }
+
+    /* How It Works Section */
+    .how-it-works-section {
+        padding: 40px 0 50px;
+    }
+
+    .steps-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .step-card {
+        padding: 30px 20px;
+    }
+
+    .step-number {
+        width: 55px;
+        height: 55px;
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+
+    .step-card h3 {
+        font-size: 17px;
+        margin-bottom: 12px;
+    }
+
+    .step-card p {
+        font-size: 13px;
+    }
+
+    /* Footer */
+    .footer {
+        padding: 40px 0 20px;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 35px;
+        margin-bottom: 30px;
+    }
+
+    .footer-brand h3 {
+        font-size: 22px;
+    }
+
+    .footer-brand p {
+        font-size: 14px;
+        max-width: 100%;
+    }
+
+    .footer-links h4 {
+        font-size: 15px;
+        margin-bottom: 15px;
+    }
+
+    .footer-links ul li {
+        margin-bottom: 10px;
+    }
+
+    .footer-bottom {
+        padding-top: 25px;
+    }
+
+    .footer-bottom p {
+        font-size: 13px;
+    }
+}
+
+/* Small mobile devices (480px and below) */
+@media (max-width: 480px) {
+    .logo img {
+        width: 50px;
+    }
+
+    .hero-title {
+        font-size: 24px;
+    }
+
+    .search-title {
+        font-size: 20px;
+    }
+
+    .section-title {
+        font-size: 24px;
+    }
+
+    .stat-number {
+        font-size: 28px;
+    }
+
+    .step-number {
+        width: 50px;
+        height: 50px;
+        font-size: 22px;
+    }
+
+    .btn-Outline, .btn-primary {
+        padding: 8px 20px;
+        font-size: 13px;
+    }
+}

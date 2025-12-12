@@ -14,6 +14,17 @@ function initGoogleMap() {
     map = new google.maps.Map(document.getElementById("map"), {
         center: baguioCity,
         zoom: 15,
+        minZoom: 13,
+        maxZoom: 18,
+           restriction: {
+               latLngBounds: {
+                   north: 16.85,
+                   south: 16.05,
+                   west: 120.40,
+                   east: 120.85
+               },
+               strictBounds: false
+           },
         streetView: null,         
         streetViewControl: false,
     });
@@ -1065,39 +1076,48 @@ async function openBookingModal(rideIndex) {
     
     const ride = window.availableRidesData[rideIndex];
     currentRideData = ride;
-    
+
     const driverName = ride.driver?.name || ride.name || ride.username || "Unknown Driver";
     const pickupLocation = ride.starting_point || ride.from || "TBD";
     const destinationLocation = ride.destination || ride.to || "TBD";
     const tripDate = ride.date || "TBD";
     const departureTime = ride.time || "TBD";
     const price = ride.fare || ride.price || "₱0.00";
-    
-    console.log('🚗 Opening booking modal for route:', pickupLocation, '→', destinationLocation);
-    
-    // Update modal summary
+
+    // Update modal UI
     document.getElementById('modal-driver').textContent = driverName;
     document.getElementById('modal-from').textContent = pickupLocation;
     document.getElementById('modal-to').textContent = destinationLocation;
     document.getElementById('modal-date').textContent = `${tripDate} at ${departureTime}`;
     document.getElementById('modal-price').textContent = price;
-    
-    // Prefill booking form
+
+    // Prefill form
     if (userData) {
         document.getElementById('passengerName').value = userData.name || "";
         document.getElementById('passengerEmail').value = userData.email || "";
         document.getElementById('passengerPhone').value = userData.phone || "";
     }
-    
-    // Show modal FIRST
+
+    // Show modal
     const modal = document.getElementById('bookingModal');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    
-    // Wait for modal to be fully rendered, then initialize map
+
+    // Initialize map AFTER modal is visible
     setTimeout(() => {
         console.log('⏰ Initializing modal map...');
-        initializeModalMapWithRoute(pickupLocation, destinationLocation);
+        
+        // IMPORTANT: GET THE MAP OBJECT
+        const modalMap = initializeModalMapWithRoute(pickupLocation, destinationLocation);
+
+
+
+        // ⭐ START LIVE DRIVER TRACKING
+        PassengerTracker.start(
+            ride._id?.$oid || ride._id || ride.id, // ensures MongoDB ID compatibility
+            modalMap
+        );
+
     }, 300);
 }
 
@@ -1130,7 +1150,18 @@ async function initializeModalMapWithRoute(origin, destination) {
         console.log('🎨 Creating Google Map...');
         modalMap = new google.maps.Map(mapContainer, {
             center: { lat: 16.4023, lng: 120.5960 },
-            zoom: 13,
+            zoom: 15,
+            minZoom: 13,
+            maxZoom: 18,
+               restriction: {
+                   latLngBounds: {
+                       north: 16.85,
+                       south: 16.05,
+                       west: 120.40,
+                       east: 120.85
+                   },
+                   strictBounds: false
+               },
             streetViewControl: false,
             mapTypeControl: true,
             zoomControl: true
@@ -1279,7 +1310,18 @@ async function initializeModalMap(pickupLocation, destinationLocation) {
         console.log('🎨 Creating map instance...');
         modalMap = new google.maps.Map(mapContainer, {
             center: { lat: 16.4023, lng: 120.5960 },
-            zoom: 13,
+            zoom: 15,
+            minZoom: 13,
+            maxZoom: 18,
+               restriction: {
+                   latLngBounds: {
+                       north: 16.85,
+                       south: 16.05,
+                       west: 120.40,
+                       east: 120.85
+                   },
+                   strictBounds: false
+               },
             streetViewControl: false,
             mapTypeControl: true
         });
@@ -1450,7 +1492,18 @@ async function displayRidePathOnMap(ride) {
             const mapContainer = document.getElementById('popupMapContainer');
             popupMap = new google.maps.Map(mapContainer, {
                 center: { lat: 16.4023, lng: 120.5960 },
-                zoom: 13,
+                zoom: 15,
+                minZoom: 13,
+                maxZoom: 18,
+                   restriction: {
+                       latLngBounds: {
+                           north: 16.85,
+                           south: 16.05,
+                           west: 120.40,
+                           east: 120.85
+                       },
+                       strictBounds: false
+                   },
                 streetViewControl: false
             });
             window.popupMap = popupMap;

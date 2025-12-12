@@ -137,6 +137,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 "gender" => $data['profile']['gender'] ?? null
             ],
             "vehicle" => $vehicles,
+            // Align with upgrade flow: new drivers start with pending driver_status
+            "driver_status" => $data['driver_status'] ?? 'pending',
             "account_status" => $data['account_status'] ?? 'pending',
             "created_at" => new UTCDateTime()
         ];

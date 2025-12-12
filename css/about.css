@@ -393,3 +393,606 @@ body {
     color: #b3c5d7;
 }
 
+.mobile-nav-buttons {
+    display: none !important;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN - TABLETS AND BELOW
+   ======================================== */
+
+/* Tablets (992px and below) */
+@media (max-width: 992px) {
+    .container {
+        padding: 0 15px;
+    }
+
+    /* Navigation */
+    .nav-menu {
+        gap: 25px;
+    }
+
+    .nav-menu a {
+        font-size: 14px;
+    }
+
+    /* About Hero */
+    .about-hero {
+        padding: 60px 0;
+    }
+
+    .about-title {
+        font-size: 40px;
+    }
+
+    .about-subtitle {
+        font-size: 16px;
+    }
+
+    /* Story Section */
+    .our-story-section {
+        padding: 50px 0;
+    }
+
+    .story-card {
+        padding: 40px 50px;
+    }
+
+    .story-title {
+        font-size: 28px;
+    }
+
+    .story-content p {
+        font-size: 14px;
+    }
+
+    /* Stats Section */
+    .about-stats-section {
+        padding: 40px 0;
+    }
+
+    .about-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .about-stat-card {
+        border-right: none;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .about-stat-card:nth-child(2) {
+        border-right: 2px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .about-stat-card:nth-child(3),
+    .about-stat-card:nth-child(4) {
+        border-bottom: none;
+    }
+
+    .about-stat-number {
+        font-size: 42px;
+    }
+
+    .about-stat-label {
+        font-size: 15px;
+    }
+
+    /* Team Section */
+    .team-section {
+        padding: 60px 0;
+    }
+
+    .section-title {
+        font-size: 32px;
+    }
+
+    .section-subtitle {
+        font-size: 15px;
+    }
+
+    .team-grid {
+        gap: 25px;
+    }
+
+    .team-card {
+        width: calc(33.333% - 17px);
+    }
+
+    /* Footer */
+    .footer-content {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN - MOBILE DEVICES
+   ======================================== */
+
+/* Mobile devices (768px and below) */
+@media (max-width: 768px) {
+    /* Navigation */
+    .nav-content {
+        position: relative;
+    }
+
+    /* HIDE desktop navigation and buttons */
+    .nav-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #fff;
+        flex-direction: column;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        gap: 15px;
+        z-index: 999;
+    }
+
+    /* Show menu when active */
+    .nav-menu.active {
+        display: flex !important;
+    }
+
+    /* Style the nav links in mobile */
+    .nav-menu li {
+        width: 100%;
+        text-align: center;
+        list-style: none;
+    }
+
+    .nav-menu a {
+        display: block;
+        padding: 10px 0;
+        font-size: 16px;
+        color: #666;
+        text-decoration: none;
+    }
+
+    .nav-menu a:hover,
+    .nav-menu a.active {
+        color: var(--accent-gold);
+    }
+
+    /* Hide desktop buttons */
+    .nav-buttons {
+        display: none;
+    }
+
+    /* SHOW hamburger icon */
+    .mobile-menu-toggle {
+        display: block;
+        background: none;
+        border: none;
+        font-size: 26px;
+        cursor: pointer;
+        color: var(--text-dark);
+        padding: 5px 10px;
+    }
+
+    /* Container for buttons inside mobile menu */
+    .nav-menu .mobile-nav-buttons {
+        display: flex !important;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 10px;
+        padding-top: 15px;
+        border-top: 1px solid #e0e0e0;
+        width: 100%;
+    }
+
+    /* Style buttons in mobile menu */
+    .nav-menu .mobile-nav-buttons .btn-Outline,
+    .nav-menu .mobile-nav-buttons .btn-primary {
+        width: 100%;
+        text-align: center;
+        padding: 12px 20px;
+        font-size: 15px;
+        display: block;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .nav-menu .mobile-nav-buttons .btn-Outline {
+        border: 2px solid var(--text-dark);
+        background: transparent;
+        color: var(--text-dark);
+    }
+
+    .nav-menu .mobile-nav-buttons .btn-Outline:hover {
+        background-color: var(--primary-color);
+        color: #fff;
+        border-color: var(--primary-color);
+    }
+
+    .nav-menu .mobile-nav-buttons .btn-primary {
+        border: none;
+        background: var(--accent-gold);
+        color: var(--text-dark);
+    }
+
+    .nav-menu .mobile-nav-buttons .btn-primary:hover {
+        background: #e5b307;
+    }
+
+    /* About Hero */
+    .about-hero {
+        padding: 50px 0;
+    }
+
+    .about-title {
+        font-size: 32px;
+        margin-bottom: 15px;
+    }
+
+    .about-subtitle {
+        font-size: 15px;
+    }
+
+    /* Story Section */
+    .our-story-section {
+        padding: 40px 0;
+    }
+
+    .story-card {
+        padding: 30px 25px;
+        border-radius: 12px;
+    }
+
+    .story-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+
+    .story-content p {
+        font-size: 14px;
+        line-height: 1.7;
+        margin-bottom: 15px;
+        text-align: left;
+    }
+
+    /* Stats Section */
+    .about-stats-section {
+        padding: 30px 0;
+    }
+
+    .about-stats-grid {
+        grid-template-columns: 1fr;
+        border-radius: 12px;
+    }
+
+    .about-stat-card {
+        padding: 35px 25px;
+        border-right: none;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .about-stat-card:last-child {
+        border-bottom: none;
+    }
+
+    .about-stat-number {
+        font-size: 38px;
+        margin-bottom: 8px;
+    }
+
+    .about-stat-label {
+        font-size: 14px;
+    }
+
+    /* Team Section */
+    .team-section {
+        padding: 50px 0;
+    }
+
+    .section-header {
+        margin-bottom: 40px;
+    }
+
+    .section-title {
+        font-size: 28px;
+        margin-bottom: 12px;
+    }
+
+    .section-subtitle {
+        font-size: 14px;
+        padding: 0 10px;
+    }
+
+    .team-grid {
+        gap: 20px;
+    }
+
+    .team-card {
+        width: calc(50% - 10px);
+        min-width: 0;
+    }
+
+    .team-image {
+        height: 220px;
+    }
+
+    .team-info {
+        padding: 20px 15px;
+    }
+
+    .team-name {
+        font-size: 15px;
+        margin-bottom: 4px;
+    }
+
+    .team-role {
+        font-size: 12px;
+    }
+
+    /* Footer */
+    .footer {
+        padding: 40px 0 20px;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+    .footer-brand h3 {
+        font-size: 22px;
+        margin-bottom: 12px;
+    }
+
+    .footer-brand p {
+        font-size: 13px;
+        margin-bottom: 20px;
+    }
+
+    .footer-social {
+        gap: 12px;
+    }
+
+    .social-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .footer-links h4 {
+        font-size: 15px;
+        margin-bottom: 15px;
+    }
+
+    .footer-links ul li {
+        margin-bottom: 10px;
+    }
+
+    .footer-links a {
+        font-size: 13px;
+    }
+
+    .footer-bottom {
+        padding-top: 25px;
+    }
+
+    .footer-bottom p {
+        font-size: 12px;
+    }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN - SMALL MOBILE
+   ======================================== */
+
+/* Small Mobile (480px and below) */
+@media (max-width: 480px) {
+    .container {
+        padding: 0 12px;
+    }
+
+    /* Navigation */
+    .navbar {
+        padding: 12px 0;
+    }
+
+    .logo img {
+        width: 45px;
+    }
+
+    .mobile-menu-toggle {
+        font-size: 22px;
+    }
+
+    /* About Hero */
+    .about-hero {
+        padding: 40px 0;
+    }
+
+    .about-title {
+        font-size: 28px;
+        margin-bottom: 12px;
+    }
+
+    .about-subtitle {
+        font-size: 14px;
+    }
+
+    /* Story Section */
+    .our-story-section {
+        padding: 30px 0;
+    }
+
+    .story-card {
+        padding: 25px 20px;
+        border-radius: 10px;
+    }
+
+    .story-title {
+        font-size: 22px;
+        margin-bottom: 18px;
+    }
+
+    .story-content p {
+        font-size: 13px;
+        line-height: 1.6;
+        margin-bottom: 12px;
+    }
+
+    /* Stats Section */
+    .about-stats-section {
+        padding: 25px 0;
+    }
+
+    .about-stats-grid {
+        border-radius: 10px;
+    }
+
+    .about-stat-card {
+        padding: 30px 20px;
+    }
+
+    .about-stat-number {
+        font-size: 34px;
+        margin-bottom: 6px;
+    }
+
+    .about-stat-label {
+        font-size: 13px;
+    }
+
+    /* Team Section */
+    .team-section {
+        padding: 40px 0;
+    }
+
+    .section-header {
+        margin-bottom: 30px;
+    }
+
+    .section-title {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+
+    .section-subtitle {
+        font-size: 13px;
+    }
+
+    .team-grid {
+        gap: 15px;
+    }
+
+    .team-card {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    .team-image {
+        height: 240px;
+    }
+
+    .team-info {
+        padding: 18px 15px;
+    }
+
+    .team-name {
+        font-size: 14px;
+    }
+
+    .team-role {
+        font-size: 11px;
+    }
+
+    /* Footer */
+    .footer-brand h3 {
+        font-size: 20px;
+    }
+
+    .footer-brand p {
+        font-size: 12px;
+        margin-bottom: 18px;
+    }
+
+    .social-icon {
+        width: 34px;
+        height: 34px;
+    }
+
+    .social-icon svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .footer-links h4 {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .footer-links ul li {
+        margin-bottom: 8px;
+    }
+
+    .footer-links a {
+        font-size: 12px;
+    }
+
+    .footer-bottom p {
+        font-size: 11px;
+    }
+}
+
+/* ========================================
+   EXTRA SMALL MOBILE (360px and below)
+   ======================================== */
+
+@media (max-width: 360px) {
+    .container {
+        padding: 0 10px;
+    }
+
+    .logo img {
+        width: 40px;
+    }
+
+    .about-title {
+        font-size: 24px;
+    }
+
+    .about-subtitle {
+        font-size: 13px;
+    }
+
+    .story-title {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+
+    .story-content p {
+        font-size: 12px;
+    }
+
+    .about-stat-number {
+        font-size: 30px;
+    }
+
+    .about-stat-label {
+        font-size: 12px;
+    }
+
+    .section-title {
+        font-size: 22px;
+    }
+
+    .section-subtitle {
+        font-size: 12px;
+    }
+
+    .team-card {
+        max-width: 280px;
+    }
+
+    .team-image {
+        height: 220px;
+    }
+}

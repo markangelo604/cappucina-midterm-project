@@ -94,6 +94,24 @@ body {
     align-items: center;
 }
 
+.btn-Outline {
+    padding: 8px 25px;
+    border: 2px solid var(--text-dark);
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+    color: var(--text-dark);
+}
+
+.btn-Outline:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
 .btn-primary {
     padding: 8px 25px;
     border: 2px solid var(--text-dark);

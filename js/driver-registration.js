@@ -431,66 +431,45 @@ function setupFileUploads() {
 
 function setupFileUpload(inputId, boxId, previewId) {
     const input = document.getElementById(inputId);
-    const box = document.getElementById(boxId);
     const preview = document.getElementById(previewId);
-    
-    if (!input || !box || !preview) return;
-    
-    box.addEventListener('click', () => input.click());
-    
+
+    if (!input || !preview) return;
+
     input.addEventListener('change', function(e) {
         const file = e.target.files[0];
-        if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                showError('File size must be less than 5MB');
-                input.value = '';
-                return;
-            }
-            
-            uploadedFiles[inputId] = file;
-            box.classList.add('has-file');
-            preview.innerHTML = `
-                <div style="color: #4CAF50; font-weight: 600; padding: 10px;">
-                    ✓ ${file.name} (${formatFileSize(file.size)})
-                </div>
-            `;
-            preview.classList.add('show');
-            
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.style.maxWidth = '200px';
-                    img.style.marginTop = '10px';
-                    img.style.borderRadius = '8px';
-                    preview.appendChild(img);
-                };
-                reader.readAsDataURL(file);
-            }
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            showError('File size must be less than 5MB');
+            return;
         }
-    });
-    
-    box.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        box.style.borderColor = 'var(--accent-gold)';
-    });
-    
-    box.addEventListener('dragleave', () => {
-        box.style.borderColor = 'var(--border-color)';
-    });
-    
-    box.addEventListener('drop', (e) => {
-        e.preventDefault();
-        box.style.borderColor = 'var(--border-color)';
-        
-        const file = e.dataTransfer.files[0];
-        if (file) {
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            input.files = dataTransfer.files;
-            input.dispatchEvent(new Event('change'));
+
+        uploadedFiles[inputId] = file;
+
+        // Clear previous preview
+        preview.innerHTML = '';
+
+        const fileInfo = document.createElement('div');
+        fileInfo.style.color = '#4CAF50';
+        fileInfo.style.fontWeight = '600';
+        fileInfo.style.padding = '10px';
+        fileInfo.textContent = `✓ ${file.name} (${formatFileSize(file.size)})`;
+        preview.appendChild(fileInfo);
+
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '200px';
+                img.style.marginTop = '10px';
+                img.style.borderRadius = '8px';
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
         }
+
+        preview.classList.add('show');
     });
 }
 

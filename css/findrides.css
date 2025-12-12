@@ -814,3 +814,729 @@ body {
         flex-direction: column;
     }
 }
+
+/* ========================================
+   RESPONSIVE DESIGN - TABLETS AND BELOW
+   ======================================== */
+
+/* Tablets (992px and below) */
+@media (max-width: 992px) {
+    .container,
+    .container-fluid {
+        padding: 0 15px;
+    }
+
+    /* Navigation */
+    .nav-menu {
+        gap: 25px;
+    }
+
+    .nav-menu a {
+        font-size: 14px;
+    }
+
+    /* Map Section */
+    .map-section {
+        height: 300px;
+    }
+
+    /* Search Section */
+    .form-row {
+        flex-wrap: wrap;
+    }
+
+    .form-group {
+        flex: 1 1 calc(50% - 15px);
+        min-width: calc(50% - 15px);
+    }
+
+    .btn-search {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    /* Content Wrapper */
+    .content-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    /* Ride Cards */
+    .ride-price {
+        font-size: 20px;
+    }
+
+    /* Footer */
+    .footer-content {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN - MOBILE DEVICES
+   ======================================== */
+
+.mobile-menu-toggle {
+    display: none;
+}
+
+/* Hide mobile nav buttons on desktop */
+.mobile-nav-buttons {
+    display: none !important;
+}
+
+/* Mobile devices (768px and below) */
+@media (max-width: 768px) {
+    /* Navigation */
+    .nav-content {
+        position: relative;
+    }
+
+    /* HIDE desktop navigation and buttons */
+    .nav-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #fff;
+        flex-direction: column;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        gap: 15px;
+        z-index: 999;
+    }
+
+    /* Show menu when active */
+    .nav-menu.active {
+        display: flex !important;
+    }
+
+    /* Style the nav links in mobile */
+    .nav-menu li {
+        width: 100%;
+        text-align: center;
+        list-style: none;
+    }
+
+    .nav-menu a {
+        display: block;
+        padding: 10px 0;
+        font-size: 16px;
+        color: #666;
+        text-decoration: none;
+    }
+
+    .nav-menu a:hover,
+    .nav-menu a.active {
+        color: var(--accent-gold);
+    }
+
+    /* Hide desktop buttons */
+    .nav-buttons {
+        display: none;
+    }
+
+    /* SHOW hamburger icon */
+    .mobile-menu-toggle {
+        display: block;
+        background: none;
+        border: none;
+        font-size: 26px;
+        cursor: pointer;
+        color: var(--text-dark);
+        padding: 5px 10px;
+    }
+
+    /* Container for buttons inside mobile menu */
+    .nav-menu .mobile-nav-buttons {
+        display: flex !important;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 10px;
+        padding-top: 15px;
+        border-top: 1px solid #e0e0e0;
+        width: 100%;
+    }
+
+    /* Style buttons in mobile menu */
+    .nav-menu .mobile-nav-buttons .btn-Outline,
+    .nav-menu .mobile-nav-buttons .btn-primary {
+        width: 100%;
+        text-align: center;
+        padding: 12px 20px;
+        font-size: 15px;
+        display: block;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .nav-menu .mobile-nav-buttons .btn-Outline {
+        border: 2px solid var(--text-dark);
+        background: transparent;
+        color: var(--text-dark);
+    }
+
+    .nav-menu .mobile-nav-buttons .btn-Outline:hover {
+        background-color: var(--primary-color);
+        color: #fff;
+        border-color: var(--primary-color);
+    }
+
+    .nav-menu .mobile-nav-buttons .btn-primary {
+        border: none;
+        background: var(--accent-gold);
+        color: var(--text-dark);
+    }
+
+    .nav-menu .mobile-nav-buttons .btn-primary:hover {
+        background: #e5b307;
+    }
+
+
+    /* Add hamburger menu button */
+    .mobile-menu-toggle {
+        display: block;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: var(--text-dark);
+    }
+    /* Map Section */
+    .map-section {
+        height: 250px;
+    }
+
+    /* Search Section */
+    .search-section {
+        padding: 15px 0;
+    }
+
+    .form-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .form-group {
+        flex: 1 1 100%;
+        min-width: 100%;
+    }
+
+    .form-group label {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    .form-input {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .arrow-icon {
+        display: none;
+    }
+
+    .btn-search {
+        width: 100%;
+        padding: 14px 30px;
+        font-size: 15px;
+        justify-content: center;
+    }
+
+    /* Main Content */
+    .main-content {
+        padding: 20px 0 40px;
+    }
+
+    /* Rides Header */
+    .rides-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .rides-header h2 {
+        font-size: 20px;
+    }
+
+    .btn-filter {
+        align-self: flex-start;
+    }
+
+    /* Filter Chips */
+    .filter-chips {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 5px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .filter-chips::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .filter-chips::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 4px;
+    }
+
+    .chip {
+        white-space: nowrap;
+        padding: 7px 14px;
+        font-size: 12px;
+    }
+
+    /* Ride Cards */
+    .ride-card {
+        padding: 15px;
+    }
+
+    .ride-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .driver-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 14px;
+    }
+
+    .driver-name {
+        font-size: 15px;
+    }
+
+    .ride-price {
+        font-size: 22px;
+        align-self: flex-start;
+    }
+
+    .ride-route {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+
+    .route-time {
+        font-size: 13px;
+    }
+
+    .route-location {
+        font-size: 13px;
+    }
+
+    .ride-meta {
+        flex-direction: column;
+        gap: 10px;
+        padding-top: 12px;
+    }
+
+    .meta-item {
+        font-size: 11px;
+    }
+
+    .btn-book-ride {
+        padding: 12px 20px;
+        font-size: 14px;
+        margin-top: 12px;
+    }
+
+    /* Modal */
+    .modal {
+        padding: 10px;
+    }
+
+    .modal-content {
+        max-width: 100%;
+        max-height: 95vh;
+        border-radius: 12px;
+    }
+
+    .modal-header {
+        padding: 20px;
+    }
+
+    .modal-header h2 {
+        font-size: 18px;
+    }
+
+    .close-modal {
+        font-size: 28px;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .booking-summary {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .booking-summary h3 {
+        font-size: 15px;
+        margin-bottom: 12px;
+    }
+
+    .summary-item {
+        font-size: 13px;
+        padding: 6px 0;
+    }
+
+    .price-highlight {
+        font-size: 16px !important;
+    }
+
+    .booking-form {
+        gap: 15px;
+    }
+
+    .form-group-modal label {
+        font-size: 12px;
+    }
+
+    .form-group-modal input,
+    .form-group-modal select,
+    .form-group-modal textarea {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 8px;
+    }
+
+    .btn-cancel,
+    .btn-confirm {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+
+    /* Footer */
+    .footer {
+        padding: 40px 0 20px;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+    .footer-brand h3 {
+        font-size: 22px;
+        margin-bottom: 12px;
+    }
+
+    .footer-brand p {
+        font-size: 13px;
+        margin-bottom: 20px;
+    }
+
+    .footer-social {
+        gap: 12px;
+    }
+
+    .social-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .footer-links h4 {
+        font-size: 15px;
+        margin-bottom: 15px;
+    }
+
+    .footer-links ul li {
+        margin-bottom: 10px;
+    }
+
+    .footer-links a {
+        font-size: 13px;
+    }
+
+    .footer-bottom {
+        padding-top: 25px;
+    }
+
+    .footer-bottom p {
+        font-size: 12px;
+    }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN - SMALL MOBILE
+   ======================================== */
+
+/* Small Mobile (480px and below) */
+@media (max-width: 480px) {
+    .container,
+    .container-fluid {
+        padding: 0 12px;
+    }
+
+    /* Navigation */
+    .navbar {
+        padding: 12px 0;
+    }
+
+    .logo img {
+        width: 45px;
+    }
+
+    .mobile-menu-toggle {
+        font-size: 22px;
+    }
+
+    /* Map Section */
+    .map-section {
+        height: 200px;
+    }
+
+    /* Search Section */
+    .form-input {
+        padding: 9px 10px;
+        font-size: 12px;
+    }
+
+    .btn-search {
+        padding: 12px 24px;
+        font-size: 14px;
+    }
+
+    /* Main Content */
+    .main-content {
+        padding: 15px 0 30px;
+    }
+
+    /* Rides Header */
+    .rides-header h2 {
+        font-size: 18px;
+    }
+
+    .btn-filter {
+        padding: 7px 14px;
+        font-size: 12px;
+    }
+
+    /* Filter Chips */
+    .chip {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+
+    /* Ride Cards */
+    .ride-card {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .driver-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 13px;
+    }
+
+    .driver-name {
+        font-size: 14px;
+    }
+
+    .ride-price {
+        font-size: 20px;
+    }
+
+    .ride-route {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .route-dot {
+        width: 10px;
+        height: 10px;
+    }
+
+    .route-time,
+    .route-location {
+        font-size: 12px;
+    }
+
+    .route-line {
+        height: 12px;
+    }
+
+    .meta-item {
+        font-size: 10px;
+        gap: 5px;
+    }
+
+    .btn-book-ride {
+        padding: 10px 18px;
+        font-size: 13px;
+        margin-top: 10px;
+    }
+
+    /* Modal */
+    .modal-header {
+        padding: 15px;
+    }
+
+    .modal-header h2 {
+        font-size: 16px;
+    }
+
+    .close-modal {
+        font-size: 24px;
+    }
+
+    .modal-body {
+        padding: 15px;
+    }
+
+    .booking-summary {
+        padding: 12px;
+    }
+
+    .booking-summary h3 {
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
+    .summary-item {
+        font-size: 12px;
+        padding: 5px 0;
+    }
+
+    .price-highlight {
+        font-size: 15px !important;
+    }
+
+    .booking-form {
+        gap: 12px;
+    }
+
+    .form-group-modal label {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+
+    .form-group-modal input,
+    .form-group-modal select,
+    .form-group-modal textarea {
+        padding: 9px 10px;
+        font-size: 12px;
+    }
+
+    .form-group-modal textarea {
+        min-height: 70px;
+    }
+
+    .btn-cancel,
+    .btn-confirm {
+        padding: 11px 18px;
+        font-size: 13px;
+    }
+
+    /* Footer */
+    .footer-brand h3 {
+        font-size: 20px;
+    }
+
+    .footer-brand p {
+        font-size: 12px;
+        margin-bottom: 18px;
+    }
+
+    .social-icon {
+        width: 34px;
+        height: 34px;
+    }
+
+    .social-icon svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .footer-links h4 {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .footer-links ul li {
+        margin-bottom: 8px;
+    }
+
+    .footer-links a {
+        font-size: 12px;
+    }
+
+    .footer-bottom p {
+        font-size: 11px;
+    }
+}
+
+/* ========================================
+   EXTRA SMALL MOBILE (360px and below)
+   ======================================== */
+
+@media (max-width: 360px) {
+    .container,
+    .container-fluid {
+        padding: 0 10px;
+    }
+
+    .logo img {
+        width: 40px;
+    }
+
+    .rides-header h2 {
+        font-size: 16px;
+    }
+
+    .ride-price {
+        font-size: 18px;
+    }
+
+    .driver-name {
+        font-size: 13px;
+    }
+
+    .btn-book-ride {
+        font-size: 12px;
+        padding: 9px 16px;
+    }
+
+    .route-time,
+    .route-location {
+        font-size: 11px;
+    }
+
+    .meta-item {
+        font-size: 9px;
+    }
+
+    .modal-header h2 {
+        font-size: 15px;
+    }
+
+    .form-input {
+        font-size: 11px;
+        padding: 8px 10px;
+    }
+
+    .btn-search {
+        font-size: 13px;
+        padding: 11px 20px;
+    }
+}
