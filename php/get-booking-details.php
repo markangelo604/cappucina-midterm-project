@@ -2,8 +2,6 @@
 /**
  * Get Booking Details Endpoint
  * Fetches detailed booking information including pickup coordinates
- * 
- * INSTALLATION: Save as php/get-booking-details.php
  */
 
 header('Content-Type: application/json');
