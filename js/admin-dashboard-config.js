@@ -1,47 +1,101 @@
 // ========================================
-// ADMIN DASHBOARD - DATABASE CONNECTED
+// ADMIN ANALYTICS DASHBOARD
 // ========================================
+
+// Chart instances
+let charts = {
+    tripsOverTime: null,
+    tripStatus: null,
+    monthlyRevenue: null,
+    topDrivers: null,
+    peakHours: null,
+    driverStatus: null
+};
 
 // Dashboard state
 let dashboardData = {
     totalUsers: 0,
     activeDrivers: 0,
     totalTrips: 0,
-    emergencies: 0,
+    totalRevenue: 0,
     recentTrips: [],
-    tripStats: {
-        completed: 0,
-        upcoming: 0,
-        cancelled: 0
-    }
+    chartData: {}
 };
 
-// Refresh interval (in milliseconds)
+// Current time period
+let currentPeriod = 'all';
+
+// Refresh interval
 const REFRESH_INTERVAL = 30000; // 30 seconds
 
 // ========================================
 // INITIALIZATION
 // ========================================
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Admin Dashboard initializing...');
+    console.log('🚀 Analytics Dashboard initializing...');
     
-    // Initialize dashboard
+    // Setup event listeners
+    setupEventListeners();
+    
+    // Load initial data
     await loadDashboardData();
+    
+    // Initialize all charts
+    initializeCharts();
     
     // Set up auto-refresh
     setInterval(loadDashboardData, REFRESH_INTERVAL);
     
-    // Setup sidebar toggle
-    setupSidebarToggle();
-    
-    // Update trip statistics section
-    updateTripStatistics();
-    
-    console.log('✅ Dashboard initialized');
+    console.log('✅ Analytics Dashboard initialized');
 });
 
 // ========================================
-// LOAD DASHBOARD DATA
+// EVENT LISTENERS
+// ========================================
+function setupEventListeners() {
+    // Sidebar toggle
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+    }
+    
+    // Time period buttons
+    const periodButtons = document.querySelectorAll('[data-period]');
+    periodButtons.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            // Update active state
+            periodButtons.forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            // Update period and reload data
+            currentPeriod = e.target.dataset.period;
+            await loadDashboardData();
+            updateCharts();
+        });
+    });
+    
+    // Refresh button
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refreshing...';
+            refreshBtn.disabled = true;
+            
+            await loadDashboardData();
+            updateCharts();
+            
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh';
+            refreshBtn.disabled = false;
+        });
+    }
+}
+
+// ========================================
+// DATA LOADING
 // ========================================
 async function loadDashboardData() {
     try {
@@ -58,18 +112,15 @@ async function loadDashboardData() {
         dashboardData.totalUsers = usersData.count;
         dashboardData.activeDrivers = driversData.activeCount;
         dashboardData.totalTrips = tripsData.totalCount;
-        dashboardData.emergencies = 0; // Placeholder - implement if needed
+        dashboardData.totalRevenue = tripsData.totalRevenue;
         dashboardData.recentTrips = tripsData.recent;
-        dashboardData.tripStats = {
-            completed: tripsData.completed,
-            upcoming: tripsData.upcoming,
-            cancelled: tripsData.cancelled
-        };
+        
+        // Generate chart data
+        dashboardData.chartData = generateChartData(tripsData, driversData);
         
         // Update UI
         updateDashboardStats();
-        updateRecentTrips();
-        updateTripStatistics();
+        updateRecentActivity();
         
         showLoadingState(false);
         
@@ -77,7 +128,7 @@ async function loadDashboardData() {
         
     } catch (error) {
         console.error('❌ Error loading dashboard data:', error);
-        showError('Failed to load dashboard data. Retrying...');
+        showError('Failed to load dashboard data');
         showLoadingState(false);
     }
 }
@@ -85,44 +136,26 @@ async function loadDashboardData() {
 // ========================================
 // FETCH FUNCTIONS
 // ========================================
-
-/**
- * Fetch all users (passengers)
- */
 async function fetchUsers() {
     try {
         const response = await fetch('/api/users');
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error('Failed to fetch users');
         
         const users = await response.json();
-        
-        return {
-            count: users.length,
-            users: users
-        };
+        return { count: users.length, users: users };
     } catch (error) {
         console.error('Error fetching users:', error);
         return { count: 0, users: [] };
     }
 }
 
-/**
- * Fetch all drivers
- */
 async function fetchDrivers() {
     try {
         const response = await fetch('/api/drivers');
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error('Failed to fetch drivers');
         
         const drivers = await response.json();
         
-        // Count active drivers
         const activeDrivers = drivers.filter(driver => 
             driver.account_status === 'active' || driver.account_status === 'on-duty'
         );
@@ -138,91 +171,374 @@ async function fetchDrivers() {
     }
 }
 
-/**
- * Fetch trips data from rides and bookings
- */
 async function fetchTrips() {
     try {
-        // Fetch rides data (which contains trip information)
-        const ridesResponse = await fetch('../Server/Models/get-rides.php');
+        const response = await fetch('../Server/Models/get-rides.php');
+        if (!response.ok) throw new Error('Failed to fetch trips');
         
-        if (!ridesResponse.ok) {
-            throw new Error(`HTTP error! status: ${ridesResponse.status}`);
-        }
-        
-        const rides = await ridesResponse.json();
+        const rides = await response.json();
         
         // Calculate statistics
         const totalTrips = rides.length;
         const completedTrips = rides.filter(ride => 
             ride.ride_status === 'completed' || ride.ride_status === 'finished'
-        ).length;
-        const upcomingTrips = rides.filter(ride => 
-            ride.ride_status === 'upcoming'
-        ).length;
-        const cancelledTrips = rides.filter(ride => 
-            ride.ride_status === 'cancelled'
-        ).length;
+        );
         
-        // Get recent trips (last 10 completed)
+        // Calculate total revenue
+        const totalRevenue = completedTrips.reduce((sum, ride) => {
+            const fare = parseFloat(ride.fare) || 0;
+            return sum + fare;
+        }, 0);
+        
+        // Get recent trips
         const recentTrips = rides
-            .filter(ride => ride.ride_status === 'completed' || ride.ride_status === 'finished')
             .sort((a, b) => {
-                // Sort by created_at or date
                 const dateA = a.created_at ? new Date(a.created_at.$date || a.created_at) : new Date(a.date);
                 const dateB = b.created_at ? new Date(b.created_at.$date || b.created_at) : new Date(b.date);
                 return dateB - dateA;
             })
-            .slice(0, 10)
+            .slice(0, 15)
             .map(ride => formatTripData(ride));
         
         return {
             totalCount: totalTrips,
-            completed: completedTrips,
-            upcoming: upcomingTrips,
-            cancelled: cancelledTrips,
-            recent: recentTrips
+            totalRevenue: totalRevenue,
+            recent: recentTrips,
+            allRides: rides
         };
     } catch (error) {
         console.error('Error fetching trips:', error);
         return { 
             totalCount: 0, 
-            completed: 0, 
-            upcoming: 0, 
-            cancelled: 0, 
-            recent: [] 
+            totalRevenue: 0,
+            recent: [],
+            allRides: []
         };
     }
 }
 
 // ========================================
-// UPDATE UI FUNCTIONS
+// CHART DATA GENERATION
 // ========================================
+function generateChartData(tripsData, driversData) {
+    const rides = tripsData.allRides || [];
+    
+    // Trips over time (last 7 days)
+    const last7Days = getLast7Days();
+    const tripsByDay = last7Days.map(date => {
+        return rides.filter(ride => {
+            const rideDate = ride.created_at ? 
+                new Date(ride.created_at.$date || ride.created_at) : 
+                new Date(ride.date);
+            return rideDate.toDateString() === date.toDateString();
+        }).length;
+    });
+    
+    // Trip status distribution
+    const statusCounts = {
+        completed: rides.filter(r => r.ride_status === 'completed' || r.ride_status === 'finished').length,
+        ongoing: rides.filter(r => r.ride_status === 'ongoing').length,
+        upcoming: rides.filter(r => r.ride_status === 'upcoming').length,
+        cancelled: rides.filter(r => r.ride_status === 'cancelled').length
+    };
+    
+    // Monthly revenue (last 6 months)
+    const last6Months = getLast6Months();
+    const revenueByMonth = last6Months.map(month => {
+        return rides.filter(ride => {
+            const rideDate = ride.created_at ? 
+                new Date(ride.created_at.$date || ride.created_at) : 
+                new Date(ride.date);
+            return rideDate.getMonth() === month.getMonth() && 
+                   rideDate.getFullYear() === month.getFullYear() &&
+                   (ride.ride_status === 'completed' || ride.ride_status === 'finished');
+        }).reduce((sum, ride) => sum + (parseFloat(ride.fare) || 0), 0);
+    });
+    
+    // Top drivers by trips
+    const driverTrips = {};
+    rides.forEach(ride => {
+        const driverName = ride.driver_username || ride.name || 'Unknown';
+        driverTrips[driverName] = (driverTrips[driverName] || 0) + 1;
+    });
+    
+    const topDrivers = Object.entries(driverTrips)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+    
+    // Peak hours
+    const hourCounts = new Array(24).fill(0);
+    rides.forEach(ride => {
+        const rideDate = ride.created_at ? 
+            new Date(ride.created_at.$date || ride.created_at) : 
+            new Date(ride.date);
+        const hour = rideDate.getHours();
+        hourCounts[hour]++;
+    });
+    
+    // Driver status distribution
+    const drivers = driversData.drivers || [];
+    const driverStatusCounts = {
+        active: drivers.filter(d => d.account_status === 'active' || d.account_status === 'on-duty').length,
+        offline: drivers.filter(d => d.account_status === 'offline' || d.account_status === 'inactive').length,
+        pending: drivers.filter(d => d.account_status === 'pending').length
+    };
+    
+    return {
+        tripsByDay,
+        statusCounts,
+        revenueByMonth,
+        topDrivers,
+        hourCounts,
+        driverStatusCounts,
+        last7Days,
+        last6Months
+    };
+}
 
-/**
- * Update dashboard statistics cards
- */
+// ========================================
+// CHART INITIALIZATION
+// ========================================
+function initializeCharts() {
+    // Trips Over Time Chart (Line)
+    const tripsCtx = document.getElementById('tripsOverTimeChart');
+    if (tripsCtx) {
+        charts.tripsOverTime = new Chart(tripsCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Trips',
+                    data: [],
+                    borderColor: '#073066',
+                    backgroundColor: 'rgba(7, 48, 102, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+    
+    // Trip Status Chart (Doughnut)
+    const statusCtx = document.getElementById('tripStatusChart');
+    if (statusCtx) {
+        charts.tripStatus = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Completed', 'Ongoing', 'Upcoming', 'Cancelled'],
+                datasets: [{
+                    data: [0, 0, 0, 0],
+                    backgroundColor: ['#28a745', '#007bff', '#ffc107', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+    
+    // Monthly Revenue Chart (Bar)
+    const revenueCtx = document.getElementById('monthlyRevenueChart');
+    if (revenueCtx) {
+        charts.monthlyRevenue = new Chart(revenueCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Revenue (₱)',
+                    data: [],
+                    backgroundColor: '#FEC708',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+    
+    // Top Drivers Chart (Horizontal Bar)
+    const driversCtx = document.getElementById('topDriversChart');
+    if (driversCtx) {
+        charts.topDrivers = new Chart(driversCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Trips',
+                    data: [],
+                    backgroundColor: '#073066',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { beginAtZero: true }
+                }
+            }
+        });
+    }
+    
+    // Peak Hours Chart (Bar)
+    const hoursCtx = document.getElementById('peakHoursChart');
+    if (hoursCtx) {
+        charts.peakHours = new Chart(hoursCtx, {
+            type: 'bar',
+            data: {
+                labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                datasets: [{
+                    label: 'Trips',
+                    data: new Array(24).fill(0),
+                    backgroundColor: '#7b1fa2',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+    
+    // Driver Status Chart (Pie)
+    const driverStatusCtx = document.getElementById('driverStatusChart');
+    if (driverStatusCtx) {
+        charts.driverStatus = new Chart(driverStatusCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Active', 'Offline', 'Pending'],
+                datasets: [{
+                    data: [0, 0, 0],
+                    backgroundColor: ['#28a745', '#6c757d', '#ffc107']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+    
+    // Update charts with data
+    updateCharts();
+}
+
+// ========================================
+// UPDATE CHARTS
+// ========================================
+function updateCharts() {
+    const chartData = dashboardData.chartData;
+    
+    if (!chartData) return;
+    
+    // Update Trips Over Time
+    if (charts.tripsOverTime) {
+        charts.tripsOverTime.data.labels = chartData.last7Days.map(d => 
+            d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        );
+        charts.tripsOverTime.data.datasets[0].data = chartData.tripsByDay;
+        charts.tripsOverTime.update();
+    }
+    
+    // Update Trip Status
+    if (charts.tripStatus) {
+        const status = chartData.statusCounts;
+        charts.tripStatus.data.datasets[0].data = [
+            status.completed,
+            status.ongoing,
+            status.upcoming,
+            status.cancelled
+        ];
+        charts.tripStatus.update();
+    }
+    
+    // Update Monthly Revenue
+    if (charts.monthlyRevenue) {
+        charts.monthlyRevenue.data.labels = chartData.last6Months.map(d => 
+            d.toLocaleDateString('en-US', { month: 'short' })
+        );
+        charts.monthlyRevenue.data.datasets[0].data = chartData.revenueByMonth;
+        charts.monthlyRevenue.update();
+    }
+    
+    // Update Top Drivers
+    if (charts.topDrivers && chartData.topDrivers.length > 0) {
+        charts.topDrivers.data.labels = chartData.topDrivers.map(d => d[0]);
+        charts.topDrivers.data.datasets[0].data = chartData.topDrivers.map(d => d[1]);
+        charts.topDrivers.update();
+    }
+    
+    // Update Peak Hours
+    if (charts.peakHours) {
+        charts.peakHours.data.datasets[0].data = chartData.hourCounts;
+        charts.peakHours.update();
+    }
+    
+    // Update Driver Status
+    if (charts.driverStatus) {
+        const driverStatus = chartData.driverStatusCounts;
+        charts.driverStatus.data.datasets[0].data = [
+            driverStatus.active,
+            driverStatus.offline,
+            driverStatus.pending
+        ];
+        charts.driverStatus.update();
+    }
+}
+
+// ========================================
+// UPDATE UI
+// ========================================
 function updateDashboardStats() {
-    // Update stat cards
     updateStatCard('totalUsers', dashboardData.totalUsers);
     updateStatCard('activeDrivers', dashboardData.activeDrivers);
     updateStatCard('totalTrips', dashboardData.totalTrips);
-    updateStatCard('emergencies', dashboardData.emergencies);
-    
-    // Add animation
-    animateStatCards();
+    updateStatCard('totalRevenue', '₱' + dashboardData.totalRevenue.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }));
 }
 
-/**
- * Update a single stat card
- */
 function updateStatCard(id, value) {
     const element = document.getElementById(id);
     if (element) {
-        // Add animation class
         element.classList.add('updating');
-        
-        // Update value with animation
         setTimeout(() => {
             element.textContent = value;
             element.classList.remove('updating');
@@ -230,43 +546,23 @@ function updateStatCard(id, value) {
     }
 }
 
-/**
- * Animate stat cards on update
- */
-function animateStatCards() {
-    const statCards = document.querySelectorAll('.stat-card');
-    statCards.forEach((card, index) => {
-        setTimeout(() => {
-            card.style.transform = 'scale(1.02)';
-            setTimeout(() => {
-                card.style.transform = 'scale(1)';
-            }, 200);
-        }, index * 50);
-    });
-}
-
-/**
- * Update recent trips table
- */
-function updateRecentTrips() {
-    const tableBody = document.getElementById('recentTripsTable');
+function updateRecentActivity() {
+    const tableBody = document.getElementById('recentActivityTable');
     
-    if (!tableBody) {
-        console.warn('Recent trips table not found');
-        return;
-    }
+    if (!tableBody) return;
     
     if (dashboardData.recentTrips.length === 0) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="5" class="text-center text-muted">No recent trips</td>
+                <td colspan="6" class="text-center text-muted">No recent activity</td>
             </tr>
         `;
         return;
     }
     
     tableBody.innerHTML = dashboardData.recentTrips.map(trip => `
-        <tr class="trip-row">
+        <tr>
+            <td>${trip.time}</td>
             <td><strong>${trip.id}</strong></td>
             <td>${trip.driver}</td>
             <td>${trip.passenger || 'N/A'}</td>
@@ -280,34 +576,17 @@ function updateRecentTrips() {
     `).join('');
 }
 
-/**
- * Update trip statistics section
- */
-function updateTripStatistics() {
-    // Update the trip statistics in the sidebar
-    const stats = dashboardData.tripStats;
-    
-    // These IDs should match your HTML
-    const totalTripsEl = document.querySelector('.trip-stat-item h4');
-    if (totalTripsEl) {
-        totalTripsEl.textContent = dashboardData.totalTrips;
-    }
-    
-    // You can add more specific updates here based on your HTML structure
-}
-
 // ========================================
 // HELPER FUNCTIONS
 // ========================================
-
-/**
- * Format trip data for display
- */
 function formatTripData(ride) {
     const tripId = ride._id?.$oid || ride._id || 'N/A';
     const shortId = typeof tripId === 'string' ? tripId.substring(0, 8) : 'N/A';
     
-    // Get passengers from ride or booking
+    const rideDate = ride.created_at ? 
+        new Date(ride.created_at.$date || ride.created_at) : 
+        new Date(ride.date);
+    
     let passengerName = 'N/A';
     if (ride.passengers && ride.passengers.length > 0) {
         passengerName = ride.passengers[0];
@@ -318,13 +597,11 @@ function formatTripData(ride) {
         driver: ride.driver_username || ride.name || 'Unknown',
         passenger: passengerName,
         status: formatStatus(ride.ride_status),
-        amount: formatPrice(ride.fare)
+        amount: formatPrice(ride.fare),
+        time: rideDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     };
 }
 
-/**
- * Format ride status for display
- */
 function formatStatus(status) {
     const statusMap = {
         'completed': 'Completed',
@@ -333,207 +610,73 @@ function formatStatus(status) {
         'ongoing': 'In Progress',
         'cancelled': 'Cancelled'
     };
-    
     return statusMap[status] || status || 'Unknown';
 }
 
-/**
- * Format price for display
- */
 function formatPrice(fare) {
     if (!fare) return '₱0.00';
-    
-    if (typeof fare === 'string' && fare.includes('₱')) {
-        return fare;
-    }
-    
+    if (typeof fare === 'string' && fare.includes('₱')) return fare;
     return '₱' + parseFloat(fare).toFixed(2);
 }
 
-/**
- * Get badge CSS class based on status
- */
 function getBadgeClass(status) {
     const statusLower = status.toLowerCase();
-    
     if (statusLower === 'completed') return 'bg-success';
     if (statusLower === 'in progress' || statusLower === 'ongoing') return 'bg-primary';
     if (statusLower === 'cancelled') return 'bg-danger';
     if (statusLower === 'upcoming') return 'bg-warning';
-    
     return 'bg-secondary';
 }
 
-/**
- * Show loading state
- */
+function getLast7Days() {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        days.push(date);
+    }
+    return days;
+}
+
+function getLast6Months() {
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        months.push(date);
+    }
+    return months;
+}
+
 function showLoadingState(show) {
     const statCards = document.querySelectorAll('.stat-card h3');
-    
     statCards.forEach(card => {
-        if (show) {
-            card.style.opacity = '0.5';
-        } else {
-            card.style.opacity = '1';
-        }
+        card.style.opacity = show ? '0.5' : '1';
     });
 }
 
-/**
- * Show error message
- */
 function showError(message) {
-    // Remove existing error if any
     const existing = document.querySelector('.dashboard-error');
     if (existing) existing.remove();
     
     const notification = document.createElement('div');
     notification.className = 'alert alert-warning position-fixed dashboard-error';
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    notification.innerHTML = `
-        <strong>Notice:</strong> ${message}
-    `;
+    notification.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `<strong>Notice:</strong> ${message}`;
     
     document.body.appendChild(notification);
     
-    setTimeout(() => {
-        notification.remove();
-    }, 5000);
-}
-
-/**
- * Setup sidebar toggle functionality
- */
-function setupSidebarToggle() {
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const sidebar = document.getElementById('sidebar');
-    
-    if (sidebarToggle && sidebar) {
-        sidebarToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-        });
-    }
+    setTimeout(() => notification.remove(), 5000);
 }
 
 // ========================================
-// REAL-TIME UPDATES SIMULATION
-// ========================================
-
-/**
- * Simulate real-time updates for active drivers
- * (This adds a small random variation to show "live" data)
- */
-function simulateRealTimeUpdates() {
-    setInterval(() => {
-        // Add small random variation to active drivers count (±2)
-        const variation = Math.floor(Math.random() * 5) - 2;
-        const newCount = Math.max(0, dashboardData.activeDrivers + variation);
-        
-        if (newCount !== dashboardData.activeDrivers) {
-            dashboardData.activeDrivers = newCount;
-            updateStatCard('activeDrivers', newCount);
-        }
-    }, 10000); // Every 10 seconds
-}
-
-// Start real-time simulation after initial load
-setTimeout(() => {
-    simulateRealTimeUpdates();
-}, 5000);
-
-// ========================================
-// EXPORT FOR TESTING
+// EXPORT FOR DEBUGGING
 // ========================================
 window.dashboardAPI = {
     loadDashboardData,
-    fetchUsers,
-    fetchDrivers,
-    fetchTrips,
-    updateDashboardStats,
-    dashboardData: () => dashboardData
+    updateCharts,
+    dashboardData: () => dashboardData,
+    charts: () => charts
 };
 
-// ========================================
-// STYLES
-// ========================================
-const style = document.createElement('style');
-style.textContent = `
-    .stat-card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    
-    .stat-card h3.updating {
-        animation: pulse 0.3s ease;
-    }
-    
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    
-    .trip-row {
-        transition: background-color 0.2s ease;
-    }
-    
-    .trip-row:hover {
-        background-color: rgba(0,0,0,0.02);
-    }
-    
-    .badge {
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: 500;
-        text-transform: uppercase;
-    }
-    
-    .bg-success {
-        background-color: #28a745 !important;
-        color: white !important;
-    }
-    
-    .bg-primary {
-        background-color: #007bff !important;
-        color: white !important;
-    }
-    
-    .bg-danger {
-        background-color: #dc3545 !important;
-        color: white !important;
-    }
-    
-    .bg-warning {
-        background-color: #ffc107 !important;
-        color: #212529 !important;
-    }
-    
-    .bg-secondary {
-        background-color: #6c757d !important;
-        color: white !important;
-    }
-    
-    .dashboard-error {
-        animation: slideIn 0.3s ease;
-    }
-    
-    @keyframes slideIn {
-        from {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-`;
-document.head.appendChild(style);
-
-// Log initialization
-console.log('📊 Admin Dashboard Configuration Loaded');
-console.log('🔄 Auto-refresh enabled:', REFRESH_INTERVAL / 1000, 'seconds');
+console.log('📊 Analytics Dashboard Configuration Loaded');

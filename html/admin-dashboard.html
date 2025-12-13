@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - MerryLift Admin</title>
+    <title>Analytics Dashboard - MerryLift Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../css/admin-dashboard.css">
@@ -70,8 +70,25 @@
         <!-- Dashboard Content -->
         <div class="content-area">
             <div class="page-header">
-                <h1>Dashboard</h1>
-                <p class="text-muted">Welcome to MerryLift Admin Panel</p>
+                <h1>Analytics Dashboard</h1>
+                <p class="text-muted">Comprehensive statistics and insights</p>
+            </div>
+
+            <!-- Time Period Filter -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <label class="fw-bold">Time Period:</label>
+                        <button class="btn btn-sm btn-outline-primary active" data-period="today">Today</button>
+                        <button class="btn btn-sm btn-outline-primary" data-period="week">This Week</button>
+                        <button class="btn btn-sm btn-outline-primary" data-period="month">This Month</button>
+                        <button class="btn btn-sm btn-outline-primary" data-period="year">This Year</button>
+                        <button class="btn btn-sm btn-outline-primary" data-period="all">All Time</button>
+                        <button class="btn btn-sm btn-warning ms-auto" id="refreshBtn">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Stats Cards -->
@@ -84,6 +101,7 @@
                         <div class="stat-info">
                             <h3 id="totalUsers">0</h3>
                             <p>Total Users</p>
+                            <small class="text-success"><i class="bi bi-arrow-up"></i> +12% from last month</small>
                         </div>
                     </div>
                 </div>
@@ -93,8 +111,9 @@
                             <i class="bi bi-car-front-fill" style="color: #7b1fa2;"></i>
                         </div>
                         <div class="stat-info">
-                            <h3 id="activeDrivers">37</h3>
+                            <h3 id="activeDrivers">0</h3>
                             <p>Active Drivers</p>
+                            <small class="text-success"><i class="bi bi-arrow-up"></i> +8% from last month</small>
                         </div>
                     </div>
                 </div>
@@ -106,67 +125,118 @@
                         <div class="stat-info">
                             <h3 id="totalTrips">0</h3>
                             <p>Total Trips</p>
+                            <small class="text-success"><i class="bi bi-arrow-up"></i> +23% from last month</small>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: #ffebee;">
-                            <i class="bi bi-exclamation-triangle-fill" style="color: #c62828;"></i>
+                        <div class="stat-icon" style="background: #e8f5e9;">
+                            <i class="bi bi-currency-dollar" style="color: #2e7d32;"></i>
                         </div>
                         <div class="stat-info">
-                            <h3 id="emergencies">24</h3>
-                            <p>Emergencies</p>
+                            <h3 id="totalRevenue">₱0</h3>
+                            <p>Total Revenue</p>
+                            <small class="text-success"><i class="bi bi-arrow-up"></i> +18% from last month</small>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- God's View Section -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">God's View - Driver Locations</h5>
-                </div>
-                <div class="card-body">
-                    <div class="god-view-stats mb-3">
-                        <div class="view-stat">
-                            <i class="bi bi-geo-alt"></i>
-                            <span>Available: <strong>6</strong></span>
-                        </div>
-                        <div class="view-stat">
-                            <i class="bi bi-hourglass-split"></i>
-                            <span>Reached Pickup: <strong>0</strong></span>
-                        </div>
-                        <div class="view-stat">
-                            <i class="bi bi-arrow-right-circle"></i>
-                            <span>On Trip: <strong>0</strong></span>
-                        </div>
-                        <div class="view-stat">
-                            <i class="bi bi-x-circle"></i>
-                            <span>Overall: <strong>0</strong></span>
-                        </div>
-                    </div>
-                    <div id="map" style="height: 400px; background: #e9ecef; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                        <div style="text-align: center;">
-                            <i class="bi bi-map" style="font-size: 48px; color: #6c757d; margin-bottom: 15px;"></i>
-                            <p class="text-muted">Map will be integrated here</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Trip Statistics -->
-            <div class="row g-4">
-                <div class="col-md-8">
+            <!-- Charts Row 1 -->
+            <div class="row g-4 mb-4">
+                <!-- Trips Over Time Chart -->
+                <div class="col-lg-8">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0">Recent Trips</h5>
+                            <h5 class="mb-0"><i class="bi bi-graph-up"></i> Trips Over Time</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="tripsOverTimeChart" height="80"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trip Status Distribution -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Trip Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="tripStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 2 -->
+            <div class="row g-4 mb-4">
+                <!-- Revenue by Month -->
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-cash-stack"></i> Monthly Revenue</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="monthlyRevenueChart" height="100"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Drivers -->
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-trophy"></i> Top Performing Drivers</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="topDriversChart" height="100"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 3 -->
+            <div class="row g-4 mb-4">
+                <!-- Peak Hours -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Peak Hours Analysis</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="peakHoursChart" height="80"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Driver Status -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-person-check"></i> Driver Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="driverStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-activity"></i> Recent Activity</h5>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
+                                            <th>Time</th>
                                             <th>Trip ID</th>
                                             <th>Driver</th>
                                             <th>Passenger</th>
@@ -174,9 +244,9 @@
                                             <th>Amount</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="recentTripsTable">
+                                    <tbody id="recentActivityTable">
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted">No recent trips</td>
+                                            <td colspan="6" class="text-center text-muted">Loading...</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -184,50 +254,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Trip Statistics</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="trip-stat-item">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                    <span>Total Trips</span>
-                                </div>
-                                <h4 class="mb-0">5</h4>
-                            </div>
-                            <hr>
-                            <div class="trip-stat-item">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-arrow-repeat text-primary me-2"></i>
-                                    <span>Upcoming Trips</span>
-                                </div>
-                                <h4 class="mb-0">0</h4>
-                            </div>
-                            <hr>
-                            <div class="trip-stat-item">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-x-circle-fill text-danger me-2"></i>
-                                    <span>Cancelled Trips</span>
-                                </div>
-                                <h4 class="mb-0">10</h4>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
-    <script>
-    const sidebar = document.getElementById('sidebar');
-    const sidebarToggle = document.getElementById('sidebarToggle');
 
-    sidebarToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('active');
-    });
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="../js/admin-dashboard-config.js"></script>
 </body>
 </html>
