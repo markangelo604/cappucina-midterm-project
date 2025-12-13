@@ -6,7 +6,7 @@ const successMsg = document.getElementById('successMsg');
 
 // Dashboard redirect mapping
 const dashboardRedirect = {
-    'admin': 'http://localhost:4000/admin/dashboard',
+    'admin': '/admin/dashboard',
     'driver': '../html/passenger-dashboard.html',
     'car_owner': '../html/passenger-dashboard.html',
     'passenger': '../html/passenger-dashboard.html'
@@ -41,8 +41,15 @@ loginForm.addEventListener('submit', async (e) => {
     try {
         // TRY ADMIN LOGIN FIRST (Node.js server)
         console.log('Attempting admin login for:', username);
+
+        // Get current host and construct admin URL
+        const currentHost = window.location.hostname;
+        const adminPort = 4000;
+        const adminUrl = `http://${currentHost}:${adminPort}/admin/login`;
+
+        console.log('Attempting admin login at:', adminUrl);
         
-        let response = await fetch('http://localhost:4000/admin/login', {
+        let response = await fetch(adminUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -51,7 +58,7 @@ loginForm.addEventListener('submit', async (e) => {
                 username: username,
                 password: password
             })
-        });
+        })
         
         let data = await response.json();
         
@@ -72,7 +79,7 @@ loginForm.addEventListener('submit', async (e) => {
             sessionStorage.setItem('userData', JSON.stringify(userData));
             
             setTimeout(() => {
-                window.location.href = 'http://localhost:4000/admin/dashboard';
+                window.location.href = adminUrl.replace('/admin/login', '/admin/dashboard');
             }, 1000);
             return; // Exit after successful admin login
         }
@@ -80,7 +87,7 @@ loginForm.addEventListener('submit', async (e) => {
         // If admin login failed, try regular user login (PHP server)
         console.log('Not an admin, trying regular user login');
         
-        response = await fetch('http://localhost:3000/php/login.php', {
+        response = await fetch('/php/login.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -127,7 +134,13 @@ loginForm.addEventListener('submit', async (e) => {
             // Redirect after short delay
             if (dashboardUrl) {
                 setTimeout(() => {
-                    window.location.href = dashboardUrl;
+                    if (role === 'admin') {
+                        // For admin, use the constructed admin URL
+                        window.location.href = `http://${currentHost}:${adminPort}${dashboardUrl}`;
+                    } else {
+                        // For other roles, use relative path
+                        window.location.href = dashboardUrl;
+                    }
                 }, 1000);
             } else {
                 errorMsg.textContent = `Invalid user role: ${data.role}`;

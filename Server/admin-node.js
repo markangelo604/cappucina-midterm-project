@@ -909,10 +909,50 @@ async function startServer() {
       res.sendFile(path.join(__dirname, "../html/admin.html"));
     });
 
-    const PORT = process.env.ADMIN_PORT;
-    app.listen(PORT, () =>
-      console.log(`Admin server running on http://localhost:${PORT}`)
-    );
+    // ==========================================
+    // SERVER CONFIGURATION - AUTO-DETECT IP
+    // ==========================================
+    const PORT = process.env.ADMIN_PORT || 4000;
+    const HOST = '0.0.0.0'; // Bind to all interfaces
+
+    // Auto-detect server IP for logging
+    const os = require('os');
+    const networkInterfaces = os.networkInterfaces();
+    let serverIP = 'localhost';
+    
+    for (const name of Object.keys(networkInterfaces)) {
+      for (const net of networkInterfaces[name]) {
+        // Skip internal (i.e., 127.0.0.1) and non-IPv4 addresses
+        if (net.family === 'IPv4' && !net.internal) {
+          serverIP = net.address;
+          break;
+        }
+      }
+      if (serverIP !== 'localhost') break;
+    }
+
+    // Construct admin URL
+    let ADMIN_DASHBOARD_URL = process.env.ADMIN_DASHBOARD_URL;
+    
+    if (!ADMIN_DASHBOARD_URL || ADMIN_DASHBOARD_URL.includes('${SERVER_IP}')) {
+      ADMIN_DASHBOARD_URL = `http://${serverIP}:${PORT}`;
+      console.log(`📍 Auto-constructed ADMIN_DASHBOARD_URL: ${ADMIN_DASHBOARD_URL}`);
+    }
+
+    // Start server
+    app.listen(PORT, HOST, () => {
+      console.log('='.repeat(60));
+      console.log('🚀 MerryLift Admin Server Started');
+      console.log('='.repeat(60));
+      console.log(`📍 Server IP: ${serverIP}`);
+      console.log(`🌐 Local Access: http://localhost:${PORT}`);
+      console.log(`🌐 Network Access: http://${serverIP}:${PORT}`);
+      console.log(`📊 Admin Dashboard: http://${serverIP}:${PORT}/admin/dashboard`);
+      console.log(`🔑 Login Endpoint: http://${serverIP}:${PORT}/admin/login`);
+      console.log('='.repeat(60));
+
+    });
+
   } catch (err) {
     console.error("Failed to start server:", err.message);
     process.exit(1);
