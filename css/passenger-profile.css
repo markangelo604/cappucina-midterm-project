@@ -1,22 +1,19 @@
 /* ==========================================
-   PASSENGER PROFILE CSS
+   PASSENGER PROFILE CSS - Updated to Match Site Style
    ========================================== */
-
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* CSS Variables */
 :root {
-    --primary-blue: #00418b;
+    --primary-color: #073066;
+    --primary-hover: #00418b;
     --accent-gold: #FEC708;
-    --dark-gray: #1F2937;
-    --light-gray: #F3F4F6;
-    --border-color: #E5E7EB;
-    --success-green: #10B981;
-    --error-red: #EF4444;
+    --light-bg: #f8f9fa;
+    --text-dark: #212529;
+    --text-light: #6c757d;
+    --border-color: #e0e0e0;
+    --success-green: #28a745;
+    --error-red: #dc3545;
     --warning-orange: #F59E0B;
-    --text-dark: #111827;
-    --text-light: #6B7280;
 }
 
 * {
@@ -26,8 +23,8 @@
 }
 
 body {
-    font-family: 'Inter', sans-serif;
-    background: var(--light-gray);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: var(--light-bg);
     color: var(--text-dark);
     line-height: 1.6;
 }
@@ -42,8 +39,9 @@ body {
    NAVBAR
    ========================================== */
 .navbar {
-    background: white;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    background-color: #fff;
+    padding: 15px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -53,29 +51,38 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 0;
 }
 
 .logo img {
-    height: 50px;
+    display: block;
+    width: 60px;
+    height: auto;
+    object-fit: contain;
 }
 
 .nav-menu {
     display: flex;
     list-style: none;
-    gap: 30px;
+    gap: 40px;
+    margin: 0;
+    padding: 0;
 }
 
-.nav-menu li a {
+.nav-menu li {
+    margin: 0;
+}
+
+.nav-menu a {
     text-decoration: none;
-    color: var(--text-dark);
+    color: #666;
+    font-size: 15px;
     font-weight: 500;
-    transition: color 0.3s;
+    transition: color 0.3s ease;
 }
 
-.nav-menu li a:hover,
-.nav-menu li a.active {
-    color: var(--primary-blue);
+.nav-menu a:hover,
+.nav-menu a.active {
+    color: var(--accent-gold);
 }
 
 .nav-buttons {
@@ -85,19 +92,21 @@ body {
 }
 
 .btn-Outline {
-    padding: 10px 20px;
-    border: 2px solid var(--primary-blue);
-    background: white;
-    color: var(--primary-blue);
-    border-radius: 8px;
-    font-weight: 600;
+    padding: 8px 25px;
+    border: 2px solid var(--text-dark);
+    background: transparent;
+    border-radius: 6px;
     cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
     transition: all 0.3s;
+    color: var(--text-dark);
 }
 
 .btn-Outline:hover {
-    background: var(--primary-blue);
-    color: white;
+    background-color: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
 }
 
 .profile-dropdown {
@@ -108,14 +117,20 @@ body {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 5px;
+    padding: 0;
 }
 
 .profile-icon {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    border: 2px solid var(--primary-blue);
+    border: 2px solid var(--border-color);
+    object-fit: cover;
+    transition: border-color 0.2s;
+}
+
+.profile-icon:hover {
+    border-color: var(--accent-gold);
 }
 
 .dropdown-menu {
@@ -124,12 +139,13 @@ body {
     top: 100%;
     right: 0;
     background: white;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     min-width: 180px;
     margin-top: 10px;
     flex-direction: column;
     padding: 10px 0;
+    border: 1px solid var(--border-color);
 }
 
 .dropdown-menu a {
@@ -138,10 +154,11 @@ body {
     color: var(--text-dark);
     transition: background 0.3s;
     display: block;
+    font-size: 14px;
 }
 
 .dropdown-menu a:hover {
-    background: var(--light-gray);
+    background: var(--light-bg);
 }
 
 .dropdown-menu hr {
@@ -154,7 +171,7 @@ body {
    PROFILE HERO
    ========================================== */
 .profile-hero {
-    background:var(--primary-blue);
+    background: linear-gradient(135deg, var(--primary-color) 0%, #00418b 100%);
     color: white;
     padding: 60px 0 40px;
     margin-bottom: 40px;
@@ -170,19 +187,21 @@ body {
     width: 150px;
     height: 150px;
     border-radius: 50%;
-    background: white;
-    color: var(--primary-blue);
+    background: var(--accent-gold);
+    color: var(--primary-color);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 48px;
     font-weight: 700;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
 }
 
 .profile-info h1 {
     font-size: 36px;
     margin-bottom: 5px;
+    font-weight: 700;
 }
 
 .profile-username {
@@ -226,10 +245,10 @@ body {
 
 /* Sidebar Navigation */
 .profile-sidebar {
-    background: white;
+    background: #fff;
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     height: fit-content;
     position: sticky;
     top: 100px;
@@ -259,12 +278,13 @@ body {
 }
 
 .nav-item:hover {
-    background: var(--light-gray);
+    background: var(--light-bg);
 }
 
 .nav-item.active {
     background: var(--accent-gold);
-    color: white;
+    color: var(--text-dark);
+    font-weight: 600;
 }
 
 .nav-item svg {
@@ -273,10 +293,10 @@ body {
 
 /* Content Sections */
 .profile-content {
-    background: white;
+    background: #fff;
     border-radius: 12px;
     padding: 30px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     min-height: 500px;
 }
 
@@ -311,7 +331,8 @@ body {
 
 .section-header h2 {
     font-size: 28px;
-    color: var(--text-dark);
+    color: var(--primary-color);
+    font-weight: 700;
 }
 
 /* ==========================================
@@ -400,7 +421,7 @@ body {
     border: 2px solid var(--border-color);
     border-radius: 8px;
     font-size: 15px;
-    font-family: 'Inter', sans-serif;
+    font-family: inherit;
     transition: all 0.3s;
 }
 
@@ -408,8 +429,8 @@ body {
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 0 3px rgba(254, 199, 8, 0.1);
 }
 
 .form-actions {
@@ -436,18 +457,18 @@ body {
 }
 
 .btn-edit {
-    background: var(--primary-blue);
-    color: white;
+    background: var(--accent-gold);
+    color: var(--text-dark);
 }
 
 .btn-edit:hover {
-    background: #1E3A8A;
+    background: #e5b307;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    box-shadow: 0 4px 12px rgba(254, 199, 8, 0.3);
 }
 
 .btn-secondary {
-    background: var(--light-gray);
+    background: var(--light-bg);
     color: var(--text-dark);
     border: 2px solid var(--border-color);
 }
@@ -467,9 +488,9 @@ body {
 }
 
 .btn-save:hover {
-    background: #059669;
+    background: #218838;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
 .btn-cancel {
@@ -479,98 +500,7 @@ body {
 }
 
 .btn-cancel:hover {
-    background: var(--light-gray);
-}
-
-/* ==========================================
-   ACCOUNT SETTINGS SECTION
-   ========================================== */
-.settings-group {
-    margin-bottom: 40px;
-}
-
-.settings-group h3 {
-    font-size: 20px;
-    margin-bottom: 20px;
-    color: var(--text-dark);
-}
-
-.setting-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    margin-bottom: 15px;
-}
-
-.setting-info label {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-dark);
-    display: block;
-    margin-bottom: 5px;
-}
-
-.setting-description {
-    font-size: 14px;
-    color: var(--text-light);
-}
-
-.form-select {
-    padding: 10px 16px;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    font-size: 15px;
-    cursor: pointer;
-    background: white;
-}
-
-/* Toggle Switch */
-.toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 26px;
-}
-
-.toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.toggle-slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: 0.3s;
-    border-radius: 26px;
-}
-
-.toggle-slider:before {
-    position: absolute;
-    content: "";
-    height: 20px;
-    width: 20px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: 0.3s;
-    border-radius: 50%;
-}
-
-input:checked + .toggle-slider {
-    background-color: var(--success-green);
-}
-
-input:checked + .toggle-slider:before {
-    transform: translateX(24px);
+    background: var(--light-bg);
 }
 
 /* ==========================================
@@ -597,12 +527,12 @@ input:checked + .toggle-slider:before {
 .rating-score .score {
     font-size: 48px;
     font-weight: 700;
-    color: var(--primary-blue);
+    color: var(--primary-color);
 }
 
 .rating-score .stars {
     font-size: 24px;
-    color: #FFA500;
+    color: var(--accent-gold);
 }
 
 .review-count {
@@ -628,6 +558,12 @@ input:checked + .toggle-slider:before {
     background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
     border-radius: 12px;
     border: 2px solid var(--border-color);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 .stat-icon {
@@ -659,6 +595,7 @@ input:checked + .toggle-slider:before {
 .recent-rides h3 {
     font-size: 20px;
     margin-bottom: 20px;
+    color: var(--primary-color);
 }
 
 /* ==========================================
@@ -720,6 +657,7 @@ input:checked + .toggle-slider:before {
 
 .modal-header h3 {
     font-size: 22px;
+    color: var(--primary-color);
 }
 
 .close-modal {
@@ -793,32 +731,36 @@ input:checked + .toggle-slider:before {
    FOOTER
    ========================================== */
 .footer {
-    background: var(--dark-gray);
-    color: white;
-    padding: 40px 0 20px;
+    background: #1a365d;
+    color: #fff;
+    padding: 50px 0 30px;
     margin-top: 60px;
 }
 
 .footer-content {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: 2fr 1fr 1fr 1fr;
     gap: 40px;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
 }
 
 .footer-brand h3 {
     font-size: 24px;
+    color: var(--accent-gold);
     margin-bottom: 15px;
 }
 
 .footer-brand p {
-    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    color: #b3c5d7;
     line-height: 1.6;
 }
 
 .footer-links h4 {
-    font-size: 18px;
-    margin-bottom: 15px;
+    font-size: 16px;
+    color: var(--accent-gold);
+    margin-bottom: 20px;
+    font-weight: 600;
 }
 
 .footer-links ul {
@@ -826,24 +768,29 @@ input:checked + .toggle-slider:before {
 }
 
 .footer-links li {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .footer-links a {
-    color: rgba(255, 255, 255, 0.7);
+    color: #b3c5d7;
     text-decoration: none;
+    font-size: 14px;
     transition: color 0.3s;
 }
 
 .footer-links a:hover {
-    color: white;
+    color: var(--accent-gold);
 }
 
 .footer-bottom {
     text-align: center;
-    padding-top: 20px;
+    padding-top: 30px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.7);
+}
+
+.footer-bottom p {
+    font-size: 14px;
+    color: #b3c5d7;
 }
 
 /* ==========================================
@@ -904,6 +851,10 @@ input:checked + .toggle-slider:before {
 
     .footer-content {
         grid-template-columns: 1fr;
+    }
+
+    .nav-menu {
+        display: none;
     }
 }
 
