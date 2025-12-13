@@ -404,9 +404,14 @@ async function startServer() {
     app.get("/api/drivers", async (req, res) => {
       try {
         const { users } = getCollections();
-        // Fetch ONLY drivers
+        // Fetch drivers (car_owner role) and upgraded passengers with driver_status
         const data = await users
-          .find({ role: "car_owner" })
+          .find({
+            $or: [
+              { role: "car_owner" },
+              { driver_status: { $exists: true } }
+            ]
+          })
           .project({
             password: 0 // hide password for security
           })
@@ -425,7 +430,10 @@ async function startServer() {
         const { users } = getCollections();
         const driver = await users.findOne({
           _id: new ObjectId(req.params.id),
-          role: "car_owner", 
+          $or: [
+            { role: "car_owner" },
+            { driver_status: { $exists: true } }
+          ]
         });
         if (!driver) {
           return res.status(404).json({ error: "Driver not found" });
@@ -617,7 +625,10 @@ async function startServer() {
         const result = await users.updateOne(
           {
             _id: new ObjectId(driverId),
-            role: "car_owner",
+            $or: [
+              { role: "car_owner" },
+              { driver_status: { $exists: true } }
+            ]
           },
           { $set: updateData }
         );
