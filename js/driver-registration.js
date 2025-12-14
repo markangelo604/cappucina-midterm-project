@@ -345,6 +345,18 @@ function validateStep(step) {
             showError('Invalid vehicle year');
             return false;
         }
+        
+        // Validate available seats against input min/max attributes
+        const seatsEl = document.getElementById('availableSeats');
+        if (seatsEl) {
+            const seatsVal = parseInt(seatsEl.value);
+            const minSeats = parseInt(seatsEl.getAttribute('min')) || 1;
+            const maxSeats = parseInt(seatsEl.getAttribute('max')) || 8;
+            if (isNaN(seatsVal) || seatsVal < minSeats || seatsVal > maxSeats) {
+                showError(`Available Seats must be between ${minSeats} and ${maxSeats}`);
+                return false;
+            }
+        }
     }
     
     if (step === 3 && isValid) {
