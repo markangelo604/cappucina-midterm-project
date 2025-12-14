@@ -2,3 +2,6 @@
 *.log
 /vendor/
 node_modules/
+
+# Ignore local cookie and temporary text files
+*.txt
