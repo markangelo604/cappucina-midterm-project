@@ -29,14 +29,9 @@ try {
 
     logPayment("Payment recording request: " . json_encode($input));
 
-    // Basic session-based authorization: if session exists, ensure user matches
-    if (isset($_SESSION['username']) && !empty($input['passenger_username'])) {
-        if ($_SESSION['username'] !== $input['passenger_username']) {
-            throw new Exception('Unauthorized: session user does not match passenger');
-        }
-    } else {
-        // No session - warn in logs (allows legacy clients that don't use sessions)
-        logPayment("⚠️ No authenticated session present for passenger: " . ($input['passenger_username'] ?? 'unknown'));
+    // Require session-based authorization: passenger must be logged in and match
+    if (!isset($_SESSION['username']) || empty($input['passenger_username']) || $_SESSION['username'] !== $input['passenger_username']) {
+        throw new Exception('Unauthorized: session user does not match passenger');
     }
     
     // Validate required fields

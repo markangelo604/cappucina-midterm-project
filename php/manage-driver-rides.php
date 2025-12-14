@@ -62,6 +62,12 @@ try {
     
     $method = $_SERVER['REQUEST_METHOD'];
     $driverUsername = getDriverUsername();
+    // Enforce session-based auth for mutating requests
+    if ($method !== 'GET') {
+        if (!isset($_SESSION['username']) || $_SESSION['username'] !== $driverUsername) {
+            sendResponse(false, 'Unauthorized: please login as the driver');
+        }
+    }
     
     // Verify driver exists
     if ($driverUsername) {

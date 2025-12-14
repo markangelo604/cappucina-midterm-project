@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../Server/server.php';
+session_start();
 
 function logBooking($message) {
     $logDir = __DIR__ . "/../Server/Server-Logs";
@@ -31,6 +32,11 @@ try {
     // Validate required fields
     if (empty($input['passenger_username'])) {
         throw new Exception('Passenger username is required');
+    }
+
+    // Enforce session auth: passenger must be logged in
+    if (!isset($_SESSION['username']) || $_SESSION['username'] !== $input['passenger_username']) {
+        throw new Exception('Unauthorized: session user does not match passenger');
     }
     
     if (empty($input['ride_id'])) {
