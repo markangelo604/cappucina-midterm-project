@@ -16,6 +16,7 @@ let userMarkerDriver = null;
 let driverUsername = null;
 let destinations = [];
 let vehicleMaxSeats = null; // Store max seats from vehicle registration
+let lastComputedFare = null; // Store last fare calculation for real-time seat updates
 
 // DOM Elements
 const addDestinationForm = document.getElementById('addDestinationForm');
@@ -1644,19 +1645,34 @@ async function computeFare(origin, destination) {
                 if (status !== "OK" || !result) {
                     return resolve(null);
                 }
-
+                
                 const leg = result.routes[0].legs[0];
                 const distanceKm = leg.distance.value / 1000;
+                const durationSeconds = leg.duration.value;
+                const durationMinutes = Math.ceil(durationSeconds / 60);
 
+                // Fare Calculation Factors
                 const baseFare = 30;
                 const ratePerKm = 8;
-                const fare = baseFare + distanceKm * ratePerKm;
+                const ratePerMinute = 3;
+                const minuteInterval = 1; // Rate is applied every n minutes
+
+                 // Calculate distance-based fare and time-based fare
+                const distanceFare = distanceKm * ratePerKm;
+                const chargeableMinutes = Math.ceil(durationMinutes / minuteInterval) * minuteInterval;
+                const timeFare = (chargeableMinutes / minuteInterval) * ratePerMinute;
+                
+                // Total fare is base + distance + time
+                const fare = baseFare + distanceFare + timeFare;
 
                 resolve({
                     origin,
                     destination,
                     distanceKm,
+                    durationMinutes,
                     duration: leg.duration.text,
+                    distanceFare,
+                    timeFare,
                     fare: Math.round(fare)
                 });
             }
@@ -1680,13 +1696,19 @@ async function computeAndSetFare() {
     console.log('fareData:', fareData); // debug
 
     if (fareData) {
+        // Store fare for real-time seat updates
+        lastComputedFare = fareData;
+        
         const seats = parseInt(seatsInput.value) || 1;
         const pricePerSeat = fareData.fare / seats;
         priceInput.value = pricePerSeat.toFixed(2);
 
         console.log(`Route: ${fareData.origin.formatted_address} → ${fareData.destination.formatted_address}`);
-        console.log(`Distance: ${fareData.distanceKm} km`);
-        console.log(`Duration: ${fareData.duration}`);
+        console.log(`Distance: ${fareData.distanceKm.toFixed(2)} km`);
+        console.log(`Duration: ${fareData.duration} (${fareData.durationMinutes} minutes)`);
+        console.log(`Distance Fare: ₱${fareData.distanceFare.toFixed(2)} (${fareData.distanceKm.toFixed(2)} km × ₱8/km)`);
+        console.log(`Time Fare: ₱${fareData.timeFare.toFixed(2)} (${fareData.durationMinutes} minutes × ₱2/min)`);
+        console.log(`Base Fare: ₱30.00`);
         console.log(`Total Fare: ₱${fareData.fare.toFixed(2)}`);
         console.log(`Seats: ${seats}`);
         console.log(`Price per Seat: ₱${pricePerSeat.toFixed(2)}`);
@@ -1694,6 +1716,22 @@ async function computeAndSetFare() {
         priceInput.value = '';
         showError('Could not compute fare. Please try again.');
     }
+}
+
+// Real-time handler for seat changes - recalculates price per seat without recomputing full fare
+function handleSeatsChange() {
+    const seatsInput = document.getElementById('seats');
+    const priceInput = document.getElementById('price');
+
+    if (!seatsInput || !priceInput || !lastComputedFare) {
+        return;
+    }
+
+    const seats = Math.max(1, Math.min(parseInt(seatsInput.value) || 1, vehicleMaxSeats));
+    const pricePerSeat = lastComputedFare.fare / seats;
+    priceInput.value = pricePerSeat.toFixed(2);
+    
+    console.log(`💺 Seats updated to ${seats} → Price per seat: ₱${pricePerSeat.toFixed(2)}`);
 }
 
 // Call computeFare when both pickup and destination are selected
@@ -1707,10 +1745,11 @@ function attachFareComputation() {
         return;
     }
 
-    // Attach listeners to both inputs
+    // Attach listeners: use 'change' for location inputs (full fare recompute), 'input' for seats (real-time price update)
     pickupInput.addEventListener('change', computeAndSetFare);
     destInput.addEventListener('change', computeAndSetFare);
-    seatsInput.addEventListener('change', computeAndSetFare);
+    seatsInput.addEventListener('input', handleSeatsChange); // Real-time update on every keystroke
+    seatsInput.addEventListener('change', handleSeatsChange); // Also handle on blur
 }
 
 async function waitForGoogleMaps() {
