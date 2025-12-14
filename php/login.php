@@ -71,6 +71,14 @@ function loginUser($data) {
             "role" => $user['role']
         ];
 
+        // Set session variables for authenticated flows
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['user_id'] = (string)$user['_id'];
+        $_SESSION['role'] = $user['role'] ?? null;
+
         logAction("User logged in: {$user['username']} ({$user['role']})");
 
         return $response;
