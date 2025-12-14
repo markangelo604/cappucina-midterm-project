@@ -158,6 +158,32 @@ if ($method === 'GET') {
             sendResponse(false, 'Price cannot be negative');
         }
         
+        // Check schedule conflicts: driver may have multiple rides but must keep at least 30 minutes gap on same date
+        try {
+            $newRideDT = new DateTime($input['date'] . ' ' . $input['time']);
+        } catch (Exception $e) {
+            sendResponse(false, 'Invalid date/time format');
+        }
+
+        $sameDateRides = $ridesCollection->find([
+            'driver_username' => $driverUsername,
+            'date' => $input['date'],
+            'ride_status' => ['$in' => ['upcoming','departed','ongoing']]
+        ])->toArray();
+
+        foreach ($sameDateRides as $er) {
+            $erTime = $er['time'] ?? '00:00';
+            try {
+                $erDT = new DateTime($er['date'] . ' ' . $erTime);
+            } catch (Exception $e) {
+                continue;
+            }
+            $diffMinutes = abs($newRideDT->getTimestamp() - $erDT->getTimestamp()) / 60;
+            if ($diffMinutes < 30) {
+                sendResponse(false, "Schedule conflict: another ride at {$erTime} (must be at least 30 minutes apart)");
+            }
+        }
+
         // Create ride document
         $newRide = [
             'driver_username' => $driverUsername,
@@ -259,6 +285,17 @@ if ($method === 'GET') {
 
         // CHECK IF THIS IS A DEPART REQUEST
         if (isset($input['status']) && $input['status'] === 'departed') {
+            // Ensure driver does not have another ride already departed/ongoing
+            $active = $ridesCollection->findOne([
+                'driver_username' => $driverUsername,
+                '_id' => ['$ne' => $rideId],
+                'ride_status' => ['$in' => ['departed','ongoing']]
+            ]);
+
+            if ($active) {
+                sendResponse(false, 'You already have an active ride (departed or ongoing). Finish it before departing another ride.');
+            }
+
             // Mark ride as departed - allow even with passengers
             $result = $ridesCollection->updateOne(
                 ['_id' => $rideId],
