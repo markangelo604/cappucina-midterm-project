@@ -75,6 +75,11 @@ try {
     if (!$ride) {
         throw new Exception('Ride not found');
     }
+
+    // Prevent driver from booking their own ride
+    if (!empty($ride['driver_username']) && $ride['driver_username'] === $input['passenger_username']) {
+        throw new Exception('Drivers cannot book their own rides');
+    }
     
     logBooking("Ride found: " . $input['ride_id']);
     
