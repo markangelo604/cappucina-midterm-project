@@ -641,33 +641,25 @@ async function cancelRide(rideId) {
         console.log('❌ Cancelling ride:', rideId);
         showLoading('Cancelling ride...');
 
-        const payload = {
-            driver_username: driverUsername,
-            ride_id: rideId,
-            status: 'cancelled'
-        };
-
-        console.log('PUT request payload:', payload);
-
-        const response = await fetch('../php/manage-driver-rides.php', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
-        });
-
+        // Backend expects DELETE for cancel/delete behavior
+        const url = `../php/manage-driver-rides.php?driver_username=${encodeURIComponent(driverUsername)}&ride_id=${encodeURIComponent(rideId)}`;
+        const response = await fetch(url, { method: 'DELETE' });
         const data = await response.json();
-        console.log('Cancel ride response:', data);
+        console.log('Cancel/Delete ride response:', data);
 
         if (data.success) {
-            console.log('✅ Ride cancelled successfully');
             hideLoading();
-            await loadDestinations(); // Reload to update UI
-            showSuccessMessage('Ride cancelled due to timeout!');
+            await loadDestinations();
+            // Use consistent UI alert styling
+            const action = (data.data && data.data.action) || 'cancelled';
+            if (action === 'deleted') {
+                showSuccessMessage('Ride deleted successfully');
+            } else {
+                showSuccessMessage('Ride cancelled successfully');
+                setActiveTab('history');
+            }
             return true;
         } else {
-            console.error('❌ Failed to cancel ride:', data.message);
             hideLoading();
             showError(data.message || 'Failed to cancel ride');
             return false;
@@ -931,12 +923,13 @@ function renderDestinations() {
                     </svg>
                     Edit
                 </button>
-                <button class="btn-delete" onclick="deleteDestination('${dest.id}')" ${dest.status === 'completed' || dest.status === 'cancelled' || dest.status === 'departed' ? 'disabled title="Cannot delete completed/cancelled/departed rides"' : ''}>
+                <button class="btn-delete" onclick="cancelRide('${dest.id}')" ${dest.status === 'completed' || dest.status === 'cancelled' || dest.status === 'departed' ? 'disabled title="Cannot cancel completed/cancelled/departed rides"' : ''}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                        <path d="M2 2h12v12H2z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="4" y1="4" x2="12" y2="12" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="12" y1="4" x2="4" y2="12" stroke="currentColor" stroke-width="1.5"/>
                     </svg>
-                    Delete
+                    Cancel
                 </button>
             </div>
         </div>
