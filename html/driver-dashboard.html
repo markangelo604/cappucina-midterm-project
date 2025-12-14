@@ -18,7 +18,8 @@
                     </a>
                 </div>
                 <ul class="nav-menu">
-                    <li><a href="driver-dashboard.html" class="active">My Rides</a></li>
+                    <li><a href="#" id="tabMyRides" class="active">My Rides</a></li>
+                    <li><a href="#" id="tabHistory">History</a></li>
                 </ul>
                 <div class="nav-buttons">
                     <button class="btn-outline">Profile</button>
@@ -43,7 +44,7 @@
             </div>
 
             <!-- Add Destination Form -->
-            <div class="add-destination-card">
+            <div class="add-destination-card" id="addDestinationCard">
                 <h2>Add New Destination</h2>
                 <form id="addDestinationForm" class="destination-form">
                     <!-- Vehicle Info Row -->
@@ -148,7 +149,7 @@
             </div>
 
             <!-- My Destinations List -->
-            <div class="destinations-section">
+            <div class="destinations-section" id="activeDestinationsSection">
                 <div class="section-header">
                     <h2>My Active Destinations</h2>
                     <span class="destination-count" id="destinationCount">0 destinations</span>
@@ -163,6 +164,23 @@
                     </svg>
                     <h3>No destinations yet</h3>
                     <p>Add your first destination to start offering rides</p>
+                </div>
+            </div>
+
+            <!-- Ride History -->
+            <div class="history-section" id="historySection" style="display:none;">
+                <div class="section-header">
+                    <h2>Ride History</h2>
+                    <span class="destination-count" id="historyCount">0 rides</span>
+                </div>
+                <div id="historyList" class="destinations-grid"></div>
+                <div id="historyEmptyState" class="empty-state">
+                    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="40" cy="40" r="30"/>
+                        <path d="M40 30 L40 45 L52 50"/>
+                    </svg>
+                    <h3>No ride history</h3>
+                    <p>Completed and cancelled rides will appear here</p>
                 </div>
             </div>
         </div>

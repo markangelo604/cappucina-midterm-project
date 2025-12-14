@@ -23,6 +23,14 @@ const addDestinationForm = document.getElementById('addDestinationForm');
 const destinationsList = document.getElementById('destinationsList');
 const emptyState = document.getElementById('emptyState');
 const destinationCount = document.getElementById('destinationCount');
+const historyList = document.getElementById('historyList');
+const historyEmptyState = document.getElementById('historyEmptyState');
+const historyCount = document.getElementById('historyCount');
+const activeDestinationsSection = document.getElementById('activeDestinationsSection');
+const historySection = document.getElementById('historySection');
+const tabMyRides = document.getElementById('tabMyRides');
+const tabHistory = document.getElementById('tabHistory');
+const addDestinationCard = document.getElementById('addDestinationCard');
 const currentYearSpan = document.getElementById('currentYear');
 
 
@@ -277,6 +285,21 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         addRoleSwitcherToDriverDashboard();
 
+        // Tabs for My Rides / History
+        if (tabMyRides && tabHistory) {
+            tabMyRides.addEventListener('click', (e) => {
+                e.preventDefault();
+                setActiveTab('myrides');
+            });
+            tabHistory.addEventListener('click', (e) => {
+                e.preventDefault();
+                setActiveTab('history');
+            });
+        }
+
+        // Default tab
+        setActiveTab('myrides');
+
     } catch (err) {
         console.error('Failed to initialize driver dashboard', err);
     }
@@ -446,6 +469,7 @@ async function loadDestinations() {
                 DriverTracker.start(activeRide.id);
             }
             renderDestinations();
+            renderHistory();
             hideLoading();
         } else {
             console.error('❌ Failed to load rides:', data.message);
@@ -783,23 +807,28 @@ async function handleAddDestination(e) {
 // ========================================
 
 function renderDestinations() {
-    console.log('🎨 Rendering', destinations.length, 'destinations');
+    const activeDestinations = (destinations || []).filter(dest => {
+        const status = (dest.status || dest.ride_status || '').toLowerCase();
+        return status === 'upcoming' || status === 'departed';
+    });
 
-    // Update count
-    updateDestinationCount();
+    console.log('🎨 Rendering', activeDestinations.length, 'active destinations');
 
-    // Check if there are destinations
-    if (destinations.length === 0) {
+    // Update count based on active destinations
+    destinationCount.textContent = `${activeDestinations.length} destination${activeDestinations.length === 1 ? '' : 's'}`;
+
+    // Check if there are active destinations
+    if (activeDestinations.length === 0) {
         destinationsList.innerHTML = '';
         emptyState.classList.add('show');
-        console.log('📭 No destinations to display');
+        console.log('📭 No active destinations to display');
         return;
     }
 
     emptyState.classList.remove('show');
     
     // Render destination cards
-    destinationsList.innerHTML = destinations.map(dest => `
+    destinationsList.innerHTML = activeDestinations.map(dest => `
         <div class="destination-card" data-id="${dest.id}">
             <div class="destination-header">
                 <span class="destination-status ${dest.status}">${dest.status}</span>
@@ -914,6 +943,130 @@ function renderDestinations() {
     `).join('');
     destinations.forEach(dest => validateDriverDistanceForRide(dest));
     console.log('✅ Destinations rendered');
+}
+
+// ========================================
+// TAB HANDLING (MY RIDES / HISTORY)
+// ========================================
+
+function setActiveTab(tab) {
+    if (!activeDestinationsSection || !historySection || !tabMyRides || !tabHistory) return;
+
+    const isHistory = tab === 'history';
+
+    activeDestinationsSection.style.display = isHistory ? 'none' : 'block';
+    historySection.style.display = isHistory ? 'block' : 'none';
+    if (addDestinationCard) {
+        addDestinationCard.style.display = isHistory ? 'none' : 'block';
+    }
+
+    tabMyRides.classList.toggle('active', !isHistory);
+    tabHistory.classList.toggle('active', isHistory);
+}
+
+// ========================================
+// RIDE HISTORY RENDERING
+// ========================================
+
+function renderHistory() {
+    if (!historyList || !historyEmptyState || !historyCount) return;
+
+    const historyRides = (destinations || []).filter(dest => {
+        const status = (dest.status || dest.ride_status || '').toLowerCase();
+        return status === 'completed' || status === 'cancelled';
+    });
+
+    // Sort latest first using date/time
+    historyRides.sort((a, b) => {
+        const dateA = new Date(`${a.date || ''} ${a.time || ''}`);
+        const dateB = new Date(`${b.date || ''} ${b.time || ''}`);
+        return dateB - dateA;
+    });
+
+    historyCount.textContent = `${historyRides.length} ride${historyRides.length === 1 ? '' : 's'}`;
+
+    if (historyRides.length === 0) {
+        historyList.innerHTML = '';
+        historyEmptyState.style.display = 'flex';
+        return;
+    }
+
+    historyEmptyState.style.display = 'none';
+    historyList.innerHTML = historyRides.map(dest => {
+        const status = (dest.status || dest.ride_status || 'completed').toLowerCase();
+        const statusClass = `status-${status}`;
+        return `
+            <div class="destination-card">
+                <div class="destination-header">
+                    <div>
+                        <div class="destination-status ${statusClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</div>
+                    </div>
+                    <div class="destination-price">₱${parseFloat(dest.price || 0).toFixed(2)}</div>
+                </div>
+                <div class="destination-route">
+                    <div class="location-item">
+                        <div class="location-icon">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="8" cy="8" r="2"/>
+                            </svg>
+                        </div>
+                        <div class="location-text">
+                            <div class="location-label">Pickup</div>
+                            <div class="location-value">${dest.pickup || dest.from || 'N/A'}</div>
+                        </div>
+                    </div>
+                    <div class="location-item">
+                        <div class="location-icon">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 0C5.2 0 3 2.2 3 5c0 4 5 9 5 9s5-5 5-9c0-2.8-2.2-5-5-5z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="8" cy="5" r="2"/>
+                            </svg>
+                        </div>
+                        <div class="location-text">
+                            <div class="location-label">Destination</div>
+                            <div class="location-value">${dest.destination || dest.to || 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="destination-details">
+                    <div class="detail-item">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                            <line x1="2" y1="6" x2="14" y2="6" stroke="currentColor" stroke-width="1.5"/>
+                            <line x1="5" y1="1" x2="5" y2="4" stroke="currentColor" stroke-width="1.5"/>
+                            <line x1="11" y1="1" x2="11" y2="4" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        <span>${formatDate(dest.date)}</span>
+                    </div>
+                    <div class="detail-item">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                            <line x1="8" y1="8" x2="8" y2="4" stroke="currentColor" stroke-width="1.5"/>
+                            <line x1="8" y1="8" x2="11" y2="8" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        <span>${formatTime(dest.time)}</span>
+                    </div>
+                    <div class="detail-item">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <circle cx="5" cy="8" r="2"/>
+                            <circle cx="11" cy="8" r="2"/>
+                        </svg>
+                        <span>${dest.seats || 0} seat${(dest.seats || 0) > 1 ? 's' : ''}</span>
+                    </div>
+                </div>
+                <div class="destination-notes">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M2 2h12v12H2z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="4" y1="5" x2="12" y2="5" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="4" y1="8" x2="12" y2="8" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="4" y1="11" x2="9" y2="11" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <span>${dest.notes || 'No additional notes'}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 // ========================================

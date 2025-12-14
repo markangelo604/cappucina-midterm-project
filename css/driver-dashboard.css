@@ -240,6 +240,14 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
+.history-section {
+    background: #fff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-top: 30px;
+}
+
 .section-header {
     display: flex;
     justify-content: space-between;
@@ -300,6 +308,23 @@ body {
     font-weight: 600;
     background: var(--success-color);
     color: #fff;
+}
+
+.destination-status.status-completed {
+    background: var(--success-color);
+}
+
+.destination-status.status-cancelled {
+    background: var(--danger-color);
+}
+
+.destination-status.status-departed {
+    background: var(--accent-gold);
+    color: #000;
+}
+
+.destination-status.status-upcoming {
+    background: #6c757d;
 }
 
 .destination-route {
