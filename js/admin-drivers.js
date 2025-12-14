@@ -299,6 +299,8 @@ async function approveDriver() {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                // Explicitly set role on approval so the account becomes a car owner
+                role: 'car_owner',
                 account_status: "active",
                 "vehicle.0.verified": true,
                 driver_status: "active",
