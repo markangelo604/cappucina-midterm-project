@@ -1,11 +1,13 @@
 <?php
-require_once __DIR__ . '/vendor/autoload.php'; // Make sure MongoDB library is installed
+require_once __DIR__ . '/vendor/autoload.php';
 
-use MongoDB\Client;
+// Use shared server bootstrap to honor .env config
+$server = require __DIR__ . '/Server/server.php';
+
 use MongoDB\BSON\UTCDateTime;
 
-$client = new Client("mongodb://localhost:27017");
-$db = $client->CarpoolDB;
+// Get DB handle from server bootstrap
+$db = $server['db'];
 
 // Clear old data first (optional)
 $db->users->drop();
@@ -48,6 +50,20 @@ $users = [
         ]],
         "account_status" => "active",
         "created_at" => new UTCDateTime(strtotime("2025-10-19T10:00:00Z") * 1000)
+    ],
+    [
+        "username" => "admin",
+        "password" => password_hash("admin123", PASSWORD_DEFAULT),
+        "email" => "admin@cappucina.local",
+        "role" => "admin",
+        "profile" => [
+            "name" => "System Admin",
+            "phone" => "+639000000000",
+            "gender" => "n/a",
+            "address" => "Baguio City"
+        ],
+        "account_status" => "active",
+        "created_at" => new UTCDateTime(strtotime("2025-10-18T08:00:00Z") * 1000)
     ],
     [
         "username" => "passenger1",

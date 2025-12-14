@@ -1,10 +1,11 @@
 <?php
-require_once __DIR__ . '/../../vendor/autoload.php';  // if using composer
-$client = new MongoDB\Client("mongodb://localhost:27017");
-$db = $client->CarPool;
-$collection = $db->driver;
+// Use shared server bootstrap so .env and collection names are consistent
+$config = require __DIR__ . '/../server.php';
 
 header('Content-Type: application/json');
-$rides = $collection->find()->toArray();
+
+$ridesCollection = $config['rides'];
+
+$rides = $ridesCollection->find()->toArray();
 echo json_encode($rides);
 ?>

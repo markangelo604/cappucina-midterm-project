@@ -39,14 +39,15 @@ function getDriverUsername() {
     }
     
     // Try to get from POST data
+    // Try to get from GET parameter first to avoid consuming php://input twice
+    if (isset($_GET['driver_username'])) {
+        return $_GET['driver_username'];
+    }
+
+    // Try to get from POST data (body)
     $input = json_decode(file_get_contents('php://input'), true);
     if (isset($input['driver_username'])) {
         return $input['driver_username'];
-    }
-    
-    // Try to get from GET parameter
-    if (isset($_GET['driver_username'])) {
-        return $_GET['driver_username'];
     }
     
     return null;

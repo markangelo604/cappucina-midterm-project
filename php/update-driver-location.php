@@ -1,5 +1,6 @@
 <?php
-require_once "../Server/server.php";  // MongoDB connection
+// Use shared server bootstrap to honor .env and collection names
+$config = require __DIR__ . '/../Server/server.php';
 
 $data = json_decode(file_get_contents("php://input"), true);
 
@@ -12,9 +13,9 @@ if (!$rideId || !$lat || !$lng) {
     exit;
 }
 
-$collection = $client->CarpoolDB->Rides;
+$ridesCollection = $config['rides'];
 
-$update = $collection->updateOne(
+$update = $ridesCollection->updateOne(
     [ "_id" => new MongoDB\BSON\ObjectId($rideId) ],
     [
         '$set' => [
