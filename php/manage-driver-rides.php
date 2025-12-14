@@ -103,6 +103,13 @@ if ($method === 'GET') {
         ];
     }
     
+    // Sort rides by date and time (latest first)
+    usort($formattedRides, function($a, $b) {
+        $dateA = new DateTime($a['date'] . ' ' . $a['time']);
+        $dateB = new DateTime($b['date'] . ' ' . $b['time']);
+        return $dateB <=> $dateA; // Descending order (latest first)
+    });
+    
     sendResponse(true, 'Rides fetched successfully', [
         'rides' => $formattedRides,
         'count' => count($formattedRides)
