@@ -121,8 +121,8 @@ async function loadUserProfile() {
     try {
         console.log('📥 Loading profile for:', userData.username);
         
-        // Fetch full user profile from database
-        const response = await fetch(`../php/get-user-profile.php?username=${encodeURIComponent(userData.username)}`);
+        // Fetch full user profile from database (use existing endpoint)
+        const response = await fetch(`../php/get-user-data.php?username=${encodeURIComponent(userData.username)}`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -130,8 +130,8 @@ async function loadUserProfile() {
         
         const result = await response.json();
         
-        if (result.success && result.user) {
-            const user = result.user;
+        if (result.success && result.data) {
+            const user = result.data;
             
             // Update session storage with complete data
             userData = {
@@ -162,7 +162,7 @@ function displayUserProfile(user) {
     console.log('📊 Displaying profile:', user);
     
     // Avatar initials
-    const name = user.name || user.username || 'User';
+    const name = user.profile?.name || user.name || user.username || 'User';
     const initials = getInitials(name);
     document.getElementById('avatarInitials').textContent = initials;
     
