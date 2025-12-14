@@ -286,20 +286,28 @@ function setupEventListeners() {
         addDriverBtn.addEventListener('click', addNewDriver);
     }
 }
-
 async function approveDriver() {
     if (!currentDriver) return;
-    
-    if (!confirm('Are you sure you want to approve and verify this driver? This will allow them to start accepting rides.')) {
-        return;
-    }
-    
+
+    const confirmModalEl = document.getElementById('approveConfirmModal');
+    const confirmModal = new bootstrap.Modal(confirmModalEl);
+
+    confirmModal.show();
+
+    // Remove previous handlers to avoid double execution
+    const confirmBtn = document.getElementById('confirmApproveBtn');
+    confirmBtn.onclick = async () => {
+        confirmModal.hide();
+        await finalizeDriverApproval();
+    };
+}
+
+async function finalizeDriverApproval() {
     try {
         const response = await fetch(`/api/drivers/${currentDriver._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                // Explicitly set role on approval so the account becomes a car owner
                 role: 'car_owner',
                 account_status: "active",
                 "vehicle.0.verified": true,
@@ -308,17 +316,21 @@ async function approveDriver() {
                 verified_by: "admin"
             })
         });
-        
+
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
             showNotification('Driver approved and verified successfully!', 'success');
-            const modal = bootstrap.Modal.getInstance(document.getElementById('reviewDriverModal'));
-            modal.hide();
+
+            const reviewModal = bootstrap.Modal.getInstance(
+                document.getElementById('reviewDriverModal')
+            );
+            reviewModal.hide();
+
             await loadDrivers();
         } else {
             showNotification(result.message || 'Error approving driver', 'error');
@@ -328,6 +340,7 @@ async function approveDriver() {
         showNotification('Error approving driver: ' + error.message, 'error');
     }
 }
+
 
 async function rejectDriver() {
     if (!currentDriver) return;

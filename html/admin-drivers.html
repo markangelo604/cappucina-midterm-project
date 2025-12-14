@@ -300,6 +300,39 @@
             </div>
         </div>
     </div>
+    <!-- Approve Confirmation Modal -->
+    <div class="modal fade" id="approveConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+        
+        <div class="modal-header">
+            <h5 class="modal-title text-success">
+            <i class="bi bi-check-circle"></i> Confirm Approval
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+            <p>
+            Are you sure you want to <strong>approve and verify</strong> this driver?
+            </p>
+            <p class="text-muted mb-0">
+            This will allow them to start accepting rides.
+            </p>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+            </button>
+            <button class="btn btn-success" id="confirmApproveBtn">
+            <i class="bi bi-check-circle"></i> Yes, Approve
+            </button>
+        </div>
+
+        </div>
+    </div>
+    </div>
 
     <!-- Edit Driver Modal -->
     <div class="modal fade" id="editDriverModal" tabindex="-1">
@@ -319,7 +352,7 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Username</label>
                                 <input type="text" class="form-control" id="editDriverUsername" name="username" required>
-                            </div>
+                            </div>      
                             
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Full Name</label>
