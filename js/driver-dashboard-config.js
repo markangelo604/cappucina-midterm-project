@@ -15,6 +15,7 @@ let userMarkerDriver = null;
 // Get driver username from session
 let driverUsername = null;
 let destinations = [];
+let vehicleMaxSeats = null; // Store max seats from vehicle registration
 
 // DOM Elements
 const addDestinationForm = document.getElementById('addDestinationForm');
@@ -363,8 +364,12 @@ async function loadUserData() {
         const result = await response.json();
 
         if (result.success && result.data.vehicle && result.data.vehicle.length > 0) {
-            const plateNumber = result.data.vehicle[0].plate_number;
+            const vehicle = result.data.vehicle[0];
+            const plateNumber = vehicle.plate_number;
+            vehicleMaxSeats = vehicle.available_seats || 4; // Store max seats from vehicle
+            
             const plateInput = document.getElementById('plateNumber');
+            const seatsInput = document.getElementById('seats');
             
             if (plateInput) {
                 plateInput.value = plateNumber;
@@ -377,6 +382,38 @@ async function loadUserData() {
                     hint.textContent = `Auto-filled from your vehicle registration (${plateNumber})`;
                     hint.classList.add('filled');
                 }
+            }
+            
+            // Set max seats for input validation
+            if (seatsInput) {
+                seatsInput.setAttribute('max', vehicleMaxSeats);
+                seatsInput.value = Math.min(parseInt(seatsInput.value) || 1, vehicleMaxSeats);
+                
+                // Add helper text showing max seats
+                const seatsGroup = seatsInput.closest('.form-group');
+                if (seatsGroup) {
+                    let seatsHint = seatsGroup.querySelector('.seats-hint');
+                    if (!seatsHint) {
+                        seatsHint = document.createElement('small');
+                        seatsHint.className = 'seats-hint';
+                        seatsHint.style.color = '#666';
+                        seatsHint.style.display = 'block';
+                        seatsHint.style.marginTop = '4px';
+                        seatsGroup.appendChild(seatsHint);
+                    }
+                    seatsHint.textContent = `Maximum ${vehicleMaxSeats} seat${vehicleMaxSeats > 1 ? 's' : ''} available in your vehicle`;
+                }
+                
+                // Add real-time validation
+                seatsInput.addEventListener('input', function() {
+                    const value = parseInt(this.value);
+                    if (value > vehicleMaxSeats) {
+                        this.value = vehicleMaxSeats;
+                        showError(`Cannot exceed ${vehicleMaxSeats} seats for your vehicle`);
+                    } else if (value < 1) {
+                        this.value = 1;
+                    }
+                });
             }
         }
     } catch (error) {
@@ -699,6 +736,13 @@ async function handleAddDestination(e) {
     if (isNaN(formData.seats) || formData.seats < 1) {
         console.error('❌ Validation failed: Invalid seats');
         showError('Please enter valid number of seats');
+        return;
+    }
+    
+    // Validate seats against vehicle capacity
+    if (vehicleMaxSeats && formData.seats > vehicleMaxSeats) {
+        console.error('❌ Validation failed: Seats exceed vehicle capacity');
+        showError(`Cannot offer more than ${vehicleMaxSeats} seat${vehicleMaxSeats > 1 ? 's' : ''}. Your vehicle has ${vehicleMaxSeats} available seat${vehicleMaxSeats > 1 ? 's' : ''}.`);
         return;
     }
     
