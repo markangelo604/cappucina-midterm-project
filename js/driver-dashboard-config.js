@@ -1234,9 +1234,84 @@ async function handleDepartRide(destinationId) {
         showError("You cannot depart yet. The scheduled time has not arrived.");
         return;
     }
+    // Require Google Maps geometry library
+    if (!window.google || !google.maps || !google.maps.geometry) {
+        showError('Maps not ready. Please wait a moment and try again.');
+        return;
+    }
     try {
         console.log('🚗 Departing ride:', destinationId);
         showLoading('Marking ride as departed...');
+
+        // Validate driver is within 40 meters of pickup location
+        const ARRIVAL_AT_PICKUP_DISTANCE = 40; // meters
+
+        const pickupLocationName = destination.pickup || destination.from;
+        if (!pickupLocationName) {
+            hideLoading();
+            showError('Pickup location is not set for this ride.');
+            return false;
+        }
+
+        // Resolve pickup location to coordinates using PlacesService
+        const mapForPlaces = map || (window.popupMapDriver);
+        const placesService = new google.maps.places.PlacesService(mapForPlaces || document.createElement('div'));
+
+        const pickupPlace = await new Promise((resolve) => {
+            placesService.findPlaceFromQuery({
+                query: pickupLocationName,
+                fields: ['geometry', 'formatted_address', 'name']
+            }, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
+                    resolve(results[0]);
+                } else {
+                    console.warn('Could not resolve pickup location:', pickupLocationName, status);
+                    resolve(null);
+                }
+            });
+        });
+
+        if (!pickupPlace || !pickupPlace.geometry || !pickupPlace.geometry.location) {
+            hideLoading();
+            showError('Unable to validate pickup location. Please re-enter the pickup address.');
+            return false;
+        }
+
+        // Get driver's current position
+        if (!navigator.geolocation) {
+            hideLoading();
+            showError('Geolocation is not supported by your browser');
+            return false;
+        }
+
+        const driverPosition = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                err => reject(err),
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }).catch(err => {
+            console.error('Geolocation error:', err);
+            return null;
+        });
+
+        if (!driverPosition) {
+            hideLoading();
+            showError('Unable to get your current location');
+            return false;
+        }
+
+        const driverLatLng = new google.maps.LatLng(driverPosition.lat, driverPosition.lng);
+        const pickupLatLng = pickupPlace.geometry.location;
+        const distanceToPickup = google.maps.geometry.spherical.computeDistanceBetween(driverLatLng, pickupLatLng);
+
+        console.log(`Distance to pickup: ${Math.round(distanceToPickup)} meters`);
+
+        if (distanceToPickup > ARRIVAL_AT_PICKUP_DISTANCE) {
+            hideLoading();
+            showError(`You must be within ${ARRIVAL_AT_PICKUP_DISTANCE} meters of the pickup location to depart.`);
+            return false;
+        }
 
         const payload = {
             driver_username: driverUsername,
