@@ -387,19 +387,21 @@ if ($method === 'GET') {
         }
         
         // Check if ride has passengers
-        if (isset($ride['passengers']) && count($ride['passengers']) > 0) {
-            // Don't delete, just mark as cancelled
-            $result = $ridesCollection->updateOne(
-                ['_id' => $rideObjectId],
-                ['$set' => [
-                    'ride_status' => 'cancelled',
-                    'cancelled_at' => new MongoDB\BSON\UTCDateTime(),
-                    'cancelled_by' => 'driver'
-                ]]
-            );
-            
-            if ($result->getModifiedCount() > 0) {
-                // ALSO CANCEL ALL BOOKINGS FOR THIS RIDE
+        // Always mark ride as cancelled instead of deleting, even if no passengers
+        $updateFields = [
+            'ride_status' => 'cancelled',
+            'cancelled_at' => new MongoDB\BSON\UTCDateTime(),
+            'cancelled_by' => 'driver'
+        ];
+
+        $result = $ridesCollection->updateOne(
+            ['_id' => $rideObjectId],
+            ['$set' => $updateFields]
+        );
+
+        if ($result->getModifiedCount() > 0 || $result->getMatchedCount() > 0) {
+            // If there are bookings, cancel them as well
+            if (isset($ride['passengers']) && count($ride['passengers']) > 0) {
                 $bookingsCollection = $db->bookings;
                 $bookingsResult = $bookingsCollection->updateMany(
                     [
@@ -413,25 +415,19 @@ if ($method === 'GET') {
                         'cancel_reason' => 'Ride cancelled by driver'
                     ]]
                 );
-                
+
                 sendResponse(true, 'Ride cancelled successfully (had bookings)', [
                     'action' => 'cancelled',
                     'bookings_cancelled' => $bookingsResult->getModifiedCount()
                 ]);
-            } else {
-                sendResponse(false, 'Failed to cancel ride');
             }
+
+            // No bookings to cancel — still report as cancelled
+            sendResponse(true, 'Ride cancelled successfully', [
+                'action' => 'cancelled'
+            ]);
         } else {
-            // No passengers, safe to delete
-            $result = $ridesCollection->deleteOne(['_id' => $rideObjectId]);
-            
-            if ($result->getDeletedCount() > 0) {
-                sendResponse(true, 'Ride deleted successfully', [
-                    'action' => 'deleted'
-                ]);
-            } else {
-                sendResponse(false, 'Failed to delete ride');
-            }
+            sendResponse(false, 'Failed to cancel ride');
         }
     }
     
