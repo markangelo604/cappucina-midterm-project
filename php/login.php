@@ -9,8 +9,11 @@ session_start();
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../Server/Models/user-model.php';
-require_once __DIR__ . '/../Server/server.php';
 require_once __DIR__ . '/../vendor/autoload.php'; 
+
+// Load DB from server bootstrap
+$config = require __DIR__ . '/../Server/server.php';
+$db = $config['db'];
 
 // This is expected to return a JSON of 
 // ([
@@ -60,6 +63,17 @@ function loginUser($data) {
             ];
         }
 
+        // Check single-device login: if user already has an active session, deny unless `force` is true
+        $currentSession = session_id();
+        $existingSession = $user['active_session_id'] ?? null;
+
+        if ($existingSession && $existingSession !== $currentSession) {
+            return [
+                "success" => false,
+                "message" => "User already logged in on another device."
+            ];
+        }
+
         // Success response
         $response = [
             "success" => true,
@@ -80,6 +94,17 @@ function loginUser($data) {
         $_SESSION['role'] = $user['role'] ?? null;
 
         logAction("User logged in: {$user['username']} ({$user['role']})");
+
+        // Persist active session id and last_login time to user document
+        try {
+            $users->updateOne(
+                ['_id' => $user['_id']],
+                ['$set' => ['active_session_id' => $currentSession, 'last_login_at' => new MongoDB\BSON\UTCDateTime()]]
+            );
+        } catch (Exception $e) {
+            // Non-fatal: log and continue
+            logAction("Warning: failed to persist active_session_id: " . $e->getMessage());
+        }
 
         return $response;
 
