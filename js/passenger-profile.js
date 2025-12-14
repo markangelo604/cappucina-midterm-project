@@ -39,6 +39,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load user profile
     loadUserProfile();
     
+    // Update role switcher button if user is a driver
+    checkDriverStatusAndUpdateButton();
+    
     // Load ride history
     loadRideHistory();
     
@@ -84,6 +87,9 @@ function renderNavigation() {
             </a>
         </li>
     `).join('');
+
+    // Ensure the nav button reflects driver role when rendering
+    checkDriverStatusAndUpdateButton();
 }
 
 // ==========================================
@@ -121,8 +127,8 @@ async function loadUserProfile() {
     try {
         console.log('📥 Loading profile for:', userData.username);
         
-        // Fetch full user profile from database
-        const response = await fetch(`../php/get-user-profile.php?username=${encodeURIComponent(userData.username)}`);
+        // Fetch full user profile from database (use existing endpoint)
+        const response = await fetch(`../php/get-user-data.php?username=${encodeURIComponent(userData.username)}`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -130,8 +136,8 @@ async function loadUserProfile() {
         
         const result = await response.json();
         
-        if (result.success && result.user) {
-            const user = result.user;
+        if (result.success && result.data) {
+            const user = result.data;
             
             // Update session storage with complete data
             userData = {
@@ -162,7 +168,7 @@ function displayUserProfile(user) {
     console.log('📊 Displaying profile:', user);
     
     // Avatar initials
-    const name = user.name || user.username || 'User';
+    const name = user.profile?.name || user.name || user.username || 'User';
     const initials = getInitials(name);
     document.getElementById('avatarInitials').textContent = initials;
     
@@ -374,6 +380,9 @@ function setupEventListeners() {
             saveSettingPreference('profile_visibility', this.value);
         });
     }
+
+    // Sync role button with current status
+    checkDriverStatusAndUpdateButton();
 }
 
 // ==========================================
@@ -641,6 +650,44 @@ function getInitials(name) {
 function capitalizeFirst(str) {
     if (!str) return '';
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+// ==========================================
+// CHECK DRIVER STATUS AND UPDATE BUTTON
+// ==========================================
+async function checkDriverStatusAndUpdateButton() {
+    try {
+        if (!userData || !userData.username) return;
+        
+        const response = await fetch(`../php/check-driver-status.php?username=${encodeURIComponent(userData.username)}`);
+        const result = await response.json();
+        
+        if (result.success && result.is_driver) {
+            const navButtons = document.querySelector('.nav-buttons');
+            if (!navButtons) return;
+            
+            const becomeDriverBtn = Array.from(navButtons.querySelectorAll('button')).find(
+                btn => btn.textContent.includes('Become a Driver')
+            );
+            
+            if (becomeDriverBtn) {
+                becomeDriverBtn.className = 'btn-Outline role-switcher';
+                becomeDriverBtn.innerHTML = '🚗 Switch to Driver';
+                becomeDriverBtn.onclick = function(e) {
+                    e.preventDefault();
+                    window.location.href = '../html/driver-dashboard.html';
+                };
+                
+                if (result.driver_status === 'pending') {
+                    becomeDriverBtn.innerHTML = '🚗 Switch to Driver <span class="status-badge pending">Pending</span>';
+                } else if (result.driver_status === 'active') {
+                    becomeDriverBtn.innerHTML = '🚗 Switch to Driver <span class="status-badge active">Active</span>';
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error updating role switcher button:', error);
+    }
 }
 
 // ==========================================
