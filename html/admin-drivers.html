@@ -98,7 +98,13 @@
             <div class="search-filter-bar">
                 <div class="filter-group">
                     <label>SEARCH:</label>
-                    <input type="text" class="filter-input" id="searchInput" placeholder="🔍 Search by name, email, or plate">
+                    <select class="filter-select" id="searchType">
+                        <option>All</option>
+                        <option>Name</option>
+                        <option>Email</option>
+                        <option>Phone</option>
+                    </select>
+                    <input type="text" class="filter-input" id="searchInput" placeholder="🔍">
                 </div>
                 
                 <button class="btn-search" id="searchBtn">Search</button>
