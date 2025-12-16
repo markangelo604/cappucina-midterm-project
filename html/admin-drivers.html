@@ -80,6 +80,10 @@
 
             <!-- Status Tabs -->
             <div class="status-tabs">
+                <button class="tab-btn" data-status="AllDrivers" onclick="switchTab('AllDrivers')">
+                    <span>All Drivers</span>
+                    <span class="count-badge" id="AllDriversCount">0</span>
+                </button>
                 <button class="tab-btn active" data-status="pending" onclick="switchTab('pending')">
                     <span>Pending Review</span>
                     <span class="count-badge" id="pendingCount">0</span>
