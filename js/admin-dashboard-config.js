@@ -203,10 +203,38 @@ async function fetchDrivers() {
 
 async function fetchTrips() {
     try {
-        const response = await fetch('../Server/Models/get-rides.php');
-        if (!response.ok) throw new Error('Failed to fetch trips');
-        
-        const rides = await response.json();
+        // Try relative path first (works when PHP server is proxied), then absolute path as fallback
+        const candidatePaths = ['../Server/Models/get-rides.php', '/Server/Models/get-rides.php'];
+        let response = null;
+        let lastText = '';
+        let rides = null;
+
+        for (const p of candidatePaths) {
+            try {
+                response = await fetch(p);
+            } catch (e) {
+                response = null;
+            }
+
+            if (!response || !response.ok) continue;
+
+            // parse as text then JSON to capture any server-side HTML/errors
+            lastText = await response.text();
+            try {
+                rides = JSON.parse(lastText);
+                break; // success
+            } catch (e) {
+                console.warn('Failed to parse JSON from', p, '-', e.message);
+                // try next path
+                rides = null;
+            }
+        }
+
+        if (!rides) {
+            console.error('Invalid JSON from trips endpoint (tried paths):', candidatePaths.join(', '));
+            console.error('Last response snippet:', lastText.substring(0, 1000));
+            throw new Error('Invalid JSON from trips endpoint');
+        }
         
         // Calculate statistics
         const totalTrips = rides.length;
@@ -399,13 +427,12 @@ function generateChartData(tripsData, driversData) {
     
     return {
         tripsByDay,
-        labels: dateRange.map((d, i) => labelsFormatter(d, i)),
         statusCounts,
         revenueByMonth,
         topDrivers,
         hourCounts,
         driverStatusCounts,
-        last7Days,
+        last7Days: dateRange,
         last6Months
     };
 }

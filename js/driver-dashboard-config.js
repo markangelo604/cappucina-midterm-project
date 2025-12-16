@@ -1376,7 +1376,7 @@ async function handleDepartRide(destinationId) {
      const destination = destinations.find(d => d.id === destinationId);
 
     // Prevent depart when not allowed
-    if (!isRideTimeNow(destination.date, destination.time)) {
+    if (isRideTimeNow(destination.date, destination.time)) {
         showError("You cannot depart yet. The scheduled time has not arrived.");
         return;
     }
