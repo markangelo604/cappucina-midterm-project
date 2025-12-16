@@ -233,10 +233,6 @@ async function reviewDriver(id) {
             documentsContainer.appendChild(docDiv);
         });
         
-        // Reset rejection reason section
-        document.getElementById('rejectionReasonSection').style.display = 'none';
-        document.getElementById('rejectionReason').value = '';
-        
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('reviewDriverModal'));
         modal.show();
@@ -266,18 +262,16 @@ function setupEventListeners() {
         btnApprove.addEventListener('click', approveDriver);
     }
     
-    // Reject button
+    // Reject button - opens reject modal
     const btnReject = document.getElementById('btnRejectDriver');
     if (btnReject) {
-        btnReject.addEventListener('click', () => {
-            const reasonSection = document.getElementById('rejectionReasonSection');
-            if (reasonSection.style.display === 'none') {
-                reasonSection.style.display = 'block';
-                btnReject.textContent = 'Confirm Rejection';
-            } else {
-                rejectDriver();
-            }
-        });
+        btnReject.addEventListener('click', openRejectModal);
+    }
+
+    // Confirm reject button in reject modal
+    const confirmRejectBtn = document.getElementById('confirmRejectBtn');
+    if (confirmRejectBtn) {
+        confirmRejectBtn.addEventListener('click', confirmRejection);
     }
     
     // Add driver button
@@ -341,13 +335,35 @@ async function finalizeDriverApproval() {
     }
 }
 
+function openRejectModal() {
+    if (!currentDriver) return;
+    
+    // Set driver name in reject modal
+    const driverName = currentDriver.profile?.name || currentDriver.username || 'Unknown';
+    document.getElementById('rejectDriverName').textContent = driverName;
+    
+    // Clear previous rejection reason
+    document.getElementById('rejectionReason').value = '';
+    
+    // Show reject modal
+    const rejectModal = new bootstrap.Modal(document.getElementById('rejectConfirmModal'));
+    rejectModal.show();
+}
 
-async function rejectDriver() {
+async function confirmRejection() {
     if (!currentDriver) return;
     
     const reason = document.getElementById('rejectionReason').value.trim();
+    
     if (!reason) {
-        alert('Please provide a reason for rejection.');
+        alert('❌ Please provide a reason for rejection.');
+        document.getElementById('rejectionReason').focus();
+        return;
+    }
+
+    if (reason.length < 20) {
+        alert('❌ Please provide a more detailed reason (at least 20 characters).');
+        document.getElementById('rejectionReason').focus();
         return;
     }
     
@@ -370,9 +386,15 @@ async function rejectDriver() {
         const result = await response.json();
         
         if (result.success) {
-            showNotification('Driver application rejected.', 'success');
-            const modal = bootstrap.Modal.getInstance(document.getElementById('reviewDriverModal'));
-            modal.hide();
+            showNotification('Driver application rejected successfully.', 'success');
+            
+            // Close both modals
+            const rejectModal = bootstrap.Modal.getInstance(document.getElementById('rejectConfirmModal'));
+            const reviewModal = bootstrap.Modal.getInstance(document.getElementById('reviewDriverModal'));
+            
+            if (rejectModal) rejectModal.hide();
+            if (reviewModal) reviewModal.hide();
+            
             await loadDrivers();
         } else {
             showNotification(result.message || 'Error rejecting driver', 'error');

@@ -287,17 +287,13 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Rejection Reason Section (Hidden by default) -->
-                    <div id="rejectionReasonSection" style="display: none;">
-                        <label for="rejectionReason" class="form-label"><strong>Reason for Rejection:</strong></label>
-                        <textarea class="form-control" id="rejectionReason" rows="3" placeholder="Please provide a reason for rejecting this application..."></textarea>
-                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i> Close
+                    </button>
                     <button type="button" class="btn btn-danger" id="btnRejectDriver">
-                        <i class="bi bi-x-circle"></i> Reject
+                        <i class="bi bi-x-circle"></i> Reject Application
                     </button>
                     <button type="button" class="btn btn-success" id="btnApproveDriver">
                         <i class="bi bi-check-circle"></i> Approve & Verify
@@ -338,6 +334,51 @@
 
         </div>
     </div>
+    </div>
+
+    <!-- Reject Confirmation Modal -->
+    <div class="modal fade" id="rejectConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: #fff3cd; border-bottom: 2px solid #ffc107;">
+                    <h5 class="modal-title" style="color: #856404;">
+                        <i class="bi bi-exclamation-triangle"></i> Reject Driver Application
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Important:</strong> Please provide a clear reason for rejection. This will be sent to the driver via email.
+                    </div>
+                    
+                    <p class="mb-3"><strong>Driver:</strong> <span id="rejectDriverName">-</span></p>
+                    
+                    <label for="rejectionReason" class="form-label">
+                        <strong>Reason for Rejection: <span class="text-danger">*</span></strong>
+                    </label>
+                    <textarea 
+                        class="form-control" 
+                        id="rejectionReason" 
+                        rows="4" 
+                        style="min-height: 100px; resize: vertical;"
+                        placeholder="Example: Vehicle registration documents are unclear. Please upload clearer photos of your OR/CR."
+                        required
+                    ></textarea>
+                    <small class="text-muted d-block mt-2">
+                        <i class="bi bi-lightbulb"></i> Be specific about what documents or information need to be corrected.
+                    </small>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-arrow-left"></i> Cancel
+                    </button>
+                    <button class="btn btn-danger" id="confirmRejectBtn">
+                        <i class="bi bi-x-circle"></i> Confirm Rejection
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Edit Driver Modal -->
