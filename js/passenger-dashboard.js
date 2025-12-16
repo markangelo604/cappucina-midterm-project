@@ -1098,6 +1098,19 @@ async function openBookingModal(rideIndex) {
         document.getElementById('passengerPhone').value = userData.phone || "";
     }
 
+    // Dynamically set max passengers based on available seats
+    const availableSeats = ride.available_seats || ride.seat_available || 0;
+    const numPassengersSelect = document.getElementById('numPassengers');
+    
+    // Clear existing options and rebuild based on available seats
+    numPassengersSelect.innerHTML = '<option value="">Select number</option>';
+    for (let i = 1; i <= Math.min(5, availableSeats); i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = i === 1 ? '1 Passenger' : `${i} Passengers`;
+        numPassengersSelect.appendChild(option);
+    }
+
     // Show modal
     const modal = document.getElementById('bookingModal');
     modal.style.display = 'flex';
