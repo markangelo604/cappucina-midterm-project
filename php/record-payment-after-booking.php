@@ -1,7 +1,13 @@
 <?php
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+if ($origin !== '*') {
+    header('Access-Control-Allow-Origin: ' . $origin);
+    header('Access-Control-Allow-Credentials: true');
+} else {
+    header('Access-Control-Allow-Origin: *');
+}
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
@@ -29,9 +35,17 @@ try {
 
     logPayment("Payment recording request: " . json_encode($input));
 
-    // Require session-based authorization: passenger must be logged in and match
-    if (!isset($_SESSION['username']) || empty($input['passenger_username']) || $_SESSION['username'] !== $input['passenger_username']) {
-        throw new Exception('Unauthorized: session user does not match passenger');
+    // Require session-based authorization: passenger must be logged in
+    if (!isset($_SESSION['username'])) {
+        http_response_code(401);
+        throw new Exception('Not authenticated: please log in');
+    }
+
+    // Trust the session username; override any client-provided mismatch
+    $sessionUser = $_SESSION['username'];
+    if (empty($input['passenger_username']) || $input['passenger_username'] !== $sessionUser) {
+        logPayment("ℹ️ Overriding passenger_username with session user: {$sessionUser}");
+        $input['passenger_username'] = $sessionUser;
     }
     
     // Validate required fields

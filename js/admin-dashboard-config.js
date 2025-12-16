@@ -253,15 +253,50 @@ async function fetchTrips() {
 function generateChartData(tripsData, driversData) {
     const rides = tripsData.allRides || [];
     
-    // Trips over time (last 7 days)
-    const last7Days = getLast7Days();
-    const tripsByDay = last7Days.map(date => {
-        return rides.filter(ride => {
-            const rideDate = ride.created_at ? 
-                new Date(ride.created_at.$date || ride.created_at) : 
-                new Date(ride.date);
-            return rideDate.toDateString() === date.toDateString();
-        }).length;
+    // Determine date range based on current period
+    let dateRange = getLast7Days();
+    let labelsFormatter = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    
+    if (currentPeriod === 'today') {
+        dateRange = getTodayHours();
+        labelsFormatter = (d, i) => `${i}:00`;
+    } else if (currentPeriod === 'week') {
+        dateRange = getLast7Days();
+        labelsFormatter = (d) => d.toLocaleDateString('en-US', { weekday: 'short' });
+    } else if (currentPeriod === 'month') {
+        dateRange = getLast30Days();
+        labelsFormatter = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } else if (currentPeriod === 'year') {
+        dateRange = getLast12Months();
+        labelsFormatter = (d) => d.toLocaleDateString('en-US', { month: 'short' });
+    } else if (currentPeriod === 'all') {
+        dateRange = getLast7Days(); // Default to 7 days for 'all'
+        labelsFormatter = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    
+    // Trips over time
+    const tripsByDay = dateRange.map((dateOrHour, index) => {
+        if (currentPeriod === 'today') {
+            // For today, filter by hour
+            const hour = index;
+            return rides.filter(ride => {
+                const rideDate = ride.created_at ? 
+                    new Date(ride.created_at.$date || ride.created_at) : 
+                    new Date(ride.date);
+                return rideDate.getHours() === hour && 
+                       rideDate.toDateString() === new Date().toDateString() &&
+                       (ride.ride_status === 'completed' || ride.ride_status === 'finished');
+            }).length;
+        } else {
+            // For other periods, filter by date
+            return rides.filter(ride => {
+                const rideDate = ride.created_at ? 
+                    new Date(ride.created_at.$date || ride.created_at) : 
+                    new Date(ride.date);
+                return rideDate.toDateString() === dateOrHour.toDateString() &&
+                       (ride.ride_status === 'completed' || ride.ride_status === 'finished');
+            }).length;
+        }
     });
     
     // Trip status distribution
@@ -364,6 +399,7 @@ function generateChartData(tripsData, driversData) {
     
     return {
         tripsByDay,
+        labels: dateRange.map((d, i) => labelsFormatter(d, i)),
         statusCounts,
         revenueByMonth,
         topDrivers,
@@ -547,9 +583,7 @@ function updateCharts() {
     
     // Update Trips Over Time
     if (charts.tripsOverTime) {
-        charts.tripsOverTime.data.labels = chartData.last7Days.map(d => 
-            d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        );
+        charts.tripsOverTime.data.labels = chartData.labels;
         charts.tripsOverTime.data.datasets[0].data = chartData.tripsByDay;
         charts.tripsOverTime.update();
     }
@@ -716,6 +750,34 @@ function getLast7Days() {
         days.push(date);
     }
     return days;
+}
+
+function getTodayHours() {
+    const hours = [];
+    for (let i = 0; i < 24; i++) {
+        hours.push(i);
+    }
+    return hours;
+}
+
+function getLast30Days() {
+    const days = [];
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        days.push(date);
+    }
+    return days;
+}
+
+function getLast12Months() {
+    const months = [];
+    for (let i = 11; i >= 0; i--) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        months.push(date);
+    }
+    return months;
 }
 
 function getLast6Months() {

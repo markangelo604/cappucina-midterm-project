@@ -37,7 +37,7 @@ function getBookingData() {
 // Initialize booking data
 const bookingData = getBookingData();
 let baseFare = parseFloat((bookingData?.price || bookingData?.fare || '₱0').toString().replace(/[^\d.]/g, ''));
-let serviceFee = baseFare * 0.10;
+let serviceFee = 0;
 let discountAmount = 0;
 let appliedPromoCode = null;
 
