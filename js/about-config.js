@@ -25,7 +25,7 @@ const siteConfig = {
         { name: "Damocles, Jheezren", role: "Lead Developer", image: "../images/jhez.jpg" },
         { name: "Bautista, Josh Marcus", role: "CEO & Founder", image: "../images/josh.png" },
         { name: "Contillo, Daniel Roi", role: "CTO", image: "../images/daniel.jpg" },
-        { name: "Manaois, John Michael", role: "Head of Operations", image: "../images/chars.jpg" }
+        { name: "Manaois, John Michael", role: "Head of Operations", image: "../images/jm.jpg" }
     ],
 };
 
