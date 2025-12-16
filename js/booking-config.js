@@ -226,6 +226,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
                 }
                 return status === filter;
             });
+            // Sort filtered bookings by date (most recent first)
+            filtered.sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+            });
             displayBookings(filtered);
         }
     });
