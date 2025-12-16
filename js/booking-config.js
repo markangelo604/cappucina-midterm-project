@@ -217,7 +217,12 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         const filter = this.dataset.filter;
         
         if (filter === 'all') {
-            displayBookings(bookings);
+            // Sort all bookings by date (most recent first)
+            const sorted = [...bookings];
+            sorted.sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+            });
+            displayBookings(sorted);
         } else {
             const filtered = bookings.filter(booking => {
                 const status = booking.status.toLowerCase();

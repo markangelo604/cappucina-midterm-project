@@ -768,7 +768,26 @@ async function fetchAvailableRides(searchParams = null) {
             return;
         }
         
-        renderRides(data.rides);
+        // Sort rides by date and time (most recent first)
+        const sortedRides = [...data.rides].sort((a, b) => {
+            const dateA = new Date(a.date);
+            const timeA = a.time ? a.time.split(':') : [0, 0];
+            const timeB = b.time ? b.time.split(':') : [0, 0];
+            
+            const dateB = new Date(b.date);
+            
+            // Compare dates first
+            const dateCompare = dateB - dateA;
+            if (dateCompare !== 0) return dateCompare;
+            
+            // If same date, compare times
+            const minutesA = parseInt(timeA[0]) * 60 + parseInt(timeA[1]);
+            const minutesB = parseInt(timeB[0]) * 60 + parseInt(timeB[1]);
+            
+            return minutesB - minutesA;
+        });
+        
+        renderRides(sortedRides);
         
     } catch (error) {
         console.error('Error fetching rides:', error);
