@@ -36,7 +36,12 @@ function showLoading(show) {
 }
 
 function filterByStatus(status) {
-     return driversData.filter(driver => {
+    // Return all drivers when requested
+    if (status === 'AllDrivers' || status === 'all' || status === 'allDrivers') {
+        return driversData.slice();
+    }
+
+    return driversData.filter(driver => {
         const driverStatus = driver.driver_status || "pending";
         const vehicleVerified = driver.vehicle?.[0]?.verified || false;
 
@@ -63,6 +68,8 @@ function updateCounts() {
     const pending = driversData.filter(d => (d.driver_status || "pending") === "pending" && !(d.vehicle?.[0]?.verified || false)).length;
     const verified = driversData.filter(d => (d.driver_status || "pending") === "active" && (d.vehicle?.[0]?.verified || false)).length;
     const rejected = driversData.filter(d => (d.driver_status || "pending") === "rejected").length;
+    const allCountEl = document.getElementById("AllDriversCount");
+    if (allCountEl) allCountEl.textContent = driversData.length;
 
     document.getElementById("pendingCount").textContent = pending;
     document.getElementById("verifiedCount").textContent = verified;
@@ -142,19 +149,28 @@ function renderDriversTable(data) {
                 <td><span class="status-badge ${statusBadgeClass}">${statusText}</span></td>
                 <td>
                     <div class="action-btns">
-                        ${currentStatus === 'pending' ? `
-                            <button class="btn-review" onclick="reviewDriver('${driver._id}')" title="Review Application">
-                                <i class="bi bi-file-text"></i> Review
-                            </button>
-                        ` : ''}
-                        ${currentStatus === 'verified' || currentStatus === 'rejected' ? `
-                            <button class="btn-action btn-edit" onclick="editDriver('${driver._id}')" title="Edit">
-                                ✏️
-                            </button>
-                            <button class="btn-action btn-delete" onclick="deleteDriver('${driver._id}')" title="Delete">
-                                🗑️
-                            </button>
-                        ` : ''}
+                        ${(() => {
+                            // Show per-driver actions regardless of the current tab so "All Drivers" has appropriate actions
+                            const ds = driver.driver_status || 'pending';
+                            const vVerified = driver.vehicle?.[0]?.verified || false;
+                            if (ds === 'pending' && !vVerified) {
+                                return `
+                                    <button class="btn-review" onclick="reviewDriver('${driver._id}')" title="Review Application">
+                                        <i class="bi bi-file-text"></i> Review
+                                    </button>
+                                `;
+                            }
+
+                            // For active/verified or rejected, allow edit/delete
+                            return `
+                                <button class="btn-action btn-edit" onclick="editDriver('${driver._id}')" title="Edit">
+                                    ✏️
+                                </button>
+                                <button class="btn-action btn-delete" onclick="deleteDriver('${driver._id}')" title="Delete">
+                                    🗑️
+                                </button>
+                            `;
+                        })()}
                     </div>
                 </td>
             </tr>
