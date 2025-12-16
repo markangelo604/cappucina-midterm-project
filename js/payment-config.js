@@ -49,6 +49,47 @@ navItems.forEach(item => {
     navMenu.appendChild(li);
 });
 
+// Update navigation buttons based on login state
+const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+const navButtons = document.querySelector('.nav-buttons');
+
+if (userData.username) {
+    // User is logged in - show profile menu
+    navButtons.innerHTML = `
+        <div class="user-menu">
+            <button class="user-button" onclick="toggleUserDropdown()">
+                <span class="user-avatar">${userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}</span>
+                <span class="user-name">${userData.name || userData.username}</span>
+                <span class="dropdown-arrow">▼</span>
+            </button>
+            <div class="user-dropdown" id="userDropdown">
+                <a href="../html/passenger-profile.html">My Profile</a>
+                <a href="../html/booking.html">My Bookings</a>
+                <a href="#" onclick="event.preventDefault(); logout();">Logout</a>
+            </div>
+        </div>
+    `;
+}
+
+function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdown');
+    dropdown.classList.toggle('show');
+}
+
+function logout() {
+    sessionStorage.clear();
+    window.location.href = '../html/login.html';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const userMenu = document.querySelector('.user-menu');
+    const dropdown = document.getElementById('userDropdown');
+    if (dropdown && userMenu && !userMenu.contains(event.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+
 // Populate Summary
 function populateSummary() {
     if (!bookingData) {
