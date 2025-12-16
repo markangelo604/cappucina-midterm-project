@@ -579,6 +579,18 @@ async function startServer() {
         const driverId = req.params.id;
         const updateData = req.body;
 
+        // Log incoming update for debugging
+        console.log('PUT /api/drivers/%s payload:', driverId, JSON.stringify(updateData, null, 2));
+
+        // Validate ObjectId early to return a clear error
+        let objectId;
+        try {
+          objectId = new ObjectId(driverId);
+        } catch (idErr) {
+          console.error('Invalid driver id provided for update:', driverId, idErr);
+          return res.status(400).json({ success: false, message: 'Invalid driver id', error: idErr.message });
+        }
+
         // Remove fields that shouldn't be updated
         delete updateData._id;
         delete updateData.created_at;
@@ -624,7 +636,7 @@ async function startServer() {
 
         const result = await users.updateOne(
           {
-            _id: new ObjectId(driverId),
+            _id: objectId,
             $or: [
               { role: "car_owner" },
               { driver_status: { $exists: true } }
@@ -672,6 +684,8 @@ async function startServer() {
           success: false,
           message: "Error updating driver",
           error: err.message,
+          // Include stack for debugging in development environment
+          stack: err.stack
         });
       }
     });

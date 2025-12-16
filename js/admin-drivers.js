@@ -56,8 +56,8 @@ function filterByStatus(status) {
         }
 
         if (status === "rejected") {
-            // Rejected Drivers (account_status rejected)
-            return driverStatus === "rejected" && !vehicleVerified;
+            // Rejected Drivers (account_status rejected) — include regardless of vehicle verification
+            return driverStatus === "rejected";
         }
 
         return false;
@@ -545,47 +545,52 @@ async function updateDriver() {
 
     const driverId = document.getElementById('editDriverId').value;
     const formData = new FormData(form);
-    
-    const driverData = {
-        username: formData.get('username'),
-        profile: {
-            name: formData.get('name'),
-            phone: formData.get('phone')
-        },
-        email: formData.get('email'),
-        account_status: formData.get('account_status'),
-        vehicle: [{
-            plate_number: formData.get('plate_number'),
-            brand: formData.get('brand'),
-            model: formData.get('model'),
-            year: parseInt(formData.get('year')) || 0,
-            verified: formData.get('verification') === 'true',
-            available_seats: parseInt(formData.get('available_seats')) || 4
-        }]
-    };
-    
+    // Build updateData using dot-notation keys so we don't overwrite existing `document` blobs
+    const updateData = {};
+    updateData.username = formData.get('username');
+    updateData['profile.name'] = formData.get('name');
+    updateData['profile.phone'] = formData.get('phone');
+    updateData.email = formData.get('email');
+    updateData.account_status = formData.get('account_status');
+
+    // Vehicle updates using dot-notation to avoid replacing the whole vehicle object
+    updateData['vehicle.0.plate_number'] = formData.get('plate_number');
+    updateData['vehicle.0.brand'] = formData.get('brand');
+    updateData['vehicle.0.model'] = formData.get('model');
+    updateData['vehicle.0.year'] = parseInt(formData.get('year')) || 0;
+    updateData['vehicle.0.verified'] = formData.get('verification') === 'true';
+    updateData['vehicle.0.available_seats'] = parseInt(formData.get('available_seats')) || 4;
+
     // Only include password if provided
     const password = formData.get('password');
     if (password && password.trim() !== '') {
-        driverData.password = password;
+        updateData.password = password;
     }
 
     try {
         const response = await fetch(`/api/drivers/${driverId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(driverData)
+            body: JSON.stringify(updateData)
         });
-        
-        const result = await response.json();
-        
-        if (result.success) {
+        // Read response as text first to handle non-JSON error pages
+        const responseText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseErr) {
+            console.error('Non-JSON response from server when updating driver:', response.status, response.statusText, responseText);
+            showNotification(`Error updating driver: ${response.status} ${response.statusText}. Server response: ${responseText.substring(0,200)}`, 'error');
+            return;
+        }
+
+        if (response.ok && result && result.success) {
             showNotification('Driver updated successfully', 'success');
             const editModal = bootstrap.Modal.getInstance(document.getElementById('editDriverModal'));
             editModal.hide();
             await loadDrivers();
         } else {
-            showNotification(result.message || 'Error updating driver', 'error');
+            showNotification((result && result.message) || 'Error updating driver', 'error');
         }
     } catch (error) {
         console.error('Error updating driver:', error);

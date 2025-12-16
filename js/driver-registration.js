@@ -144,6 +144,13 @@ function checkExistingUser() {
             // Show info message
             showInfo('✨ You\'re upgrading your existing account to become a driver. No need to create a new account!');
             
+            // If the user was previously rejected, make it clear they can re-apply
+            if (existingUserData.driver_status === 'rejected') {
+                const reason = existingUserData.rejection_reason || 'No reason provided.';
+                showInfo(`🔁 Your previous application was rejected. Reason: ${reason} — You may update details and reapply.`);
+                console.log('ℹ️ Previous application was rejected. Allowing re-apply.');
+            }
+            
         } catch (e) {
             console.log('No valid session found - NEW REGISTRATION MODE');
             isUpgrade = false;
@@ -538,6 +545,9 @@ async function handleFormSubmit(e) {
                     available_seats: formData.vehicle.availableSeats,
                     document: documentsBase64 // Add documents
                 }]
+            // Ensure a re-application sets status to pending so server treats this as a new application
+            , driver_status: 'pending'
+            , rejection_reason: null
             };
             successMessage = '🎉 Successfully upgraded to driver! Your application is pending approval.';
             redirectUrl = '../html/passenger-dashboard.html';
