@@ -110,7 +110,6 @@ async function loadDashboardData() {
         
         // Update dashboard stats
         dashboardData.totalUsers = usersData.count;
-        dashboardData.activeDrivers = driversData.activeCount;
         dashboardData.totalTrips = tripsData.totalCount;
         dashboardData.totalRevenue = tripsData.totalRevenue;
         dashboardData.recentTrips = tripsData.recent;
@@ -118,6 +117,12 @@ async function loadDashboardData() {
         // Generate chart data
         dashboardData.chartData = generateChartData(tripsData, driversData);
         
+        // Generate Active Drivers from chart data (ensures consistency)
+        dashboardData.chartData = generateChartData(tripsData, driversData);
+        dashboardData.activeDrivers = (dashboardData.chartData && dashboardData.chartData.driverStatusCounts && typeof dashboardData.chartData.driverStatusCounts.verified === 'number')
+            ? dashboardData.chartData.driverStatusCounts.verified
+            : (driversData.verifiedCount ?? driversData.activeCount);
+
         // Update UI
         updateDashboardStats();
         updateRecentActivity();
@@ -156,18 +161,43 @@ async function fetchDrivers() {
         
         const drivers = await response.json();
         
-        const activeDrivers = drivers.filter(driver => 
-            driver.account_status === 'active' || driver.account_status === 'on-duty'
-        );
-        
+        // Only count drivers with account_status === 'active' as active
+        const activeDrivers = drivers.filter(driver => driver.account_status === 'active');
+
+        // Compute verified drivers using robust checks (account_status, driver_status, vehicle/docs verified)
+        const verifiedDrivers = drivers.filter(d => {
+            const acc = (d.account_status || '').toString().toLowerCase();
+            const drv = (d.driver_status || '').toString().toLowerCase();
+            const vehicleVerified = Array.isArray(d.vehicle) && d.vehicle.some(v => v && (v.verified === true || String(v.verified).toLowerCase() === 'true'));
+            const docVerified = d.documents_verified === true || d.verified === true;
+
+            if (acc === 'active' || drv === 'active' || vehicleVerified || docVerified) return true;
+            return false;
+        });
+
+        // Also fetch pending applications count from dedicated endpoint (if available)
+        let pendingApplications = 0;
+        try {
+            const pendingResp = await fetch('/api/drivers/pending');
+            if (pendingResp.ok) {
+                const pendingList = await pendingResp.json();
+                if (Array.isArray(pendingList)) pendingApplications = pendingList.length;
+            }
+        } catch (e) {
+            // ignore, leave pendingApplications as 0
+        }
+
         return {
             count: drivers.length,
             activeCount: activeDrivers.length,
+            verifiedCount: verifiedDrivers.length,
+            pendingApplications: pendingApplications,
             drivers: drivers
         };
+        
     } catch (error) {
         console.error('Error fetching drivers:', error);
-        return { count: 0, activeCount: 0, drivers: [] };
+        return { count: 0, activeCount: 0, verifiedCount: 0, pendingApplications: 0, drivers: [] };
     }
 }
 
@@ -276,13 +306,61 @@ function generateChartData(tripsData, driversData) {
         hourCounts[hour]++;
     });
     
-    // Driver status distribution
+    // Driver status distribution - derive Verified/Pending/Rejected from driver fields
     const drivers = driversData.drivers || [];
-    const driverStatusCounts = {
-        active: drivers.filter(d => d.account_status === 'active' || d.account_status === 'on-duty').length,
-        offline: drivers.filter(d => d.account_status === 'offline' || d.account_status === 'inactive').length,
-        pending: drivers.filter(d => d.account_status === 'pending').length
-    };
+    const driverStatusCounts = { verified: 0, pending: 0, rejected: 0 };
+
+    drivers.forEach(d => {
+        const acc = (d.account_status || '').toString().toLowerCase();
+        const drv = (d.driver_status || '').toString().toLowerCase();
+
+        const vehicleVerified = Array.isArray(d.vehicle) && d.vehicle.some(v => v && (v.verified === true || String(v.verified).toLowerCase() === 'true'));
+        const docVerified = d.documents_verified === true || d.verified === true;
+
+        // Rejected has highest priority
+        if (acc === 'rejected' || drv === 'rejected') {
+            driverStatusCounts.rejected++;
+            return;
+        }
+
+        // If explicit pending status, treat as pending (don't allow vehicle/docs to override)
+        if (acc === 'pending' || drv === 'pending') {
+            driverStatusCounts.pending++;
+            return;
+        }
+
+        // Consider a driver verified if driver_status/account_status is active
+        if (acc === 'active' || drv === 'active') {
+            driverStatusCounts.verified++;
+            return;
+        }
+
+        // If vehicle/docs are verified and no explicit pending/rejected flags, treat as verified
+        if (vehicleVerified || docVerified) {
+            driverStatusCounts.verified++;
+            return;
+        }
+
+        // Otherwise treat as pending
+        driverStatusCounts.pending++;
+    });
+
+    // If server returned a positive pendingApplications count use it (avoids overwriting computed pending with 0)
+    if (typeof driversData.pendingApplications === 'number' && driversData.pendingApplications > 0) {
+        driverStatusCounts.pending = driversData.pendingApplications;
+        // Recompute verified so totals match and pending aren't double-counted
+        const totalDrivers = drivers.length;
+        const pending = Math.max(0, Math.min(driverStatusCounts.pending, totalDrivers));
+        const rejected = Math.max(0, Math.min(driverStatusCounts.rejected, totalDrivers - pending));
+        driverStatusCounts.verified = Math.max(0, totalDrivers - pending - rejected);
+    }
+
+    // TEMP DEBUG: log driver counts to help diagnose missing Pending slice
+    try {
+        console.debug('[DEBUG] drivers.length=', drivers.length, 'pendingApplications=', driversData.pendingApplications, 'computed=', driverStatusCounts);
+    } catch (e) {
+        // ignore
+    }
     
     return {
         tripsByDay,
@@ -433,16 +511,16 @@ function initializeCharts() {
         });
     }
     
-    // Driver Status Chart (Pie)
+    // Driver Status Chart (Pie) - show Verified / Pending / Rejected
     const driverStatusCtx = document.getElementById('driverStatusChart');
     if (driverStatusCtx) {
         charts.driverStatus = new Chart(driverStatusCtx, {
             type: 'pie',
             data: {
-                labels: ['Active', 'Offline', 'Pending'],
+                labels: ['Verified', 'Pending', 'Rejected'],
                 datasets: [{
                     data: [0, 0, 0],
-                    backgroundColor: ['#28a745', '#6c757d', '#ffc107']
+                    backgroundColor: ['#28a745', '#ffc107', '#dc3545']
                 }]
             },
             options: {
@@ -512,11 +590,13 @@ function updateCharts() {
     
     // Update Driver Status
     if (charts.driverStatus) {
-        const driverStatus = chartData.driverStatusCounts;
+        const driverStatus = chartData.driverStatusCounts || { verified: 0, pending: 0, rejected: 0 };
+        // DEBUG: show values right before updating the chart
+        try { console.debug('[DEBUG] Updating driverStatus chart with', driverStatus); } catch (e) {}
         charts.driverStatus.data.datasets[0].data = [
-            driverStatus.active,
-            driverStatus.offline,
-            driverStatus.pending
+            driverStatus.verified,
+            driverStatus.pending,
+            driverStatus.rejected
         ];
         charts.driverStatus.update();
     }
