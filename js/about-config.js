@@ -20,7 +20,7 @@ const siteConfig = {
 
     teamMembers: [
         { name: "Javier, Charles Louis", role: "CEO & Founder", image: "../images/charles.jpg" },
-        { name: "Domalanta, Mark Angelo", role: "CTO", image: "../images/mark.png" },
+        { name: "Domalanta, Mark Angelo", role: "CTO", image: "../images/mark.jpg" },
         { name: "Beset, Sam Raleigh", role: "Head of Operations", image: "../images/sam.JPG" },
         { name: "Damocles, Jheezren", role: "Lead Developer", image: "../images/jhez.jpg" },
         { name: "Bautista, Josh Marcus", role: "CEO & Founder", image: "../images/josh.png" },
